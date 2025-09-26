@@ -16,12 +16,8 @@
 {{- if $hasMermaid -}}
 <script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
 <script>
-console.log('Mermaid脚本已加载');
-
 // 等待页面完全加载
 window.addEventListener('load', function() {
-    console.log('页面加载完成，开始初始化Mermaid');
-    
     // 初始化Mermaid
     mermaid.initialize({
         startOnLoad: false,
@@ -34,11 +30,8 @@ window.addEventListener('load', function() {
         class: { useMaxWidth: true }
     });
     
-    console.log('Mermaid初始化完成');
-    
     // 查找并转换所有mermaid代码块（包括fallback类型）
     const codeBlocks = document.querySelectorAll('pre code.language-mermaid, pre code.language-fallback');
-    console.log('找到', codeBlocks.length, '个代码块');
     
     // 过滤出真正的mermaid代码块
     const mermaidBlocks = Array.from(codeBlocks).filter(function(codeElement) {
@@ -55,13 +48,9 @@ window.addEventListener('load', function() {
                content.includes('-->>');
     });
     
-    console.log('过滤后找到', mermaidBlocks.length, '个Mermaid代码块');
-    
     mermaidBlocks.forEach(function(codeElement, index) {
-        console.log('处理代码块', index + 1);
         const pre = codeElement.closest('pre');
         const mermaidCode = codeElement.textContent.trim();
-        console.log('代码内容:', mermaidCode.substring(0, 50) + '...');
         
         // 创建mermaid容器
         const container = document.createElement('div');
@@ -84,13 +73,10 @@ window.addEventListener('load', function() {
     
     // 渲染所有mermaid图表
     setTimeout(function() {
-        console.log('开始渲染Mermaid图表');
         const mermaidElements = document.querySelectorAll('.mermaid');
-        console.log('待渲染的Mermaid元素数量:', mermaidElements.length);
         
         if (mermaidElements.length > 0) {
             mermaid.run().then(function() {
-                console.log('所有Mermaid图表渲染完成');
                 // 确保SVG响应式
                 document.querySelectorAll('.mermaid svg').forEach(function(svg) {
                     svg.style.maxWidth = '100%';
@@ -99,8 +85,6 @@ window.addEventListener('load', function() {
             }).catch(function(error) {
                 console.error('Mermaid渲染失败:', error);
             });
-        } else {
-            console.log('没有找到Mermaid元素');
         }
     }, 100);
 });
