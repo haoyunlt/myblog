@@ -63,11 +63,96 @@ window.addEventListener('load', function() {
         container.style.border = '1px solid #e5e7eb';
         container.style.borderRadius = '8px';
         
+        // 创建缩放控制按钮
+        const zoomControls = document.createElement('div');
+        zoomControls.className = 'mermaid-zoom-controls';
+        
+        const zoomInBtn = document.createElement('button');
+        zoomInBtn.className = 'mermaid-zoom-btn';
+        zoomInBtn.innerHTML = '+';
+        zoomInBtn.title = '放大';
+        
+        const zoomOutBtn = document.createElement('button');
+        zoomOutBtn.className = 'mermaid-zoom-btn';
+        zoomOutBtn.innerHTML = '−';
+        zoomOutBtn.title = '缩小';
+        
+        const resetBtn = document.createElement('button');
+        resetBtn.className = 'mermaid-zoom-btn';
+        resetBtn.innerHTML = '⌂';
+        resetBtn.title = '重置';
+        
+        const fullscreenBtn = document.createElement('button');
+        fullscreenBtn.className = 'mermaid-zoom-btn';
+        fullscreenBtn.innerHTML = '⛶';
+        fullscreenBtn.title = '全屏';
+        
+        zoomControls.appendChild(zoomInBtn);
+        zoomControls.appendChild(zoomOutBtn);
+        zoomControls.appendChild(resetBtn);
+        zoomControls.appendChild(fullscreenBtn);
+        
+        // 创建缩放包装器
+        const zoomWrapper = document.createElement('div');
+        zoomWrapper.className = 'mermaid-zoom-wrapper';
+        
         const mermaidDiv = document.createElement('div');
         mermaidDiv.className = 'mermaid';
         mermaidDiv.textContent = mermaidCode;
         
-        container.appendChild(mermaidDiv);
+        zoomWrapper.appendChild(mermaidDiv);
+        container.appendChild(zoomControls);
+        container.appendChild(zoomWrapper);
+        
+        // 添加缩放功能
+        let currentScale = 1;
+        const minScale = 0.5;
+        const maxScale = 3;
+        const scaleStep = 0.2;
+        
+        function updateScale(scale) {
+            currentScale = Math.max(minScale, Math.min(maxScale, scale));
+            zoomWrapper.style.transform = `scale(${currentScale})`;
+        }
+        
+        zoomInBtn.addEventListener('click', () => updateScale(currentScale + scaleStep));
+        zoomOutBtn.addEventListener('click', () => updateScale(currentScale - scaleStep));
+        resetBtn.addEventListener('click', () => updateScale(1));
+        
+        // 全屏功能
+        fullscreenBtn.addEventListener('click', () => {
+            if (container.classList.contains('mermaid-fullscreen')) {
+                container.classList.remove('mermaid-fullscreen');
+                document.body.style.overflow = '';
+                fullscreenBtn.innerHTML = '⛶';
+                fullscreenBtn.title = '全屏';
+            } else {
+                container.classList.add('mermaid-fullscreen');
+                document.body.style.overflow = 'hidden';
+                fullscreenBtn.innerHTML = '✕';
+                fullscreenBtn.title = '退出全屏';
+            }
+        });
+        
+        // 鼠标滚轮缩放
+        container.addEventListener('wheel', (e) => {
+            e.preventDefault();
+            const delta = e.deltaY > 0 ? -scaleStep : scaleStep;
+            updateScale(currentScale + delta);
+        });
+        
+        // 双击重置
+        container.addEventListener('dblclick', () => updateScale(1));
+        
+        // ESC键退出全屏
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && container.classList.contains('mermaid-fullscreen')) {
+                container.classList.remove('mermaid-fullscreen');
+                document.body.style.overflow = '';
+                fullscreenBtn.innerHTML = '⛶';
+                fullscreenBtn.title = '全屏';
+            }
+        });
         
         // 替换原来的pre元素
         pre.parentNode.replaceChild(container, pre);

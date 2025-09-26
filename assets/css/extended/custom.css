@@ -88,9 +88,10 @@
 /* 全局样式优化 */
 body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
-    line-height: 1.7;
+    line-height: 1.8;
     color: var(--text-primary);
     transition: all 0.3s ease;
+    font-size: 16px;
 }
 
 /* 页面加载动画 */
@@ -181,9 +182,9 @@ button:hover::before, .button:hover::before {
 h1, h2, h3, h4, h5, h6 {
     color: var(--text-primary);
     font-weight: 600;
-    line-height: 1.3;
-    margin-top: 2rem;
-    margin-bottom: 1rem;
+    line-height: 1.4;
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
     transition: all 0.3s ease;
     position: relative;
 }
@@ -233,6 +234,48 @@ h1::before {
 .post-content p:nth-child(3) { animation-delay: 0.3s; }
 .post-content p:nth-child(4) { animation-delay: 0.4s; }
 .post-content p:nth-child(5) { animation-delay: 0.5s; }
+
+/* 文章内容优化 */
+.post-content {
+    max-width: none;
+    line-height: 1.8;
+    font-size: 16px;
+    color: var(--text-primary);
+}
+
+.post-content p {
+    margin-bottom: 1.5rem;
+    text-align: justify;
+    word-spacing: 0.1em;
+}
+
+.post-content ul, .post-content ol {
+    margin: 1.5rem 0;
+    padding-left: 2rem;
+}
+
+.post-content li {
+    margin-bottom: 0.75rem;
+    line-height: 1.8;
+}
+
+.post-content li p {
+    margin-bottom: 0.5rem;
+}
+
+/* 文章段落间距优化 */
+.post-content > * + * {
+    margin-top: 1.5rem;
+}
+
+.post-content > h1 + *,
+.post-content > h2 + *,
+.post-content > h3 + *,
+.post-content > h4 + *,
+.post-content > h5 + *,
+.post-content > h6 + * {
+    margin-top: 1rem;
+}
 
 h2 {
     font-size: 1.875rem;
@@ -329,13 +372,13 @@ pre {
     color: #f8f8f2 !important;
     border: 1px solid #333;
     border-radius: 12px;
-    padding: 1.25rem;
+    padding: 1.5rem;
     overflow-x: auto;
-    font-size: 0.875rem;
-    line-height: 1.6;
+    font-size: 0.9rem;
+    line-height: 1.7;
     position: relative;
     box-shadow: var(--shadow-light);
-    margin: 1.5rem 0;
+    margin: 2rem 0;
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
     transition: all 0.3s ease;
     animation: fadeInUp 0.6s ease-out;
@@ -753,11 +796,22 @@ pre[data-lang]:before {
 blockquote {
     border-left: 4px solid var(--primary-color);
     background: var(--bg-secondary);
-    margin: 1.5rem 0;
-    padding: 1rem 1.5rem;
-    border-radius: 0 8px 8px 0;
+    margin: 2rem 0;
+    padding: 1.5rem 2rem;
+    border-radius: 0 12px 12px 0;
     font-style: italic;
     color: var(--text-secondary);
+    line-height: 1.8;
+    font-size: 1.05em;
+    position: relative;
+}
+
+blockquote p {
+    margin-bottom: 1rem;
+}
+
+blockquote p:last-child {
+    margin-bottom: 0;
 }
 
 /* 表格样式 */
@@ -825,8 +879,94 @@ tr:hover {
     margin-top: 4rem;
 }
 
+/* 文章内容容器优化 */
+.main {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 2rem;
+}
+
+.post-single .main {
+    max-width: 1100px;
+}
+
+/* 文章页面特殊样式 */
+.post-single .post-content {
+    font-size: 17px;
+    line-height: 1.8;
+}
+
+.post-single .post-content h1 {
+    font-size: 2.5rem;
+    margin-top: 3rem;
+    margin-bottom: 2rem;
+}
+
+.post-single .post-content h2 {
+    font-size: 2rem;
+    margin-top: 2.5rem;
+    margin-bottom: 1.5rem;
+}
+
+.post-single .post-content h3 {
+    font-size: 1.5rem;
+    margin-top: 2rem;
+    margin-bottom: 1rem;
+}
+
+.post-single .post-content h4 {
+    font-size: 1.25rem;
+    margin-top: 1.5rem;
+    margin-bottom: 0.75rem;
+}
+
 /* 响应式设计 */
+@media (max-width: 1400px) {
+    .main {
+        max-width: 1000px;
+    }
+    
+    .post-single .main {
+        max-width: 900px;
+    }
+}
+
+@media (max-width: 1200px) {
+    .main {
+        max-width: 900px;
+    }
+    
+    .post-single .main {
+        max-width: 800px;
+    }
+}
+
 @media (max-width: 768px) {
+    .main {
+        padding: 0 1rem;
+        max-width: 100%;
+    }
+    
+    .post-single .main {
+        max-width: 100%;
+    }
+    
+    .post-single .post-content {
+        font-size: 16px;
+    }
+    
+    .post-single .post-content h1 {
+        font-size: 2rem;
+    }
+    
+    .post-single .post-content h2 {
+        font-size: 1.75rem;
+    }
+    
+    .post-single .post-content h3 {
+        font-size: 1.375rem;
+    }
+    
     .post-entry {
         padding: 1rem;
         margin-bottom: 1.5rem;
@@ -844,6 +984,17 @@ tr:hover {
     
     h2 {
         font-size: 1.5rem;
+    }
+    
+    blockquote {
+        padding: 1rem 1.5rem;
+        margin: 1.5rem 0;
+    }
+    
+    pre {
+        padding: 1rem;
+        margin: 1.5rem 0;
+        font-size: 0.85rem;
     }
 }
 
@@ -1131,7 +1282,7 @@ tr:hover {
     animation: fadeIn 0.6s ease-out;
 }
 
-/* Mermaid图表样式 - 完全响应式设计 */
+/* Mermaid图表样式 - 完全响应式设计 + 缩放功能 */
 .mermaid-container {
     margin: 2rem 0;
     background: var(--bg-primary);
@@ -1143,6 +1294,96 @@ tr:hover {
     position: relative;
     width: 100%;
     box-sizing: border-box;
+    cursor: grab;
+}
+
+.mermaid-container:active {
+    cursor: grabbing;
+}
+
+/* 缩放控制按钮 */
+.mermaid-zoom-controls {
+    position: absolute;
+    top: 10px;
+    right: 10px;
+    display: flex;
+    gap: 5px;
+    z-index: 10;
+    opacity: 0;
+    transition: opacity 0.3s ease;
+}
+
+.mermaid-container:hover .mermaid-zoom-controls {
+    opacity: 1;
+}
+
+.mermaid-zoom-btn {
+    background: var(--primary-color);
+    color: white;
+    border: none;
+    width: 32px;
+    height: 32px;
+    border-radius: 6px;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 16px;
+    font-weight: bold;
+    transition: all 0.2s ease;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.mermaid-zoom-btn:hover {
+    background: var(--primary-hover);
+    transform: scale(1.1);
+}
+
+.mermaid-zoom-btn:active {
+    transform: scale(0.95);
+}
+
+/* 全屏模式 */
+.mermaid-fullscreen {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100vw;
+    height: 100vh;
+    z-index: 9999;
+    background: rgba(0, 0, 0, 0.9);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0;
+    border-radius: 0;
+    padding: 2rem;
+}
+
+.mermaid-fullscreen .mermaid-zoom-controls {
+    opacity: 1;
+    top: 20px;
+    right: 20px;
+}
+
+.mermaid-fullscreen .mermaid-zoom-btn {
+    background: rgba(255, 255, 255, 0.8);
+    color: var(--text-primary);
+}
+
+.mermaid-fullscreen .mermaid-zoom-btn:hover {
+    background: rgba(255, 255, 255, 0.9);
+}
+
+/* 缩放容器 */
+.mermaid-zoom-wrapper {
+    transform-origin: center center;
+    transition: transform 0.3s ease;
+    width: 100%;
+    height: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
 }
 
 .mermaid {
@@ -2013,7 +2254,7 @@ ul li:nth-child(5) { animation-delay: 0.5s; }
     transition: box-shadow 0.3s ease;
 }
 
-/* 加载状态 */
+/* 加载状态 - 已禁用加载提示 */
 .mermaid:not(.mermaid-rendered) {
     min-height: 100px;
     display: flex;
@@ -2023,8 +2264,9 @@ ul li:nth-child(5) { animation-delay: 0.5s; }
     font-style: italic;
 }
 
+/* 移除加载提示文字 */
 .mermaid:not(.mermaid-rendered)::before {
-    content: "正在渲染图表...";
+    content: "";
 }
 
 /* 数学公式样式 */
