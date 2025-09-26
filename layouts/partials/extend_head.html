@@ -30,22 +30,29 @@ window.addEventListener('load', function() {
         class: { useMaxWidth: true }
     });
     
-    // 查找并转换所有mermaid代码块（包括fallback类型）
-    const codeBlocks = document.querySelectorAll('pre code.language-mermaid, pre code.language-fallback');
+    // 查找所有可能的mermaid代码块
+    const codeBlocks = document.querySelectorAll('pre code');
     
     // 过滤出真正的mermaid代码块
     const mermaidBlocks = Array.from(codeBlocks).filter(function(codeElement) {
         const content = codeElement.textContent.trim();
-        return content.startsWith('graph ') || 
+        const className = codeElement.className || '';
+        
+        // 检查是否是明确的mermaid类或包含mermaid关键词的内容
+        return className.includes('language-mermaid') ||
+               content.startsWith('graph ') || 
                content.startsWith('sequenceDiagram') || 
                content.startsWith('pie ') ||
                content.startsWith('gantt') ||
                content.startsWith('classDiagram') ||
                content.startsWith('stateDiagram') ||
                content.startsWith('flowchart ') ||
+               content.includes('participant ') ||
                content.includes('-->') ||
                content.includes('->>') ||
-               content.includes('-->>');
+               content.includes('-->>') ||
+               content.includes('subgraph ') ||
+               (content.includes('participant') && content.includes('->>'));
     });
     
     mermaidBlocks.forEach(function(codeElement, index) {
