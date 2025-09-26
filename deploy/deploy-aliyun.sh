@@ -56,7 +56,7 @@ check_local_env() {
     # 检查public目录
     if [[ ! -d "$LOCAL_PUBLIC" ]]; then
         log_warning "public目录不存在，正在构建..."
-        hugo --minify
+        hugo --minify --baseURL "https://www.tommienotes.com"
     fi
 
     log_success "本地环境检查通过"
@@ -149,7 +149,7 @@ regenerate_static_files() {
     fi
     
     # 生成新文件
-    if hugo --minify; then
+    if hugo --minify --baseURL "https://www.tommienotes.com"; then
         log_success "静态文件生成完成"
         
         # 验证关键文件
