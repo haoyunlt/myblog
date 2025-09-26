@@ -1,0 +1,308 @@
+{{- /* 扩展头部 - 添加Mermaid支持和其他功能 */ -}}
+{{- /* 利用PaperMod主题的extend_head机制 */ -}}
+
+{{- /* Mermaid图表支持 - 自动检测和渲染 */ -}}
+{{- $hasMermaid := false -}}
+{{- if .Params.mermaid -}}
+  {{- $hasMermaid = true -}}
+{{- else if .Site.Params.mermaid -}}
+  {{- $hasMermaid = true -}}
+{{- else if .RawContent -}}
+  {{- if findRE "```mermaid" .RawContent -}}
+    {{- $hasMermaid = true -}}
+  {{- end -}}
+{{- end -}}
+
+{{- if $hasMermaid -}}
+<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script>
+console.log('Mermaid脚本已加载');
+
+// 等待页面完全加载
+window.addEventListener('load', function() {
+    console.log('页面加载完成，开始初始化Mermaid');
+    
+    // 初始化Mermaid
+    mermaid.initialize({
+        startOnLoad: false,
+        theme: 'default',
+        flowchart: { useMaxWidth: true },
+        sequence: { useMaxWidth: true },
+        gantt: { useMaxWidth: true },
+        pie: { useMaxWidth: true },
+        state: { useMaxWidth: true },
+        class: { useMaxWidth: true }
+    });
+    
+    console.log('Mermaid初始化完成');
+    
+    // 查找并转换所有mermaid代码块（包括fallback类型）
+    const codeBlocks = document.querySelectorAll('pre code.language-mermaid, pre code.language-fallback');
+    console.log('找到', codeBlocks.length, '个代码块');
+    
+    // 过滤出真正的mermaid代码块
+    const mermaidBlocks = Array.from(codeBlocks).filter(function(codeElement) {
+        const content = codeElement.textContent.trim();
+        return content.startsWith('graph ') || 
+               content.startsWith('sequenceDiagram') || 
+               content.startsWith('pie ') ||
+               content.startsWith('gantt') ||
+               content.startsWith('classDiagram') ||
+               content.startsWith('stateDiagram') ||
+               content.startsWith('flowchart ') ||
+               content.includes('-->') ||
+               content.includes('->>') ||
+               content.includes('-->>');
+    });
+    
+    console.log('过滤后找到', mermaidBlocks.length, '个Mermaid代码块');
+    
+    mermaidBlocks.forEach(function(codeElement, index) {
+        console.log('处理代码块', index + 1);
+        const pre = codeElement.closest('pre');
+        const mermaidCode = codeElement.textContent.trim();
+        console.log('代码内容:', mermaidCode.substring(0, 50) + '...');
+        
+        // 创建mermaid容器
+        const container = document.createElement('div');
+        container.className = 'mermaid-container';
+        container.style.textAlign = 'center';
+        container.style.margin = '2rem 0';
+        container.style.padding = '1rem';
+        container.style.border = '1px solid #e5e7eb';
+        container.style.borderRadius = '8px';
+        
+        const mermaidDiv = document.createElement('div');
+        mermaidDiv.className = 'mermaid';
+        mermaidDiv.textContent = mermaidCode;
+        
+        container.appendChild(mermaidDiv);
+        
+        // 替换原来的pre元素
+        pre.parentNode.replaceChild(container, pre);
+    });
+    
+    // 渲染所有mermaid图表
+    setTimeout(function() {
+        console.log('开始渲染Mermaid图表');
+        const mermaidElements = document.querySelectorAll('.mermaid');
+        console.log('待渲染的Mermaid元素数量:', mermaidElements.length);
+        
+        if (mermaidElements.length > 0) {
+            mermaid.run().then(function() {
+                console.log('所有Mermaid图表渲染完成');
+                // 确保SVG响应式
+                document.querySelectorAll('.mermaid svg').forEach(function(svg) {
+                    svg.style.maxWidth = '100%';
+                    svg.style.height = 'auto';
+                });
+            }).catch(function(error) {
+                console.error('Mermaid渲染失败:', error);
+            });
+        } else {
+            console.log('没有找到Mermaid元素');
+        }
+    }, 100);
+});
+</script>
+{{- end -}}
+
+{{- /* 数学公式支持 (KaTeX) */ -}}
+{{- if or .Params.math (and .Site.Params.math (ne .Params.math false)) -}}
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
+<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+<script>
+document.addEventListener("DOMContentLoaded", function() {
+    renderMathInElement(document.body, {
+        delimiters: [
+            {left: '$$', right: '$$', display: true},
+            {left: '$', right: '$', display: false},
+            {left: '\\(', right: '\\)', display: false},
+            {left: '\\[', right: '\\]', display: true}
+        ],
+        throwOnError: false
+    });
+});
+</script>
+{{- end -}}
+
+{{- /* 代码复制功能已禁用 */ -}}
+
+{{- /* 目录交互功能 */ -}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    const toc = document.querySelector('.toc');
+    if (!toc) return;
+
+    // 获取所有标题和目录链接
+    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+    const tocLinks = toc.querySelectorAll('a');
+    
+    // 创建目录切换按钮（移动端）
+    const tocToggle = document.createElement('button');
+    tocToggle.className = 'toc-toggle';
+    tocToggle.innerHTML = '📋 目录';
+    tocToggle.setAttribute('aria-label', '切换目录显示');
+    
+    const tocContent = document.createElement('div');
+    tocContent.className = 'toc-content';
+    
+    // 移动目录内容到新容器
+    const tocTitle = toc.querySelector('.toc-title');
+    const tocList = toc.querySelector('ul');
+    if (tocTitle) tocContent.appendChild(tocTitle);
+    if (tocList) tocContent.appendChild(tocList);
+    
+    toc.appendChild(tocToggle);
+    toc.appendChild(tocContent);
+    
+    // 目录切换功能
+    tocToggle.addEventListener('click', function() {
+        tocToggle.classList.toggle('active');
+        tocContent.classList.toggle('show');
+    });
+
+    // 平滑滚动到目标章节
+    tocLinks.forEach(function(link) {
+        link.addEventListener('click', function(e) {
+            e.preventDefault();
+            
+            const targetId = this.getAttribute('href').substring(1);
+            const targetElement = document.getElementById(targetId);
+            
+            if (targetElement) {
+                // 计算滚动位置（考虑固定头部）
+                const headerHeight = document.querySelector('header')?.offsetHeight || 0;
+                const targetPosition = targetElement.offsetTop - headerHeight - 20;
+                
+                window.scrollTo({
+                    top: targetPosition,
+                    behavior: 'smooth'
+                });
+                
+                // 移动端关闭目录
+                if (window.innerWidth < 1200) {
+                    tocToggle.classList.remove('active');
+                    tocContent.classList.remove('show');
+                }
+            }
+        });
+    });
+
+    // 滚动时高亮当前章节
+    let currentActiveLink = null;
+    
+    function updateActiveLink() {
+        let currentHeading = null;
+        const scrollPosition = window.scrollY + 100; // 偏移量
+        
+        // 找到当前可视区域的标题
+        for (let i = headings.length - 1; i >= 0; i--) {
+            const heading = headings[i];
+            if (heading.offsetTop <= scrollPosition) {
+                currentHeading = heading;
+                break;
+            }
+        }
+        
+        // 更新目录链接的活动状态
+        tocLinks.forEach(function(link) {
+            link.classList.remove('active');
+        });
+        
+        if (currentHeading) {
+            const targetLink = toc.querySelector(`a[href="#${currentHeading.id}"]`);
+            if (targetLink && targetLink !== currentActiveLink) {
+                targetLink.classList.add('active');
+                currentActiveLink = targetLink;
+                
+                // 确保活动链接在可视区域内
+                if (toc.classList.contains('toc-fixed')) {
+                    const tocRect = toc.getBoundingClientRect();
+                    const linkRect = targetLink.getBoundingClientRect();
+                    
+                    if (linkRect.top < tocRect.top || linkRect.bottom > tocRect.bottom) {
+                        targetLink.scrollIntoView({
+                            behavior: 'smooth',
+                            block: 'center'
+                        });
+                    }
+                }
+            }
+        }
+    }
+    
+    // 节流函数
+    function throttle(func, wait) {
+        let timeout;
+        return function executedFunction(...args) {
+            const later = () => {
+                clearTimeout(timeout);
+                func(...args);
+            };
+            clearTimeout(timeout);
+            timeout = setTimeout(later, wait);
+        };
+    }
+    
+    // 监听滚动事件
+    window.addEventListener('scroll', throttle(updateActiveLink, 100));
+    
+    // 初始化
+    updateActiveLink();
+    
+    // 响应式处理
+    function handleResize() {
+        if (window.innerWidth >= 1200) {
+            // 桌面端：显示固定目录
+            toc.classList.add('toc-fixed');
+            tocContent.classList.add('show');
+            tocToggle.style.display = 'none';
+        } else {
+            // 移动端：显示切换按钮
+            toc.classList.remove('toc-fixed');
+            tocToggle.style.display = 'flex';
+            if (!tocToggle.classList.contains('active')) {
+                tocContent.classList.remove('show');
+            }
+        }
+    }
+    
+    window.addEventListener('resize', throttle(handleResize, 250));
+    handleResize(); // 初始化
+    
+    // 键盘导航支持
+    document.addEventListener('keydown', function(e) {
+        if (e.altKey && e.key === 't') {
+            e.preventDefault();
+            tocToggle.click();
+        }
+    });
+    
+    // 目录编号功能
+    const tocNumbered = toc.querySelector('.toc-numbered');
+    if (tocNumbered) {
+        // 为标题添加编号
+        let h2Counter = 0;
+        let h3Counter = 0;
+        
+        headings.forEach(function(heading) {
+            if (heading.tagName === 'H2') {
+                h2Counter++;
+                h3Counter = 0;
+                const number = document.createElement('span');
+                number.className = 'heading-number';
+                number.textContent = h2Counter + '. ';
+                heading.insertBefore(number, heading.firstChild);
+            } else if (heading.tagName === 'H3') {
+                h3Counter++;
+                const number = document.createElement('span');
+                number.className = 'heading-number';
+                number.textContent = h2Counter + '.' + h3Counter + ' ';
+                heading.insertBefore(number, heading.firstChild);
+            }
+        });
+    }
+});
+</script>

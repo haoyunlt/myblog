@@ -1,0 +1,220 @@
+# Cursor编辑器忽略文件配置
+# 更新时间: 2024-01-04
+
+# Hugo生成的文件和构建产物
+/public/
+/resources/
+.hugo_build.lock
+
+# 依赖和包管理
+node_modules/
+.npm/
+.yarn/
+.pnpm/
+package-lock.json
+yarn.lock
+pnpm-lock.yaml
+.pnpm-store/
+
+# 构建和缓存文件
+.cache/
+.temp/
+.tmp/
+*.tmp
+*.temp
+*.log
+*.pid
+.next/
+.nuxt/
+dist/
+build/
+
+# 操作系统文件
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+$RECYCLE.BIN/
+
+# 编辑器和IDE文件
+.vscode/settings.json
+.vscode/launch.json
+.vscode/extensions.json
+.idea/
+*.swp
+*.swo
+*~
+.vim/
+.emacs.d/
+.sublime-project
+.sublime-workspace
+
+# 版本控制系统
+.git/
+.gitignore
+.svn/
+.hg/
+.bzr/
+
+# 环境变量和配置
+.env
+.env.*
+!.env.example
+.envrc
+.direnv/
+
+# 备份和临时文件
+*.bak
+*.backup
+*.orig
+*~
+*.old
+*.save
+
+# 压缩和归档文件
+*.zip
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.rar
+*.7z
+*.gz
+*.bz2
+*.xz
+
+# 图片缓存和优化文件
+*.webp.cache
+*.jpg.cache
+*.png.cache
+*.gif.cache
+.imageoptim/
+
+# 主题文件（PaperMod主题 - 通常不需要编辑）
+/themes/PaperMod/assets/
+/themes/PaperMod/static/
+/themes/PaperMod/layouts/
+/themes/PaperMod/i18n/
+/themes/PaperMod/images/
+/themes/PaperMod/go.mod
+/themes/PaperMod/LICENSE
+/themes/PaperMod/README.md
+/themes/PaperMod/theme.toml
+
+# 大型静态文件
+*.mp4
+*.mov
+*.avi
+*.mkv
+*.wmv
+*.flv
+*.webm
+*.pdf
+*.dmg
+*.iso
+*.img
+
+# 音频文件
+*.mp3
+*.wav
+*.flac
+*.aac
+*.ogg
+
+# 数据库文件
+*.db
+*.sqlite
+*.sqlite3
+*.mdb
+*.accdb
+
+# 文档生成文件
+/docs/build/
+/site/
+/_site/
+/out/
+
+# 测试和覆盖率文件
+coverage/
+*.coverage
+.nyc_output/
+.jest/
+test-results/
+playwright-report/
+
+# 锁文件和包管理器文件
+*.lock
+Pipfile.lock
+poetry.lock
+composer.lock
+
+# 临时目录
+tmp/
+temp/
+.tmp/
+
+# 日志文件
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# 运行时文件
+*.pid
+*.seed
+*.pid.lock
+
+# 性能和调试文件
+.trace
+.cpuprofile
+.heapsnapshot
+
+# CDN和外部资源（如果有本地副本）
+/static/libs/
+/static/vendor/
+
+# 自动生成的文件
+/static/css/
+/static/js/
+/assets/css/compiled/
+/assets/js/compiled/
+
+# 搜索索引文件
+/static/search/
+lunr-index.json
+search-index.json
+
+# 分析和统计文件
+.bundle-analyzer/
+webpack-bundle-analyzer-report.html
+
+# 部署相关
+.vercel/
+.netlify/
+.firebase/
+.surge/
+
+# 其他工具生成的文件
+.eslintcache
+.stylelintcache
+.parcel-cache/
+.rpt2_cache/
+.rts2_cache_cjs/
+.rts2_cache_es/
+.rts2_cache_umd/
+
+# 系统和应用程序文件
+Thumbs.db
+.AppleDouble
+.LSOverride
+Icon
+.DocumentRevisions-V100
+.fseventsd
+.TemporaryItems
+.VolumeIcon.icns
+.com.apple.timemachine.donotpresent

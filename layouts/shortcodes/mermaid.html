@@ -1,0 +1,12 @@
+{{- /* Mermaid图表短代码 */ -}}
+{{- $id := .Get "id" | default (printf "mermaid-%d" .Ordinal) -}}
+{{- $class := .Get "class" | default "" -}}
+{{- $style := .Get "style" | default "" -}}
+
+<div class="mermaid-container">
+    <div class="mermaid {{ $class }}" 
+         id="{{ $id }}" 
+         {{- if $style }} style="{{ $style }}"{{ end }}>
+        {{- .Inner | safeHTML -}}
+    </div>
+</div>
