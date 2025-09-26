@@ -1179,7 +1179,9 @@ class GraphParallel(BaseModel):
     
     # 超时配置
     timeout: Optional[int] = None
+```
 
+```python
 class ParallelStrategy(Enum):
     """并行执行策略"""
     
