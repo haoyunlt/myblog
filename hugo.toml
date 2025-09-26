@@ -70,8 +70,8 @@ enableEmoji = true
   # 目录默认展开
   TocOpen = true
   
-  # 目录侧边栏
-  TocSide = 'right'
+  # 目录侧边栏 - 改为顶部显示
+  TocSide = 'top'
   
   # 启用搜索
   ShowSearchPage = true

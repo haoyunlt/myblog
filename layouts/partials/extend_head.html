@@ -143,11 +143,11 @@ document.addEventListener('DOMContentLoaded', function() {
     toc.appendChild(tocToggle);
     toc.appendChild(tocContent);
     
-    // 目录切换功能
-    tocToggle.addEventListener('click', function() {
-        tocToggle.classList.toggle('active');
-        tocContent.classList.toggle('show');
-    });
+     // 目录切换功能 - 默认展开
+     tocToggle.addEventListener('click', function() {
+         tocToggle.classList.toggle('collapsed');
+         tocContent.classList.toggle('hidden');
+     });
 
     // 平滑滚动到目标章节
     tocLinks.forEach(function(link) {
@@ -167,11 +167,8 @@ document.addEventListener('DOMContentLoaded', function() {
                     behavior: 'smooth'
                 });
                 
-                // 移动端关闭目录
-                if (window.innerWidth < 1200) {
-                    tocToggle.classList.remove('active');
-                    tocContent.classList.remove('show');
-                }
+                 // 移动端保持目录展开状态
+                 // 顶部TOC不需要自动关闭
             }
         });
     });
@@ -238,22 +235,18 @@ document.addEventListener('DOMContentLoaded', function() {
     // 初始化
     updateActiveLink();
     
-    // 响应式处理
-    function handleResize() {
-        if (window.innerWidth >= 1200) {
-            // 桌面端：显示固定目录
-            toc.classList.add('toc-fixed');
-            tocContent.classList.add('show');
-            tocToggle.style.display = 'none';
-        } else {
-            // 移动端：显示切换按钮
-            toc.classList.remove('toc-fixed');
-            tocToggle.style.display = 'flex';
-            if (!tocToggle.classList.contains('active')) {
-                tocContent.classList.remove('show');
-            }
-        }
-    }
+     // 响应式处理 - 顶部TOC布局
+     function handleResize() {
+         if (window.innerWidth >= 1200) {
+             // 桌面端：隐藏切换按钮，显示目录
+             tocToggle.style.display = 'none';
+             tocContent.classList.remove('hidden');
+         } else {
+             // 移动端：显示切换按钮，默认展开
+             tocToggle.style.display = 'flex';
+             // 保持默认展开状态，不自动隐藏
+         }
+     }
     
     window.addEventListener('resize', throttle(handleResize, 250));
     handleResize(); // 初始化
@@ -291,7 +284,240 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // ===== 炫酷特效增强 =====
+     // ===== PaperMod 专用炫酷特效增强 =====
+     
+     // PaperMod 导航栏智能隐藏/显示
+     let lastScrollTop = 0;
+     const header = document.querySelector('.header');
+     
+     if (header) {
+         window.addEventListener('scroll', throttle(function() {
+             const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+             
+             if (scrollTop > lastScrollTop && scrollTop > 100) {
+                 // 向下滚动 - 隐藏导航栏
+                 header.style.transform = 'translateY(-100%)';
+                 header.style.opacity = '0.9';
+             } else {
+                 // 向上滚动 - 显示导航栏
+                 header.style.transform = 'translateY(0)';
+                 header.style.opacity = '1';
+             }
+             
+             lastScrollTop = scrollTop;
+         }, 100));
+     }
+     
+     // PaperMod 文章条目视差效果
+     const papermodPostEntries = document.querySelectorAll('.post-entry');
+     papermodPostEntries.forEach((entry, index) => {
+         entry.addEventListener('mouseenter', function() {
+             this.style.transform = 'translateY(-8px) rotateX(5deg) rotateY(2deg)';
+             this.style.zIndex = '10';
+         });
+         
+         entry.addEventListener('mouseleave', function() {
+             this.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+             this.style.zIndex = '1';
+         });
+     });
+     
+     // PaperMod Logo 交互动画
+     const logo = document.querySelector('.logo');
+     if (logo) {
+         let clickCount = 0;
+         logo.addEventListener('click', function(e) {
+             clickCount++;
+             if (clickCount >= 5) {
+                 // 彩蛋：连续点击5次触发特殊动画
+                 document.body.style.animation = 'papermod-wobble 2s ease-in-out';
+                 setTimeout(() => {
+                     document.body.style.animation = '';
+                     clickCount = 0;
+                 }, 2000);
+             }
+         });
+     }
+     
+     // PaperMod 社交图标动画增强
+     const papermodSocialIcons = document.querySelectorAll('.social-icons a');
+     papermodSocialIcons.forEach((icon, index) => {
+         icon.addEventListener('mouseenter', function() {
+             // 为其他图标添加轻微动画
+             papermodSocialIcons.forEach((otherIcon, otherIndex) => {
+                 if (otherIndex !== index) {
+                     otherIcon.style.transform = 'scale(0.9) translateY(2px)';
+                     otherIcon.style.opacity = '0.7';
+                 }
+             });
+         });
+         
+         icon.addEventListener('mouseleave', function() {
+             papermodSocialIcons.forEach(otherIcon => {
+                 otherIcon.style.transform = '';
+                 otherIcon.style.opacity = '';
+             });
+         });
+     });
+     
+     // PaperMod 分类卡片3D效果
+     const papermodCategoryCards = document.querySelectorAll('.category-card');
+     papermodCategoryCards.forEach(card => {
+         card.addEventListener('mousemove', function(e) {
+             const rect = this.getBoundingClientRect();
+             const x = e.clientX - rect.left;
+             const y = e.clientY - rect.top;
+             
+             const centerX = rect.width / 2;
+             const centerY = rect.height / 2;
+             
+             const rotateX = (y - centerY) / 10;
+             const rotateY = (centerX - x) / 10;
+             
+             this.style.transform = `translateY(-10px) rotateX(${rotateX}deg) rotateY(${rotateY}deg)`;
+         });
+         
+         card.addEventListener('mouseleave', function() {
+             this.style.transform = 'translateY(0) rotateX(0) rotateY(0)';
+         });
+     });
+     
+     // PaperMod 搜索框动画增强
+     const papermodSearchBox = document.querySelector('#searchbox input, .search-input');
+     if (papermodSearchBox) {
+         let searchTimeout;
+         
+         papermodSearchBox.addEventListener('input', function() {
+             clearTimeout(searchTimeout);
+             this.style.borderColor = 'var(--accent-color)';
+             this.style.boxShadow = '0 0 15px rgba(245, 158, 11, 0.3)';
+             
+             searchTimeout = setTimeout(() => {
+                 this.style.borderColor = '';
+                 this.style.boxShadow = '';
+             }, 1000);
+         });
+         
+         papermodSearchBox.addEventListener('focus', function() {
+             this.parentElement.style.transform = 'scale(1.05)';
+             this.parentElement.style.transition = 'transform 0.3s ease';
+         });
+         
+         papermodSearchBox.addEventListener('blur', function() {
+             this.parentElement.style.transform = '';
+         });
+     }
+     
+     // PaperMod 标签云动画
+     const papermodTags = document.querySelectorAll('.terms-tags a, .post-tags a');
+     papermodTags.forEach((tag, index) => {
+         // 随机延迟动画
+         tag.style.animationDelay = `${Math.random() * 0.5}s`;
+         
+         tag.addEventListener('mouseenter', function() {
+             // 为相邻标签添加轻微动画
+             const siblings = Array.from(this.parentElement.children);
+             const currentIndex = siblings.indexOf(this);
+             
+             siblings.forEach((sibling, siblingIndex) => {
+                 if (Math.abs(siblingIndex - currentIndex) <= 2 && sibling !== this) {
+                     sibling.style.transform = 'scale(0.95) translateY(2px)';
+                     sibling.style.opacity = '0.8';
+                 }
+             });
+         });
+         
+         tag.addEventListener('mouseleave', function() {
+             const siblings = Array.from(this.parentElement.children);
+             siblings.forEach(sibling => {
+                 sibling.style.transform = '';
+                 sibling.style.opacity = '';
+             });
+         });
+     });
+     
+     // PaperMod 分页按钮增强
+     const papermodPaginationLinks = document.querySelectorAll('.pagi a');
+     papermodPaginationLinks.forEach(link => {
+         link.addEventListener('click', function(e) {
+             // 添加点击波纹效果
+             const ripple = document.createElement('span');
+             ripple.style.cssText = `
+                 position: absolute;
+                 border-radius: 50%;
+                 background: rgba(255, 255, 255, 0.6);
+                 transform: scale(0);
+                 animation: ripple 0.6s linear;
+                 pointer-events: none;
+             `;
+             
+             const rect = this.getBoundingClientRect();
+             const size = Math.max(rect.width, rect.height);
+             ripple.style.width = ripple.style.height = size + 'px';
+             ripple.style.left = (e.clientX - rect.left - size / 2) + 'px';
+             ripple.style.top = (e.clientY - rect.top - size / 2) + 'px';
+             
+             this.appendChild(ripple);
+             
+             setTimeout(() => {
+                 ripple.remove();
+             }, 600);
+         });
+     });
+     
+     // PaperMod 主题切换动画增强
+     const papermodThemeToggle = document.querySelector('.theme-toggle, #theme-toggle');
+     if (papermodThemeToggle) {
+         papermodThemeToggle.addEventListener('click', function() {
+             // 添加主题切换过渡动画
+             document.body.style.transition = 'all 0.5s cubic-bezier(0.4, 0, 0.2, 1)';
+             
+             // 创建切换效果
+             const overlay = document.createElement('div');
+             overlay.style.cssText = `
+                 position: fixed;
+                 top: 0;
+                 left: 0;
+                 width: 100%;
+                 height: 100%;
+                 background: radial-gradient(circle at center, transparent 0%, rgba(0,0,0,0.1) 100%);
+                 z-index: 9999;
+                 pointer-events: none;
+                 opacity: 0;
+                 transition: opacity 0.3s ease;
+             `;
+             
+             document.body.appendChild(overlay);
+             
+             setTimeout(() => {
+                 overlay.style.opacity = '1';
+             }, 10);
+             
+             setTimeout(() => {
+                 overlay.style.opacity = '0';
+                 setTimeout(() => {
+                     overlay.remove();
+                     document.body.style.transition = '';
+                 }, 300);
+             }, 200);
+         });
+     }
+     
+     // PaperMod 代码块增强动画
+     const papermodCodeBlocks = document.querySelectorAll('pre, .highlight');
+     papermodCodeBlocks.forEach(block => {
+         block.addEventListener('mouseenter', function() {
+             this.style.transform = 'translateY(-2px) scale(1.01)';
+             this.style.boxShadow = '0 10px 30px rgba(0, 0, 0, 0.2)';
+         });
+         
+         block.addEventListener('mouseleave', function() {
+             this.style.transform = '';
+             this.style.boxShadow = '';
+         });
+     });
+     
+     // ===== 炫酷特效增强 =====
     
     // 滚动动画观察器
     const observerOptions = {
