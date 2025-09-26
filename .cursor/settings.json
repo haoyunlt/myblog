@@ -1,0 +1,77 @@
+{
+  "// Cursor性能优化配置": "2025-09-26",
+  
+  "// 文件搜索优化": "",
+  "search.exclude": {
+    "**/public/**": true,
+    "**/themes/PaperMod/**": true,
+    "**/node_modules/**": true,
+    "**/.git/**": true,
+    "**/deploy/*.log": true,
+    "**/test-*.sh": true
+  },
+  
+  "// 文件监控优化": "",
+  "files.watcherExclude": {
+    "**/public/**": true,
+    "**/themes/PaperMod/**": true,
+    "**/node_modules/**": true,
+    "**/.git/**": true,
+    "**/deploy/temp/**": true,
+    "**/*.log": true,
+    "**/.cache/**": true,
+    "**/.tmp/**": true
+  },
+  
+  "// 大文件处理": "",
+  "files.maxMemoryForLargeFilesMB": 4096,
+  "editor.largeFileOptimizations": true,
+  
+  "// 索引优化": "",
+  "typescript.preferences.includePackageJsonAutoImports": "off",
+  "typescript.suggest.autoImports": false,
+  "javascript.suggest.autoImports": false,
+  
+  "// Git优化": "",
+  "git.enabled": true,
+  "git.autorefresh": false,
+  "git.decorations.enabled": false,
+  
+  "// 编辑器性能优化": "",
+  "editor.semanticHighlighting.enabled": false,
+  "editor.bracketPairColorization.enabled": false,
+  "editor.guides.bracketPairs": false,
+  "editor.minimap.enabled": false,
+  "editor.wordWrap": "off",
+  "editor.renderWhitespace": "none",
+  "editor.renderControlCharacters": false,
+  
+  "// Markdown优化": "",
+  "markdown.preview.breaks": true,
+  "markdown.preview.linkify": false,
+  "markdown.preview.typographer": false,
+  
+  "// 扩展优化": "",
+  "extensions.autoUpdate": false,
+  "extensions.autoCheckUpdates": false,
+  
+  "// 工作区特定设置": "",
+  "files.associations": {
+    "*.md": "markdown",
+    "hugo.toml": "toml",
+    "*.toml": "toml"
+  },
+  
+  "// 排除特定文件类型的语言服务": "",
+  "emmet.excludeLanguages": ["markdown"],
+  
+  "// 禁用不需要的功能": "",
+  "breadcrumbs.enabled": false,
+  "outline.showVariables": false,
+  "outline.showFunctions": false,
+  
+  "// 内存管理": "",
+  "window.restoreWindows": "none",
+  "workbench.editor.enablePreview": false,
+  "workbench.editor.enablePreviewFromQuickOpen": false
+}

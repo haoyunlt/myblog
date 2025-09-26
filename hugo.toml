@@ -1,4 +1,5 @@
 baseURL = "https://www.tommienotes.com"
+summaryLength = 0  # 禁用摘要长度限制
 languageCode = "zh-cn"
 title = "我的个人博客"
 theme = "PaperMod"
@@ -43,10 +44,10 @@ enableEmoji = true
 # PaperMod主题参数
 [params]
   # 网站描述
-  description = "专注于技术分享与思考的个人博客"
+  description = "深度技术博客：专注AI/大模型应用开发、云原生架构、分布式系统、数据库存储、系统底层技术的源码剖析与实战经验分享"
   
   # 作者信息
-  author = "Your Name"
+  author = "林涛"
   
   # 显示阅读时间
   ShowReadingTime = true
@@ -84,7 +85,7 @@ enableEmoji = true
   # 社交链接
   [[params.socialIcons]]
     name = "github"
-    url = "https://github.com/yourusername"
+    url = "https://github.com/haoyunlt"
   [[params.socialIcons]]
     name = "email"
     url = "mailto:your@email.com"

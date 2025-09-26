@@ -1,0 +1,222 @@
+{{- define "main" }}
+
+{{- if (and site.Params.profileMode.enabled .IsHome) }}
+{{- partial "index_profile.html" . }}
+{{- else }} {{/* if not profileMode */}}
+
+{{- if and .IsHome site.Params.homeInfoParams }}
+{{- partial "home_info.html" . }}
+{{- end }}
+
+{{/* 文章类目展示 */}}
+{{- if .IsHome }}
+<div class="categories-section">
+  <header class="categories-header">
+    <h2>📚 文章类目</h2>
+    <p>按技术领域分类的文章集合</p>
+  </header>
+  
+  {{- $categories := dict }}
+  {{- range site.RegularPages }}
+    {{- if eq .Type "posts" }}
+      {{- $filename := path.BaseName .File.Path }}
+      {{- $parts := split $filename "-" }}
+      {{- if gt (len $parts) 1 }}
+        {{- $category := index $parts 0 }}
+        {{- $posts := index $categories $category | default slice }}
+        {{- $posts = $posts | append . }}
+        {{- $categories = merge $categories (dict $category $posts) }}
+      {{- end }}
+    {{- end }}
+  {{- end }}
+  
+  <div class="categories-grid">
+    {{- $categoryOrder := slice "voicehelper" "eino" "dify" "qwen" "OpenAIAgents" "autogen" "AutoGPT" "langchain" "langgraph" "metagpt" "milvus" "golang" "kubernetes" "grpc-go" "grpc" "etcd" "mysql" "kafka" "nginx" "pytorch" "TensorRTLLM" "rocksdb" "RocksDB" "kitex" "istio" "mimio" "minio" }}
+    {{- range $categoryOrder }}
+      {{- $category := . }}
+      {{- $posts := index $categories $category }}
+      {{- if $posts }}
+        {{- $postCount := len $posts }}
+    <div class="category-card">
+      <div class="category-header">
+        <h3 class="category-title">
+          <a href="/categories/{{ $category | urlize }}/">{{ $category }}</a>
+        </h3>
+        <span class="category-count">{{ $postCount }} 篇文章</span>
+      </div>
+      <div class="category-description">
+        {{- if eq $category "voicehelper" }}
+          <p>语音助手系统架构设计与实现</p>
+        {{- else if eq $category "eino" }}
+          <p>Eino大模型应用开发框架</p>
+        {{- else if eq $category "dify" }}
+          <p>Dify大语言模型应用开发平台</p>
+        {{- else if eq $category "qwen" }}
+          <p>通义千问大语言模型技术解析</p>
+        {{- else if eq $category "OpenAIAgents" }}
+          <p>OpenAI智能体开发与应用</p>
+        {{- else if eq $category "autogen" }}
+          <p>AutoGen多智能体框架相关技术文档</p>
+        {{- else if eq $category "AutoGPT" }}
+          <p>AutoGPT自主AI智能体平台</p>
+        {{- else if eq $category "langchain" }}
+          <p>LangChain大语言模型应用开发框架</p>
+        {{- else if eq $category "langgraph" }}
+          <p>LangGraph工作流编排和状态管理</p>
+        {{- else if eq $category "metagpt" }}
+          <p>MetaGPT多智能体软件开发框架</p>
+        {{- else if eq $category "milvus" }}
+          <p>Milvus向量数据库系统</p>
+        {{- else if eq $category "golang" }}
+          <p>Go语言运行时和标准库源码</p>
+        {{- else if eq $category "kubernetes" }}
+          <p>Kubernetes容器编排平台</p>
+        {{- else if eq $category "grpc-go" }}
+          <p>gRPC-Go高性能RPC框架</p>
+        {{- else if eq $category "grpc" }}
+          <p>gRPC高性能RPC框架</p>
+        {{- else if eq $category "etcd" }}
+          <p>etcd分布式键值存储系统</p>
+        {{- else if eq $category "mysql" }}
+          <p>MySQL数据库系统架构与实现</p>
+        {{- else if eq $category "kafka" }}
+          <p>Apache Kafka分布式流处理平台</p>
+        {{- else if eq $category "nginx" }}
+          <p>Nginx高性能Web服务器</p>
+        {{- else if eq $category "pytorch" }}
+          <p>PyTorch深度学习框架</p>
+        {{- else if eq $category "TensorRTLLM" }}
+          <p>TensorRT-LLM大模型推理优化</p>
+        {{- else if eq $category "rocksdb" }}
+          <p>RocksDB嵌入式键值存储引擎</p>
+        {{- else if eq $category "RocksDB" }}
+          <p>RocksDB嵌入式键值存储引擎</p>
+        {{- else if eq $category "kitex" }}
+          <p>Kitex高性能RPC框架</p>
+        {{- else if eq $category "istio" }}
+          <p>Istio服务网格平台</p>
+        {{- else if eq $category "mimio" }}
+          <p>MinIO对象存储系统</p>
+        {{- else if eq $category "minio" }}
+          <p>MinIO对象存储系统</p>
+        {{- else if eq $category "linux" }}
+          <p>Linux内核网络子系统</p>
+        {{- else }}
+          <p>{{ $category }} 相关技术文档和源码分析</p>
+        {{- end }}
+      </div>
+      <div class="category-posts">
+        <div class="recent-posts">
+          <h4>最新文章</h4>
+          <ul>
+            {{- range first 3 (sort $posts "Date" "desc") }}
+            <li>
+              <a href="{{ .Permalink }}" title="{{ .Title }}">
+                {{ .Title | truncate 50 }}
+              </a>
+              <time>{{ .Date.Format "01-02" }}</time>
+            </li>
+            {{- end }}
+          </ul>
+          {{- if gt $postCount 3 }}
+          <a href="/categories/{{ $category | urlize }}/" class="view-all">查看全部 {{ $postCount }} 篇 →</a>
+          {{- end }}
+        </div>
+      </div>
+    </div>
+      {{- end }}
+    {{- end }}
+    
+    {{/* 显示其他未在优先级列表中的分类 */}}
+    {{- range $category, $posts := $categories }}
+      {{- $isInOrder := false }}
+      {{- range $categoryOrder }}
+        {{- if eq . $category }}
+          {{- $isInOrder = true }}
+        {{- end }}
+      {{- end }}
+      {{- if not $isInOrder }}
+        {{- $postCount := len $posts }}
+    <div class="category-card">
+      <div class="category-header">
+        <h3 class="category-title">
+          <a href="/categories/{{ $category | urlize }}/">{{ $category }}</a>
+        </h3>
+        <span class="category-count">{{ $postCount }} 篇文章</span>
+      </div>
+      <div class="category-description">
+        <p>{{ $category }} 相关技术文档和源码分析</p>
+      </div>
+      <div class="category-posts">
+        <div class="recent-posts">
+          <h4>最新文章</h4>
+          <ul>
+            {{- range first 3 (sort $posts "Date" "desc") }}
+            <li>
+              <a href="{{ .Permalink }}" title="{{ .Title }}">
+                {{ .Title | truncate 50 }}
+              </a>
+              <time>{{ .Date.Format "01-02" }}</time>
+            </li>
+            {{- end }}
+          </ul>
+          {{- if gt $postCount 3 }}
+          <a href="/categories/{{ $category | urlize }}/" class="view-all">查看全部 {{ $postCount }} 篇 →</a>
+          {{- end }}
+        </div>
+      </div>
+    </div>
+      {{- end }}
+    {{- end }}
+  </div>
+</div>
+{{- end }}
+
+{{/* 最新文章列表 */}}
+{{- $pages := where site.RegularPages "Type" "in" site.Params.mainSections }}
+{{- $pages = where $pages "Params.hiddenInHomeList" "!=" "true"  }}
+{{- $paginator := .Paginate (first 10 $pages) }}
+
+<div class="recent-posts-section">
+  <header class="section-header">
+    <h2>📝 最新文章</h2>
+  </header>
+  
+  {{- range $index, $page := $paginator.Pages }}
+  <article class="post-entry">
+    {{- $isHidden := (.Param "cover.hiddenInList") | default (.Param "cover.hidden") | default false }}
+    {{- partial "cover.html" (dict "cxt" . "IsSingle" false "isHidden" $isHidden) }}
+    <header class="entry-header">
+      <h2 class="entry-hint-parent">
+        {{- .Title }}
+        {{- if .Draft }}
+        <span class="entry-hint" title="Draft">
+          <svg xmlns="http://www.w3.org/2000/svg" height="20" viewBox="0 -960 960 960" fill="currentColor">
+            <path d="M160-410v-60h300v60H160Zm0-165v-60h470v60H160Zm0-165v-60h470v60H160Zm360 580v-123l221-220q9-9 20-13t22-4q12 0 23 4.5t20 13.5l37 37q9 9 13 20t4 22q0 11-4.5 22.5T862.09-380L643-160H520Zm300-263-37-37 37 37ZM580-220h38l121-122-18-19-19-18-122 121v38Zm141-141-19-18 37 37-18-19Z" />
+          </svg>
+        </span>
+        {{- end }}
+      </h2>
+    </header>
+    {{- if (ne (.Param "hideSummary") true) }}
+    <div class="entry-content">
+      <p>{{ .Summary | plainify | htmlUnescape }}{{ if .Truncated }}...{{ end }}</p>
+    </div>
+    {{- end }}
+    {{- if not (.Param "hideMeta") }}
+    <footer class="entry-footer">
+      {{- partial "post_meta.html" . -}}
+    </footer>
+    {{- end }}
+    <a class="entry-link" aria-label="post link to {{ .Title | plainify }}" href="{{ .Permalink }}"></a>
+  </article>
+  {{- end }}
+  
+  <div class="view-more">
+    <a href="/archives/" class="view-all-posts">查看所有文章 →</a>
+  </div>
+</div>
+
+{{- end }}{{/* end profileMode */}}
+
+{{- end }}{{- /* end main */ -}}

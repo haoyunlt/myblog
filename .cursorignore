@@ -1,5 +1,5 @@
 # Cursor编辑器忽略文件配置
-# 更新时间: 2024-01-04
+# 更新时间: 2025-09-26
 
 # Hugo生成的文件和构建产物
 /public/
@@ -52,6 +52,9 @@ $RECYCLE.BIN/
 .emacs.d/
 .sublime-project
 .sublime-workspace
+
+# Cursor配置文件（保留自定义配置）
+# .cursor/settings.json 不忽略，保留性能优化配置
 
 # 版本控制系统
 .git/
@@ -198,6 +201,10 @@ webpack-bundle-analyzer-report.html
 .netlify/
 .firebase/
 .surge/
+deployment-report.md
+/deploy/*.log
+/deploy/temp/
+/deploy/.env*
 
 # 其他工具生成的文件
 .eslintcache
@@ -218,3 +225,80 @@ Icon
 .TemporaryItems
 .VolumeIcon.icns
 .com.apple.timemachine.donotpresent
+
+# 测试和脚本文件（临时）
+test-*.sh
+*.test.log
+test-results/
+test-output/
+
+# Hugo特定忽略
+.hugo_build.lock
+/resources/_gen/
+/public/
+hugo_stats.json
+
+# 本地开发文件
+.local/
+local-config.*
+dev-notes.md
+
+# Cursor性能优化 - 大文件忽略
+# 超过2000行的大型文档（可根据需要调整）
+**/RocksDB-源码剖析_完整文档.md
+**/voicehelper-*.md
+**/*-完整文档.md
+**/*-源码剖析.md
+
+# 二进制和媒体文件
+*.bin
+*.exe
+*.dll
+*.so
+*.dylib
+*.wasm
+*.ico
+*.svg
+*.webp
+*.avif
+*.heic
+*.tiff
+*.bmp
+
+# 字体文件
+*.woff
+*.woff2
+*.ttf
+*.otf
+*.eot
+
+# 数据文件
+*.json.gz
+*.csv
+*.tsv
+*.xml
+*.yaml.bak
+*.toml.bak
+
+# 编译产物和缓存
+.sass-cache/
+.postcss-cache/
+.parcel-cache/
+.webpack-cache/
+.turbo/
+.swc/
+
+# IDE和编辑器临时文件
+.history/
+.vscode/settings.json.bak
+*.code-workspace
+.fleet/
+.nova/
+
+# 性能监控和分析文件
+*.cpuprofile
+*.heapprofile
+*.trace
+profile.out
+mem.out
+cpu.out
