@@ -8,7 +8,14 @@
     "**/node_modules/**": true,
     "**/.git/**": true,
     "**/deploy/*.log": true,
-    "**/test-*.sh": true
+    "**/test-*.sh": true,
+    "**/*-完整文档.md": true,
+    "**/*-源码剖析.md": true,
+    "**/dify-agent-module.md": true,
+    "**/kubernetes-apiserver-source-analysis.md": true,
+    "**/autogen-*.md": true,
+    "**/*analysis*.md": true,
+    "**/*深度剖析*.md": true
   },
   
   "// 文件监控优化": "",
@@ -73,5 +80,28 @@
   "// 内存管理": "",
   "window.restoreWindows": "none",
   "workbench.editor.enablePreview": false,
-  "workbench.editor.enablePreviewFromQuickOpen": false
+  "workbench.editor.enablePreviewFromQuickOpen": false,
+  "workbench.editor.limit.enabled": true,
+  "workbench.editor.limit.value": 10,
+  "workbench.editor.limit.perEditorGroup": true,
+  
+  "// AI功能优化": "",
+  "cursor.cpp.disabledLanguages": ["markdown"],
+  "cursor.general.enableAutocompletions": false,
+  "cursor.general.enableChatInEditor": false,
+  
+  "// 文件处理优化": "",
+  "files.trimTrailingWhitespace": false,
+  "files.insertFinalNewline": false,
+  "files.trimFinalNewlines": false,
+  "files.hotExit": "off",
+  
+  "// 搜索性能优化": "",
+  "search.smartCase": false,
+  "search.globalFindClipboard": false,
+  "search.maxResults": 1000,
+  
+  "// 终端优化": "",
+  "terminal.integrated.enablePersistentSessions": false,
+  "terminal.integrated.persistentSessionReviveProcess": "never"
 }

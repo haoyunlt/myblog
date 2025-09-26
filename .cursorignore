@@ -244,11 +244,26 @@ local-config.*
 dev-notes.md
 
 # Cursor性能优化 - 大文件忽略
-# 超过2000行的大型文档（可根据需要调整）
+# 超过100KB的大型文档（根据实际情况调整）
 **/RocksDB-源码剖析_完整文档.md
 **/voicehelper-*.md
 **/*-完整文档.md
 **/*-源码剖析.md
+**/dify-agent-module.md
+**/kubernetes-apiserver-source-analysis.md
+**/autogen-core-analysis.md
+**/autogen-advanced-patterns.md
+**/golang-concurrency-primitives-analysis.md
+**/dify-workflow-module.md
+**/dify-model-runtime-module.md
+**/AutoGPT-共享库深度剖析.md
+**/langgraph-prebuilt-module.md
+
+# 大文件模式匹配（避免索引超大文档）
+**/*analysis*.md
+**/*深度剖析*.md
+**/*完整指南*.md
+**/*源码解析*.md
 
 # 二进制和媒体文件
 *.bin

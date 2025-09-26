@@ -1,0 +1,23 @@
+# 大文件专用忽略列表
+# 当Cursor性能仍有问题时，可将此文件内容追加到.cursorignore
+
+# 当前识别的大文件（>100KB）
+content/posts/dify-agent-module.md
+content/posts/RocksDB-源码剖析_完整文档.md
+content/posts/kubernetes-apiserver-source-analysis.md
+content/posts/autogen-core-analysis.md
+content/posts/autogen-advanced-patterns.md
+content/posts/golang-concurrency-primitives-analysis.md
+content/posts/dify-workflow-module.md
+content/posts/dify-model-runtime-module.md
+content/posts/AutoGPT-共享库深度剖析.md
+content/posts/langgraph-prebuilt-module.md
+
+# 大文件模式（可根据需要启用）
+# **/*-analysis.md
+# **/*-guide.md
+# **/*tutorial*.md
+# **/*深度*.md
+# **/*完整*.md
+# **/*详解*.md
+# **/*源码*.md
