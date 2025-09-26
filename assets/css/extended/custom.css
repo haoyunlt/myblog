@@ -137,94 +137,98 @@ a:hover {
     border-color: var(--primary-color);
 }
 
-/* 代码块样式 */
+/* 代码块样式 - 黑色背景主题 */
 pre {
-    background: var(--bg-secondary) !important;
-    border: 1px solid var(--border-color);
+    background: #1a1a1a !important;
+    border: 1px solid #333333;
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
     font-size: 0.875rem;
     line-height: 1.6;
     position: relative;
-    box-shadow: var(--shadow-light);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
     margin: 1.5rem 0;
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+    color: #e5e5e5 !important;
 }
 
 /* 代码块内容区域 */
 pre > code {
     display: block;
     padding: 0;
-    background: transparent;
-    color: inherit;
+    background: transparent !important;
+    color: #e5e5e5 !important;
     font-weight: normal;
     font-family: inherit;
 }
 
-/* 行内代码 */
+/* 行内代码 - 深色背景 */
 :not(pre) > code {
-    background: var(--bg-secondary);
+    background: #2a2a2a !important;
     padding: 0.2rem 0.4rem;
     border-radius: 6px;
     font-size: 0.85rem;
-    color: var(--accent-color);
+    color: #fbbf24 !important;
     font-weight: 600;
-    border: 1px solid var(--border-color);
+    border: 1px solid #444444;
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
 }
 
 /* 代码复制按钮已禁用 */
 
-/* 代码高亮样式 */
+/* 代码高亮样式 - 黑色背景主题 */
 .highlight {
     position: relative;
     border-radius: 12px;
     overflow: hidden;
     margin: 1.5rem 0;
-    box-shadow: var(--shadow-light);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    background: #1a1a1a !important;
 }
 
 .highlight pre {
     margin: 0;
-    background: var(--bg-secondary) !important;
-    border: 1px solid var(--border-color);
+    background: #1a1a1a !important;
+    border: 1px solid #333333;
     padding: 1.25rem;
     overflow-x: auto;
     font-size: 0.875rem;
     line-height: 1.6;
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+    color: #e5e5e5 !important;
 }
 
 .highlight code {
-    background: transparent;
+    background: transparent !important;
     padding: 0;
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;
+    color: #e5e5e5 !important;
 }
 
-/* 高亮行样式 */
+/* 高亮行样式 - 适配黑色背景 */
 .hl {
-    background-color: rgba(255, 255, 0, 0.1);
+    background-color: rgba(255, 255, 0, 0.15) !important;
     display: block;
     width: 100%;
 }
 
-/* 代码语言标签 */
+/* 代码语言标签 - 适配黑色背景 */
 pre[data-lang]:before {
     content: attr(data-lang);
     position: absolute;
     top: 0;
     right: 0;
-    background: var(--text-secondary);
-    color: white;
+    background: #333333;
+    color: #e5e5e5;
     padding: 0.25rem 0.75rem;
     font-size: 0.7rem;
     font-weight: 600;
     text-transform: uppercase;
     border-bottom-left-radius: 6px;
-    opacity: 0.8;
+    opacity: 0.9;
 }
 
 /* 特定语言的代码块样式 */
@@ -1195,6 +1199,115 @@ abbr[title] {
     border-bottom: 1px dotted var(--text-secondary);
     text-decoration: none;
     cursor: help;
+}
+
+/* 代码语法高亮 - 黑色背景适配 */
+.highlight .c,
+.highlight .c1,
+.highlight .cm,
+.highlight .cp,
+.highlight .cs {
+    color: #6a9955 !important; /* 注释 - 绿色 */
+}
+
+.highlight .k,
+.highlight .kc,
+.highlight .kd,
+.highlight .kn,
+.highlight .kp,
+.highlight .kr,
+.highlight .kt {
+    color: #569cd6 !important; /* 关键字 - 蓝色 */
+}
+
+.highlight .s,
+.highlight .s1,
+.highlight .s2,
+.highlight .sa,
+.highlight .sb,
+.highlight .sc,
+.highlight .sd,
+.highlight .se,
+.highlight .sh,
+.highlight .si,
+.highlight .sx,
+.highlight .sr,
+.highlight .ss {
+    color: #ce9178 !important; /* 字符串 - 橙色 */
+}
+
+.highlight .m,
+.highlight .mb,
+.highlight .mf,
+.highlight .mh,
+.highlight .mi,
+.highlight .mo {
+    color: #b5cea8 !important; /* 数字 - 浅绿色 */
+}
+
+.highlight .n,
+.highlight .na,
+.highlight .nb,
+.highlight .nc,
+.highlight .nd,
+.highlight .ne,
+.highlight .nf,
+.highlight .ni,
+.highlight .nl,
+.highlight .nn,
+.highlight .no,
+.highlight .nt,
+.highlight .nv,
+.highlight .nx {
+    color: #9cdcfe !important; /* 标识符 - 浅蓝色 */
+}
+
+.highlight .o,
+.highlight .ow {
+    color: #d4d4d4 !important; /* 操作符 - 浅灰色 */
+}
+
+.highlight .p {
+    color: #d4d4d4 !important; /* 标点符号 - 浅灰色 */
+}
+
+.highlight .err {
+    color: #f44747 !important; /* 错误 - 红色 */
+    background: transparent !important;
+}
+
+.highlight .g,
+.highlight .gd,
+.highlight .ge,
+.highlight .gh,
+.highlight .gi,
+.highlight .go,
+.highlight .gp,
+.highlight .gr,
+.highlight .gs,
+.highlight .gt,
+.highlight .gu,
+.highlight .w {
+    color: #d4d4d4 !important; /* 通用 - 浅灰色 */
+}
+
+/* 确保mermaid图表不受代码样式影响 */
+.mermaid,
+.mermaid *,
+.mermaid-container,
+.mermaid-container * {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+}
+
+.mermaid pre,
+.mermaid code,
+.mermaid-container pre,
+.mermaid-container code {
+    background: var(--bg-primary) !important;
+    color: var(--text-primary) !important;
+    border: none !important;
+    box-shadow: none !important;
 }
 
 /* 滚动条样式 */
