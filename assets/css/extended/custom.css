@@ -1,4 +1,63 @@
-/* 自定义样式 - 优化博客外观 */
+/* 自定义样式 - 优化博客外观 + 炫酷效果 */
+
+/* 动画关键帧 */
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+@keyframes slideInRight {
+    from {
+        opacity: 0;
+        transform: translateX(30px);
+    }
+    to {
+        opacity: 1;
+        transform: translateX(0);
+    }
+}
+
+@keyframes pulse {
+    0%, 100% {
+        transform: scale(1);
+    }
+    50% {
+        transform: scale(1.05);
+    }
+}
+
+@keyframes glow {
+    0%, 100% {
+        box-shadow: 0 0 5px rgba(59, 130, 246, 0.5);
+    }
+    50% {
+        box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+    }
+}
+
+@keyframes shimmer {
+    0% {
+        background-position: -200px 0;
+    }
+    100% {
+        background-position: calc(200px + 100%) 0;
+    }
+}
+
+@keyframes float {
+    0%, 100% {
+        transform: translateY(0px);
+    }
+    50% {
+        transform: translateY(-10px);
+    }
+}
 
 /* 颜色主题 */
 :root {
@@ -31,6 +90,91 @@ body {
     font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Helvetica Neue', Arial, sans-serif;
     line-height: 1.7;
     color: var(--text-primary);
+    transition: all 0.3s ease;
+}
+
+/* 页面加载动画 */
+.main {
+    animation: fadeInUp 0.8s ease-out;
+}
+
+/* 文章列表动画 */
+.post-entry {
+    animation: fadeInUp 0.6s ease-out;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+}
+
+.post-entry:nth-child(1) { animation-delay: 0.1s; }
+.post-entry:nth-child(2) { animation-delay: 0.2s; }
+.post-entry:nth-child(3) { animation-delay: 0.3s; }
+.post-entry:nth-child(4) { animation-delay: 0.4s; }
+.post-entry:nth-child(5) { animation-delay: 0.5s; }
+
+.post-entry:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 10px 25px rgba(0, 0, 0, 0.15);
+}
+
+/* 导航栏动画 */
+.header {
+    transition: all 0.3s ease;
+}
+
+.logo a {
+    transition: all 0.3s ease;
+}
+
+.logo a:hover {
+    transform: scale(1.05);
+    color: var(--primary-color);
+}
+
+/* 菜单项动画 */
+.menu a {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.menu a::after {
+    content: '';
+    position: absolute;
+    bottom: -5px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.menu a:hover::after {
+    width: 100%;
+}
+
+/* 按钮动画增强 */
+button, .button, input[type="submit"] {
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: hidden;
+}
+
+button:hover, .button:hover, input[type="submit"]:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+button::before, .button::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: -100%;
+    width: 100%;
+    height: 100%;
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+    transition: left 0.5s;
+}
+
+button:hover::before, .button:hover::before {
+    left: 100%;
 }
 
 /* 标题样式 */
@@ -40,13 +184,55 @@ h1, h2, h3, h4, h5, h6 {
     line-height: 1.3;
     margin-top: 2rem;
     margin-bottom: 1rem;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+h1, h2, h3 {
+    animation: slideInRight 0.8s ease-out;
 }
 
 h1 {
     font-size: 2.25rem;
     border-bottom: 3px solid var(--primary-color);
     padding-bottom: 0.5rem;
+    position: relative;
+    overflow: hidden;
 }
+
+h1::before {
+    content: '';
+    position: absolute;
+    bottom: 0;
+    left: -100%;
+    width: 100%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    animation: shimmer 2s ease-in-out infinite;
+}
+
+/* 文章标题特效 */
+.post-title {
+    background: linear-gradient(135deg, var(--primary-color), var(--accent-color));
+    background-clip: text;
+    -webkit-background-clip: text;
+    -webkit-text-fill-color: transparent;
+    animation: glow 3s ease-in-out infinite alternate;
+}
+
+/* 内容区域动画 */
+.post-content p, 
+.post-content li,
+.post-content blockquote {
+    animation: fadeInUp 0.6s ease-out;
+    animation-fill-mode: both;
+}
+
+.post-content p:nth-child(1) { animation-delay: 0.1s; }
+.post-content p:nth-child(2) { animation-delay: 0.2s; }
+.post-content p:nth-child(3) { animation-delay: 0.3s; }
+.post-content p:nth-child(4) { animation-delay: 0.4s; }
+.post-content p:nth-child(5) { animation-delay: 0.5s; }
 
 h2 {
     font-size: 1.875rem;
@@ -139,8 +325,9 @@ a:hover {
 
 /* 代码块样式 */
 pre {
-    background: var(--bg-secondary) !important;
-    border: 1px solid var(--border-color);
+    background: #1a1a1a !important;
+    color: #f8f8f2 !important;
+    border: 1px solid #333;
     border-radius: 12px;
     padding: 1.25rem;
     overflow-x: auto;
@@ -150,6 +337,33 @@ pre {
     box-shadow: var(--shadow-light);
     margin: 1.5rem 0;
     font-family: 'SF Mono', 'Monaco', 'Inconsolata', 'Roboto Mono', 'Source Code Pro', monospace;
+    transition: all 0.3s ease;
+    animation: fadeInUp 0.6s ease-out;
+}
+
+pre:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 25px rgba(0, 0, 0, 0.3);
+    border-color: var(--primary-color);
+}
+
+/* 代码块复制按钮动画 */
+.copy-button {
+    transition: all 0.3s ease;
+    opacity: 0;
+}
+
+pre:hover .copy-button {
+    opacity: 1;
+    animation: pulse 2s infinite;
+}
+
+/* Mermaid代码块保持原样 */
+pre.mermaid,
+.mermaid pre {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color);
 }
 
 /* 代码块内容区域 */
@@ -160,6 +374,12 @@ pre > code {
     color: inherit;
     font-weight: normal;
     font-family: inherit;
+}
+
+/* Mermaid代码块内容保持原样 */
+pre.mermaid > code,
+.mermaid pre > code {
+    color: var(--text-primary) !important;
 }
 
 /* 行内代码 */
@@ -187,8 +407,9 @@ pre > code {
 
 .highlight pre {
     margin: 0;
-    background: var(--bg-secondary) !important;
-    border: 1px solid var(--border-color);
+    background: #1a1a1a !important;
+    color: #f8f8f2 !important;
+    border: 1px solid #333;
     padding: 1.25rem;
     overflow-x: auto;
     font-size: 0.875rem;
@@ -202,6 +423,20 @@ pre > code {
     font-family: inherit;
     font-size: inherit;
     line-height: inherit;
+    color: inherit;
+}
+
+/* Mermaid高亮块保持原样 */
+.highlight.mermaid,
+.highlight .language-mermaid {
+    background: var(--bg-secondary) !important;
+}
+
+.highlight.mermaid pre,
+.highlight .language-mermaid pre {
+    background: var(--bg-secondary) !important;
+    color: var(--text-primary) !important;
+    border: 1px solid var(--border-color);
 }
 
 /* 高亮行样式 */
@@ -674,7 +909,8 @@ tr:hover {
     color: var(--primary-color);
     background: var(--bg-primary);
     border-left-color: var(--primary-color);
-    transform: translateX(2px);
+    transform: translateX(5px);
+    animation: pulse 1s ease-in-out;
 }
 
 .toc a.active {
@@ -735,13 +971,15 @@ tr:hover {
     .toc-fixed {
         position: fixed;
         top: 50%;
-        right: 2rem;
-        transform: translateY(-50%);
+        left: 50%;
+        transform: translate(-50%, -50%);
         width: 280px;
         max-height: 60vh;
         z-index: 100;
         opacity: 0.9;
         transition: opacity 0.3s ease;
+        /* 确保目录在页面右侧区域居中 */
+        margin-left: 400px; /* 调整到内容区域右侧 */
     }
     
     .toc-fixed:hover {
@@ -1011,6 +1249,209 @@ tr:hover {
 [data-theme="dark"] .mermaid svg .edgePath path,
 .dark .mermaid svg .edgePath path {
     stroke: var(--text-secondary) !important;
+}
+
+/* ===== 炫酷特效增强 ===== */
+
+/* 滚动动画效果 */
+.scroll-reveal {
+    opacity: 0;
+    transform: translateY(50px);
+    transition: all 0.6s ease;
+}
+
+.scroll-reveal.revealed {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+/* 主题切换按钮增强 */
+#theme-toggle {
+    transition: all 0.3s ease;
+    position: relative;
+    overflow: hidden;
+}
+
+#theme-toggle:hover {
+    transform: rotate(180deg) scale(1.1);
+    animation: glow 1s ease-in-out;
+}
+
+/* 返回顶部按钮动画 */
+.top-link {
+    animation: float 3s ease-in-out infinite;
+    transition: all 0.3s ease;
+}
+
+.top-link:hover {
+    transform: translateY(-5px) scale(1.1);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+}
+
+/* 页面加载进度条 */
+.loading-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 0%;
+    height: 3px;
+    background: linear-gradient(90deg, var(--primary-color), var(--accent-color));
+    z-index: 9999;
+    transition: width 0.3s ease;
+}
+
+/* 鼠标悬停特效 */
+.hover-glow:hover {
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.5);
+    transform: translateY(-2px);
+}
+
+/* 卡片翻转效果 */
+.flip-card {
+    perspective: 1000px;
+}
+
+.flip-card-inner {
+    transition: transform 0.6s;
+    transform-style: preserve-3d;
+}
+
+.flip-card:hover .flip-card-inner {
+    transform: rotateY(180deg);
+}
+
+/* 文字打字机效果 */
+.typewriter {
+    overflow: hidden;
+    border-right: 2px solid var(--primary-color);
+    white-space: nowrap;
+    animation: typing 3.5s steps(40, end), blink-caret 0.75s step-end infinite;
+}
+
+@keyframes typing {
+    from { width: 0; }
+    to { width: 100%; }
+}
+
+@keyframes blink-caret {
+    from, to { border-color: transparent; }
+    50% { border-color: var(--primary-color); }
+}
+
+/* 标签云动画 */
+.tag-cloud .tag {
+    transition: all 0.3s ease;
+    display: inline-block;
+}
+
+.tag-cloud .tag:hover {
+    transform: scale(1.1) rotate(5deg);
+    color: var(--accent-color);
+}
+
+/* 搜索框增强 */
+.search-input:focus {
+    animation: glow 2s ease-in-out infinite alternate;
+    transform: scale(1.02);
+}
+
+/* 分页按钮动画 */
+.pagination a {
+    transition: all 0.3s ease;
+}
+
+.pagination a:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 5px 15px rgba(0, 0, 0, 0.2);
+}
+
+/* 社交媒体图标动画 */
+.social-icons a {
+    transition: all 0.3s ease;
+}
+
+.social-icons a:hover {
+    transform: translateY(-5px) rotate(360deg);
+    animation: pulse 1s ease-in-out;
+}
+
+/* 面包屑导航动画 */
+.breadcrumb a {
+    position: relative;
+    transition: all 0.3s ease;
+}
+
+.breadcrumb a::after {
+    content: '';
+    position: absolute;
+    bottom: -2px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--primary-color);
+    transition: width 0.3s ease;
+}
+
+.breadcrumb a:hover::after {
+    width: 100%;
+}
+
+/* 图片悬停效果 */
+img {
+    transition: all 0.3s ease;
+}
+
+img:hover {
+    transform: scale(1.05);
+    filter: brightness(1.1);
+}
+
+/* 表格行悬停效果 */
+table tr {
+    transition: all 0.3s ease;
+}
+
+table tr:hover {
+    background: var(--bg-secondary);
+    transform: translateX(5px);
+}
+
+/* 引用块增强 */
+blockquote {
+    position: relative;
+    animation: slideInRight 0.8s ease-out;
+}
+
+blockquote::before {
+    content: '';
+    position: absolute;
+    left: -10px;
+    top: 0;
+    bottom: 0;
+    width: 4px;
+    background: linear-gradient(180deg, var(--primary-color), var(--accent-color));
+    animation: shimmer 3s ease-in-out infinite;
+}
+
+/* 列表项动画 */
+ul li, ol li {
+    animation: fadeInUp 0.5s ease-out;
+    animation-fill-mode: both;
+}
+
+ul li:nth-child(1) { animation-delay: 0.1s; }
+ul li:nth-child(2) { animation-delay: 0.2s; }
+ul li:nth-child(3) { animation-delay: 0.3s; }
+ul li:nth-child(4) { animation-delay: 0.4s; }
+ul li:nth-child(5) { animation-delay: 0.5s; }
+
+/* 响应式动画优化 */
+@media (prefers-reduced-motion: reduce) {
+    * {
+        animation-duration: 0.01ms !important;
+        animation-iteration-count: 1 !important;
+        transition-duration: 0.01ms !important;
+    }
 }
 
 [data-theme="dark"] .mermaid svg .edgeLabel,
