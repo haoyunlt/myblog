@@ -17,21 +17,24 @@
   </header>
   
   {{- $categories := dict }}
+  {{- $categoryDisplayNames := dict }}
   {{- range site.RegularPages }}
     {{- if eq .Type "posts" }}
       {{- $filename := path.BaseName .File.Path }}
       {{- $parts := split $filename "-" }}
       {{- if gt (len $parts) 1 }}
-        {{- $category := index $parts 0 }}
+        {{- $categoryRaw := index $parts 0 }}
+        {{- $category := lower $categoryRaw }}
         {{- $posts := index $categories $category | default slice }}
         {{- $posts = $posts | append . }}
         {{- $categories = merge $categories (dict $category $posts) }}
+        {{- $categoryDisplayNames = merge $categoryDisplayNames (dict $category $categoryRaw) }}
       {{- end }}
     {{- end }}
   {{- end }}
   
   <div class="categories-grid">
-    {{- $categoryOrder := slice "voicehelper" "eino" "dify" "qwen" "OpenAIAgents" "autogen" "AutoGPT" "langchain" "langgraph" "metagpt" "milvus" "golang" "kubernetes" "grpc-go" "grpc" "etcd" "mysql" "kafka" "nginx" "pytorch" "TensorRTLLM" "rocksdb" "RocksDB" "kitex" "istio" "mimio" "minio" }}
+    {{- $categoryOrder := slice "dify" "语音助手" "voicehelper" "聊天助手" "autogpt" "autogen" "openaiagent" "qwenagent" "eino" "githubmcpserver" "langgraph" "langchain" "metagpt" "vllm" "tensorrtllm" "python" "golang" "tensorflow" "ray" "fastapi" "grpc" "kitex" "nginx" "kafka" "flink" "pulsar" "kubernetes" "docker" "etcd" "istio" "envoy" "mongodb" "mysql" "clickhouse" "rocksdb" "leveldb" "pgvector" "milvus" "ceph" "minio" "elasticsearch" "netpoll" "openmanus" }}
     {{- range $categoryOrder }}
       {{- $category := . }}
       {{- $posts := index $categories $category }}
@@ -40,69 +43,99 @@
     <div class="category-card">
       <div class="category-header">
         <h3 class="category-title">
-          <a href="/categories/{{ $category | urlize }}/">{{ $category }}</a>
+          <a href="/categories/{{ $category | urlize }}/">{{ index $categoryDisplayNames $category | default $category }}</a>
         </h3>
         <span class="category-count">{{ $postCount }} 篇文章</span>
       </div>
       <div class="category-description">
-        {{- if eq $category "voicehelper" }}
-          <p>语音助手系统架构设计与实现</p>
-        {{- else if eq $category "eino" }}
-          <p>Eino大模型应用开发框架</p>
-        {{- else if eq $category "dify" }}
-          <p>Dify大语言模型应用开发平台</p>
-        {{- else if eq $category "qwen" }}
-          <p>通义千问大语言模型技术解析</p>
-        {{- else if eq $category "OpenAIAgents" }}
-          <p>OpenAI智能体开发与应用</p>
+        {{- if eq $category "dify" }}
+          <p>🤖 Dify低代码LLM应用开发平台 - 工作流引擎架构与核心模块源码深度剖析</p>
+        {{- else if eq $category "语音助手" }}
+          <p>🎤 智能语音助手系统 - Home Assistant与LiveKit实时语音处理技术栈</p>
+        {{- else if eq $category "voicehelper" }}
+          <p>🎧 语音助手核心架构 - WebRTC、语音识别与自然语言处理集成方案</p>
+        {{- else if eq $category "聊天助手" }}
+          <p>💬 Chatwoot开源客服平台 - Ruby on Rails架构设计与源码实现详解</p>
+        {{- else if eq $category "autogpt" }}
+          <p>🚀 AutoGPT自主智能体 - Block系统架构与Plugin生态源码分析</p>
         {{- else if eq $category "autogen" }}
-          <p>AutoGen多智能体框架相关技术文档</p>
-        {{- else if eq $category "AutoGPT" }}
-          <p>AutoGPT自主AI智能体平台</p>
-        {{- else if eq $category "langchain" }}
-          <p>LangChain大语言模型应用开发框架</p>
+          <p>🔄 Microsoft AutoGen - 多智能体协作框架与对话编排机制深度解析</p>
+        {{- else if eq $category "openaiagent" }}
+          <p>🧠 OpenAI Agent开发实战 - Function Calling与Tool Use最佳实践</p>
+        {{- else if eq $category "qwenagent" }}
+          <p>🤖 阿里通义千问智能体 - ReAct推理与工具调用框架技术实现</p>
+        {{- else if eq $category "eino" }}
+          <p>⚡ 字节跳动Eino框架 - 企业级大模型应用开发与部署实践</p>
+        {{- else if eq $category "githubmcpserver" }}
+          <p>🔧 GitHub MCP服务器 - Model Context Protocol协议实现与集成方案</p>
         {{- else if eq $category "langgraph" }}
-          <p>LangGraph工作流编排和状态管理</p>
+          <p>📊 LangGraph状态图引擎 - 复杂AI工作流编排与执行控制机制</p>
+        {{- else if eq $category "langchain" }}
+          <p>🔗 LangChain应用框架 - Chain组合模式与Memory管理核心架构</p>
         {{- else if eq $category "metagpt" }}
-          <p>MetaGPT多智能体软件开发框架</p>
-        {{- else if eq $category "milvus" }}
-          <p>Milvus向量数据库系统</p>
+          <p>🎯 MetaGPT软件开发框架 - 多角色协作与代码生成流水线设计</p>
+        {{- else if eq $category "vllm" }}
+          <p>⚡ vLLM推理加速引擎 - PagedAttention与连续批处理优化技术</p>
+        {{- else if eq $category "tensorrtllm" }}
+          <p>🚄 NVIDIA TensorRT-LLM - GPU推理优化与模型量化部署实践</p>
+        {{- else if eq $category "python" }}
+          <p>🐍 Python深度解析 - CPython解释器内核、GIL机制与内存管理源码剖析</p>
         {{- else if eq $category "golang" }}
-          <p>Go语言运行时和标准库源码</p>
-        {{- else if eq $category "kubernetes" }}
-          <p>Kubernetes容器编排平台</p>
-        {{- else if eq $category "grpc-go" }}
-          <p>gRPC-Go高性能RPC框架</p>
+          <p>🐹 Go语言内核技术 - Runtime调度器、垃圾回收器与并发原语实现机制</p>
+        {{- else if eq $category "tensorflow" }}
+          <p>🧮 TensorFlow深度学习 - 计算图执行引擎与分布式训练架构源码分析</p>
+        {{- else if eq $category "ray" }}
+          <p>☀️ Ray分布式计算 - 任务调度系统与Actor模型核心架构设计</p>
+        {{- else if eq $category "fastapi" }}
+          <p>🚀 FastAPI高性能框架 - ASGI异步架构与依赖注入系统源码深度解析</p>
         {{- else if eq $category "grpc" }}
-          <p>gRPC高性能RPC框架</p>
-        {{- else if eq $category "etcd" }}
-          <p>etcd分布式键值存储系统</p>
-        {{- else if eq $category "mysql" }}
-          <p>MySQL数据库系统架构与实现</p>
-        {{- else if eq $category "kafka" }}
-          <p>Apache Kafka分布式流处理平台</p>
-        {{- else if eq $category "nginx" }}
-          <p>Nginx高性能Web服务器</p>
-        {{- else if eq $category "pytorch" }}
-          <p>PyTorch深度学习框架</p>
-        {{- else if eq $category "TensorRTLLM" }}
-          <p>TensorRT-LLM大模型推理优化</p>
-        {{- else if eq $category "rocksdb" }}
-          <p>RocksDB嵌入式键值存储引擎</p>
-        {{- else if eq $category "RocksDB" }}
-          <p>RocksDB嵌入式键值存储引擎</p>
+          <p>📡 gRPC通信框架 - Protobuf序列化与HTTP/2双向流传输机制剖析</p>
         {{- else if eq $category "kitex" }}
-          <p>Kitex高性能RPC框架</p>
+          <p>🛠️ 字节跳动Kitex - 微服务治理与高性能RPC框架设计实践</p>
+        {{- else if eq $category "nginx" }}
+          <p>🌐 Nginx高性能服务器 - 事件驱动架构与反向代理核心模块源码分析</p>
+        {{- else if eq $category "kafka" }}
+          <p>🔄 Apache Kafka消息系统 - 分区存储引擎与Raft一致性协议实现机制</p>
+        {{- else if eq $category "flink" }}
+          <p>🌊 Apache Flink流计算 - JobManager调度与TaskManager执行引擎架构</p>
+        {{- else if eq $category "pulsar" }}
+          <p>📨 Apache Pulsar消息平台 - BookKeeper存储层与Broker架构深度分析</p>
+        {{- else if eq $category "kubernetes" }}
+          <p>☸️ Kubernetes容器编排 - APIServer、调度器与控制器模式源码解析</p>
+        {{- else if eq $category "docker" }}
+          <p>🐳 Docker容器技术 - 容器运行时、镜像存储与网络模型底层实现</p>
+        {{- else if eq $category "etcd" }}
+          <p>🗄️ etcd分布式存储 - Raft共识算法与MVCC并发控制机制深度剖析</p>
         {{- else if eq $category "istio" }}
-          <p>Istio服务网格平台</p>
-        {{- else if eq $category "mimio" }}
-          <p>MinIO对象存储系统</p>
+          <p>🕸️ Istio服务网格 - Envoy数据平面与Pilot控制平面交互机制</p>
+        {{- else if eq $category "envoy" }}
+          <p>🔀 Envoy代理服务器 - 过滤器链架构与L7负载均衡算法实现</p>
+        {{- else if eq $category "mongodb" }}
+          <p>🍃 MongoDB文档数据库 - WiredTiger存储引擎与分片集群架构原理</p>
+        {{- else if eq $category "mysql" }}
+          <p>🐬 MySQL数据库内核 - InnoDB存储引擎与查询优化器源码深度解析</p>
+        {{- else if eq $category "clickhouse" }}
+          <p>⚡ ClickHouse列式数据库 - MergeTree引擎与分布式查询执行机制</p>
+        {{- else if eq $category "rocksdb" }}
+          <p>🗿 RocksDB存储引擎 - LSM-Tree架构与压缩合并策略核心算法剖析</p>
+        {{- else if eq $category "leveldb" }}
+          <p>📚 LevelDB键值存储 - SSTable结构设计与Bloom Filter优化技术</p>
+        {{- else if eq $category "pgvector" }}
+          <p>🔍 pgvector向量扩展 - PostgreSQL向量检索与HNSW索引算法实现</p>
+        {{- else if eq $category "milvus" }}
+          <p>🧭 Milvus向量数据库 - 分布式向量检索与AI原生存储架构设计</p>
+        {{- else if eq $category "ceph" }}
+          <p>🗂️ Ceph分布式存储 - CRUSH算法与OSD存储节点管理机制深度解析</p>
         {{- else if eq $category "minio" }}
-          <p>MinIO对象存储系统</p>
-        {{- else if eq $category "linux" }}
-          <p>Linux内核网络子系统</p>
+          <p>📦 MinIO对象存储 - S3兼容API与纠删码数据保护技术实现</p>
+        {{- else if eq $category "elasticsearch" }}
+          <p>🔎 Elasticsearch搜索引擎 - Lucene倒排索引与分布式查询协调机制</p>
+        {{- else if eq $category "netpoll" }}
+          <p>🌐 字节跳动NetPoll - 高性能网络库与epoll事件驱动架构优化</p>
+        {{- else if eq $category "openmanus" }}
+          <p>🤖 OpenManus机器人平台 - 实时控制系统与传感器数据处理架构</p>
         {{- else }}
-          <p>{{ $category }} 相关技术文档和源码分析</p>
+          <p>📖 {{ $category }} 相关技术文档和源码分析</p>
         {{- end }}
       </div>
       <div class="category-posts">
@@ -140,7 +173,7 @@
     <div class="category-card">
       <div class="category-header">
         <h3 class="category-title">
-          <a href="/categories/{{ $category | urlize }}/">{{ $category }}</a>
+          <a href="/categories/{{ $category | urlize }}/">{{ index $categoryDisplayNames $category | default $category }}</a>
         </h3>
         <span class="category-count">{{ $postCount }} 篇文章</span>
       </div>
