@@ -17,7 +17,7 @@ weight: 1
 ## 🗂️ 文档目录结构
 
 ### 1. 总体架构篇
-- **[LangGraph源码剖析-总体架构.md](/posts/LangGraph源码剖析-总体架构/)**
+- **[LangGraph源码剖析-总体架构.md](/posts/langgraph-总体架构/)**
   - 项目概述和核心特性
   - Monorepo结构分析
   - 模块依赖关系图
@@ -27,15 +27,15 @@ weight: 1
 ### 2. 核心模块深度解析
 
 #### 2.1 核心框架模块
-- **[LangGraph源码剖析-核心模块详解.md](/posts/LangGraph源码剖析-核心模块详解/)**
+- **[LangGraph源码剖析-核心模块详解.md](/posts/langgraph-核心模块详解/)**
   - StateGraph核心实现
-  - 消息处理机制
+  - CompiledStateGraph执行机制
   - 通道系统详解
   - 状态管理策略
-  - 条件路由实现
+  - Reducer函数机制
 
 #### 2.2 执行引擎模块
-- **[LangGraph源码剖析-Pregel执行引擎.md](/posts/LangGraph源码剖析-Pregel执行引擎/)**
+- **[LangGraph源码剖析-Pregel执行引擎.md](/posts/langgraph-pregel执行引擎/)**
   - Pregel算法原理
   - BSP执行模型
   - 超级步骤机制
@@ -43,7 +43,7 @@ weight: 1
   - 执行流程详解
 
 #### 2.3 预构建组件模块
-- **[LangGraph源码剖析-预构建组件详解.md](/posts/LangGraph源码剖析-预构建组件详解/)**
+- **[LangGraph源码剖析-预构建组件详解.md](/posts/langgraph-预构建组件详解/)**
   - create_react_agent实现
   - ToolNode工具节点
   - 条件函数库
@@ -51,7 +51,7 @@ weight: 1
   - 最佳实践封装
 
 #### 2.4 检查点系统模块
-- **[LangGraph源码剖析-检查点系统详解.md](/posts/LangGraph源码剖析-检查点系统详解/)**
+- **[LangGraph源码剖析-检查点系统详解.md](/posts/langgraph-检查点系统详解/)**
   - BaseCheckpointSaver接口
   - InMemorySaver实现
   - 序列化机制
@@ -59,7 +59,7 @@ weight: 1
   - 性能优化策略
 
 #### 2.5 CLI工具模块
-- **[LangGraph源码剖析-CLI工具详解.md](/posts/LangGraph源码剖析-CLI工具详解/)**
+- **[LangGraph源码剖析-CLI工具详解.md](/posts/langgraph-cli工具详解/)**
   - 命令行架构设计
   - 配置管理系统
   - 项目模板机制
@@ -69,7 +69,7 @@ weight: 1
 ### 3. 实战应用篇
 
 #### 3.1 使用示例
-- **[LangGraph源码剖析-使用示例详解.md](/posts/LangGraph源码剖析-使用示例详解/)**
+- **[LangGraph源码剖析-使用示例详解.md](/posts/langgraph-使用示例详解/)**
   - 快速入门示例
   - 工具调用智能体
   - 人机交互中断
@@ -77,7 +77,7 @@ weight: 1
   - 实际业务场景
 
 #### 3.2 最佳实践
-- **[LangGraph源码剖析-实战经验和最佳实践.md](/posts/LangGraph源码剖析-实战经验和最佳实践/)**
+- **[LangGraph源码剖析-实战经验和最佳实践.md](/posts/langgraph-实战经验和最佳实践/)**
   - 项目架构设计
   - 性能优化策略
   - 错误处理机制

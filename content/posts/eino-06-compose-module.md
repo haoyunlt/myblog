@@ -143,12 +143,10 @@ type AnyGraph interface {
 // Runnable 是可执行对象的接口。Graph、Chain 可以编译为 Runnable。
 // runnable 是 eino 的核心概念，我们对四种数据流模式做降级兼容，
 // 可以自动连接只实现一种或多种方法的组件。
-// 例如，如果组件只实现 Stream() 方法，你仍然可以调用 Invoke() 来将流输出转换为调用输出。
+// Runnable 是框架的核心抽象，定义了四种数据流模式
+// 详细的接口定义请参考 [核心API深度分析](/posts/eino-03-core-api-analysis/)
 type Runnable[I, O any] interface {
-	Invoke(ctx context.Context, input I, opts ...Option) (output O, err error)
-	Stream(ctx context.Context, input I, opts ...Option) (output *schema.StreamReader[O], err error)
-	Collect(ctx context.Context, input *schema.StreamReader[I], opts ...Option) (output O, err error)
-	Transform(ctx context.Context, input *schema.StreamReader[I], opts ...Option) (output *schema.StreamReader[O], err error)
+	// 省略具体方法定义 - 请参考核心API文档
 }
 ```
 

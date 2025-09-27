@@ -241,48 +241,7 @@ func (c *Chain[I, O]) Compile(ctx context.Context, opts ...GraphCompileOption) (
 
 ### 2. 适配器模式 (Adapter Pattern)
 
-```go
-// Runnable 接口定义统一的执行模式
-type Runnable[I, O any] interface {
-    Invoke(ctx context.Context, input I, opts ...Option) (output O, err error)
-    Stream(ctx context.Context, input I, opts ...Option) (output *schema.StreamReader[O], err error)
-    Collect(ctx context.Context, input *schema.StreamReader[I], opts ...Option) (output O, err error)
-    Transform(ctx context.Context, input *schema.StreamReader[I], opts ...Option) (output *schema.StreamReader[O], err error)
-}
-
-// composableRunnable 适配器实现
-type composableRunnable struct {
-    i invoke    // Invoke 方法适配器
-    t transform // Transform 方法适配器
-    
-    inputType  reflect.Type
-    outputType reflect.Type
-    optionType reflect.Type
-    
-    *genericHelper
-    isPassthrough bool
-    meta *executorMeta
-    nodeInfo *nodeInfo
-}
-
-// 自动适配不同的执行模式
-func (rp *runnablePacker[I, O, TOption]) Invoke(ctx context.Context, input I, opts ...TOption) (output O, err error) {
-    return rp.i(ctx, input, opts...)
-}
-
-// 如果组件只实现了 Stream，自动适配到 Invoke
-func invokeByStream[I, O, TOption any](s Stream[I, O, TOption]) Invoke[I, O, TOption] {
-    return func(ctx context.Context, input I, opts ...TOption) (O, error) {
-        stream, err := s(ctx, input, opts...)
-        if err != nil {
-            return *new(O), err
-        }
-        defer stream.Close()
-        
-        return schema.ConcatStreamReader(stream)
-    }
-}
-```
+适配器模式在 Eino 中主要体现在 `composableRunnable` 的实现上，它负责在不同执行模式之间进行自动适配。详细的 Runnable 接口定义和适配机制请参考 [核心API深度分析](/posts/eino-03-core-api-analysis/)。
 
 **设计优势**:
 - 统一不同组件的接口
@@ -369,117 +328,15 @@ func dagChannelBuilder(dependencies []string, indirectDependencies []string,
 
 ### 1. Runnable 核心接口
 
-```go
-// Runnable 是框架的核心抽象，定义了四种数据流模式
-type Runnable[I, O any] interface {
-    // ping => pong: 单输入单输出
-    Invoke(ctx context.Context, input I, opts ...Option) (output O, err error)
-    
-    // ping => stream: 单输入流输出
-    Stream(ctx context.Context, input I, opts ...Option) (output *schema.StreamReader[O], err error)
-    
-    // stream => pong: 流输入单输出
-    Collect(ctx context.Context, input *schema.StreamReader[I], opts ...Option) (output O, err error)
-    
-    // stream => stream: 流输入流输出
-    Transform(ctx context.Context, input *schema.StreamReader[I], opts ...Option) (output *schema.StreamReader[O], err error)
-}
-```
+Runnable 是框架的核心抽象，定义了四种数据流模式：单输入单输出(Invoke)、单输入流输出(Stream)、流输入单输出(Collect)、流输入流输出(Transform)。
 
-**设计理念**:
-- 统一的执行接口抽象
-- 支持所有可能的数据流模式
-- 自动处理流式数据转换
+详细的接口定义、自动适配机制和使用示例请参考 [核心API深度分析](/posts/eino-03-core-api-analysis/)。
 
 ### 2. 流处理系统
 
-```mermaid
-graph TB
-    subgraph "流处理核心"
-        SR[StreamReader]
-        SW[StreamWriter]
-        SC[StreamConcatenator]
-        SM[StreamMerger]
-        SCopy[StreamCopier]
-    end
-    
-    subgraph "流操作"
-        Recv[Recv 接收]
-        Send[Send 发送]
-        Close[Close 关闭]
-        Copy[Copy 复制]
-        Merge[Merge 合并]
-        Concat[Concat 拼接]
-    end
-    
-    SR --> Recv
-    SW --> Send
-    SR --> Close
-    SC --> Concat
-    SM --> Merge
-    SCopy --> Copy
-    
-    style SR fill:#e8f5e8
-    style SW fill:#fff3e0
-```
+流处理系统是 Eino 的核心特性之一，提供了完整的流式数据处理能力。系统包含 StreamReader、StreamWriter 等核心组件，支持流的拼接、合并、复制等操作。
 
-```go
-// StreamReader 流读取器接口
-type StreamReader[T any] interface {
-    // Recv 接收下一个数据块，返回 io.EOF 表示流结束
-    Recv() (T, error)
-    // Close 关闭流，释放资源
-    Close() error
-}
-
-// 流的自动管理
-func (s *streamReader[T]) Recv() (T, error) {
-    select {
-    case item, ok := <-s.ch:
-        if !ok {
-            return *new(T), io.EOF
-        }
-        return item, nil
-    case err := <-s.errCh:
-        return *new(T), err
-    case <-s.ctx.Done():
-        return *new(T), s.ctx.Err()
-    }
-}
-
-// 自动拼接流数据
-func ConcatMessages(msgs []*Message) (*Message, error) {
-    var (
-        contents []string
-        contentLen int
-        toolCalls []ToolCall
-        ret = Message{}
-    )
-    
-    for _, msg := range msgs {
-        if msg.Content != "" {
-            contents = append(contents, msg.Content)
-            contentLen += len(msg.Content)
-        }
-        if len(msg.ToolCalls) > 0 {
-            toolCalls = append(toolCalls, msg.ToolCalls...)
-        }
-        // ... 其他字段处理
-    }
-    
-    // 拼接内容
-    if len(contents) > 0 {
-        var sb strings.Builder
-        sb.Grow(contentLen)
-        for _, content := range contents {
-            sb.WriteString(content)
-        }
-        ret.Content = sb.String()
-    }
-    
-    return &ret, nil
-}
-```
+详细的流处理架构、接口定义和使用方法请参考 [Schema模块详解](/posts/eino-04-schema-module/)。
 
 ### 3. 类型系统
 

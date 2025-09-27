@@ -1,13 +1,13 @@
 ---
-title: "关于我"
+title: "关于tommie"
 date: 2024-01-01T10:00:00+08:00
 draft: false
-description: "了解更多关于我的信息"
+description: "了解更多关于tommie信息"
 ---
 
 ## 👋 你好！
 
-我是 [Your Name]，一个热爱技术和写作的开发者。
+我是tommie，一个热爱技术和写作的开发者。
 
 ### 🚀 我的技能
 
@@ -19,7 +19,7 @@ description: "了解更多关于我的信息"
 
 ### 💼 工作经历
 
-- **现在**: 软件工程师 @ 某科技公司
+- **现在**: ***
 - **专注领域**: 全栈开发、系统架构、DevOps
 
 ### 🎯 兴趣爱好
@@ -39,9 +39,9 @@ description: "了解更多关于我的信息"
 
 ### 📬 联系方式
 
-- **Email**: your@email.com
-- **GitHub**: [@yourusername](https://github.com/yourusername)
-- **Twitter**: [@yourusername](https://twitter.com/yourusername)
+- **Email**: hawklin_0@126.com
+- **GitHub**: [@yourusername](https://github.com/haoyunlt)
+
 
 ---
 

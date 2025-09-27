@@ -318,38 +318,18 @@ async def main():
     session = SQLiteSession("conversation_123", "conversations.db")
     
     # 第一轮对话
-    result = await Runner.run(
-        agent,
-        "金门大桥在哪个城市？",
-        session=session  # 传入会话实例
-    )
-    print("第一轮:", result.final_output)  # "旧金山"
+    result = await Runner.run(agent, "金门大桥在哪个城市？", session=session)
+    print("第一轮:", result.final_output)
     
     # 第二轮对话 - 代理自动记住前面的上下文
-    result = await Runner.run(
-        agent,
-        "它在哪个州？",  # 这里的"它"指的是金门大桥
-        session=session
-    )  
-    print("第二轮:", result.final_output)  # "加利福尼亚州"
-    
-    # 第三轮对话
-    result = await Runner.run(
-        agent,
-        "那个州的人口是多少？",
-        session=session
-    )
-    print("第三轮:", result.final_output)  # "约3900万人"
+    result = await Runner.run(agent, "它在哪个州？", session=session)
+    print("第二轮:", result.final_output)
 
 if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-**会话管理特点分析**：
-1. **自动历史管理**：无需手动处理对话历史，框架自动维护
-2. **持久化存储**：支持SQLite、Redis等多种存储方式
-3. **会话隔离**：不同session_id的对话完全独立
-4. **上下文连续性**：代理能够理解前面对话中的指代关系
+**会话管理特点**：自动历史管理、持久化存储、会话隔离、上下文连续性。详细实现请参考第8章会话管理模块分析。
 
 ### 2.2.3 流式输出示例
 
@@ -401,117 +381,55 @@ if __name__ == "__main__":
     asyncio.run(main())
 ```
 
-## 2.3 最佳实践示例
-
-### 2.3.1 结构化输出示例
+## 2.3 结构化输出示例
 
 使用Pydantic模型定义结构化输出：
 
 ```python
-import asyncio
-from typing import List
 from pydantic import BaseModel, Field
 from agents import Agent, Runner
 
 class AnalysisResult(BaseModel):
-    """文本分析结果"""
     sentiment: str = Field(description="情感倾向: positive/negative/neutral")
     confidence: float = Field(description="置信度 (0.0-1.0)", ge=0.0, le=1.0)
-    key_themes: List[str] = Field(description="关键主题列表")
-    summary: str = Field(description="内容摘要", max_length=200)
+    key_themes: list[str] = Field(description="关键主题列表")
 
-# 创建文本分析代理
 analyzer_agent = Agent(
     name="文本分析师",
-    instructions="""
-    你是一个专业的文本分析师。请分析给定的文本内容，
-    确定其情感倾向、关键主题，并生成简洁的摘要。
-    """,
-    output_type=AnalysisResult  # 指定结构化输出类型
+    instructions="分析文本的情感倾向和关键主题。",
+    output_type=AnalysisResult
 )
 
-async def main():
-    text_to_analyze = """
-    今天是美好的一天！阳光明媚，我和朋友们一起去公园踏青。
-    我们享受了美味的野餐，拍了很多照片，度过了愉快的时光。
-    这样的友谊让我感到非常幸福和感激。
-    """
-    
-    result = await Runner.run(analyzer_agent, f"请分析以下文本：{text_to_analyze}")
-    
-    # result.final_output 现在是 AnalysisResult 类型
-    analysis = result.final_output
-    print(f"情感倾向: {analysis.sentiment}")
-    print(f"置信度: {analysis.confidence}")
-    print(f"关键主题: {', '.join(analysis.key_themes)}")
-    print(f"摘要: {analysis.summary}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
+# 使用
+result = await Runner.run(analyzer_agent, "分析这段文本...")
+analysis = result.final_output  # 类型为 AnalysisResult
 ```
 
-### 2.3.2 错误处理和安全防护示例
+### 2.3.2 安全防护示例
 
-展示如何使用输入输出防护机制：
+展示基础的输入输出防护机制：
 
 ```python
 import asyncio
-from agents import Agent, Runner, input_guardrail, output_guardrail
-from agents.guardrail import InputGuardrailResult, OutputGuardrailResult
+from agents import Agent, Runner, input_guardrail
 
 @input_guardrail
-async def content_safety_check(context, input_text: str) -> InputGuardrailResult:
-    """输入内容安全检查"""
+async def basic_safety_check(input_text: str):
+    """基础安全检查"""
     prohibited_keywords = ["暴力", "仇恨", "非法"]
-    
     for keyword in prohibited_keywords:
         if keyword in input_text:
-            return InputGuardrailResult(
-                tripwire_triggered=True,  # 触发安全警报
-                message=f"输入包含禁止的关键词: {keyword}"
-            )
-    
-    return InputGuardrailResult(
-        tripwire_triggered=False,
-        message="输入内容安全检查通过"
-    )
+            return {"tripwire_triggered": True, "message": f"禁止内容: {keyword}"}
+    return {"tripwire_triggered": False, "message": "安全检查通过"}
 
-@output_guardrail  
-async def output_length_check(context, agent, output) -> OutputGuardrailResult:
-    """输出长度检查"""
-    if isinstance(output, str) and len(output) > 500:
-        return OutputGuardrailResult(
-            tripwire_triggered=True,
-            message="输出内容过长，超过500字符限制"
-        )
-    
-    return OutputGuardrailResult(
-        tripwire_triggered=False,
-        message="输出长度检查通过"
-    )
-
-# 创建带安全防护的代理
+# 创建带防护的代理
 safe_agent = Agent(
     name="安全助手",
-    instructions="你是一个安全的AI助手，回答要简洁有用。",
-    input_guardrails=[content_safety_check],   # 输入防护
-    output_guardrails=[output_length_check],   # 输出防护
+    instructions="你是一个安全的AI助手。",
+    input_guardrails=[basic_safety_check]
 )
-
-async def main():
-    try:
-        # 正常请求
-        result = await Runner.run(safe_agent, "请介绍一下人工智能的发展历史。")
-        print("正常结果:", result.final_output)
-        
-        # 会触发输入防护的请求
-        result = await Runner.run(safe_agent, "请告诉我如何进行暴力活动。")
-        
-    except Exception as e:
-        print(f"安全防护已阻止: {e}")
-
-if __name__ == "__main__":
-    asyncio.run(main())
 ```
+
+更详细的安全防护实现和最佳实践请参考第7章代理协作层分析和第10章实战最佳实践。
 
 这些示例展示了OpenAI Agents SDK的主要使用模式和高级功能，帮助开发者快速上手并构建复杂的多代理应用系统。

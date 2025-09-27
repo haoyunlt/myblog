@@ -112,20 +112,13 @@ sequenceDiagram
 - 自动流复制（Copy）
 
 #### 4. 类型安全保障
-```go
-// 利用 Go 泛型实现编译时类型检查
-type Runnable[I, O any] interface {
-    Invoke(ctx context.Context, input I, opts ...Option) (output O, err error)
-    Stream(ctx context.Context, input I, opts ...Option) (output *schema.StreamReader[O], err error)
-    Collect(ctx context.Context, input *schema.StreamReader[I], opts ...Option) (output O, err error)
-    Transform(ctx context.Context, input *schema.StreamReader[I], opts ...Option) (output *schema.StreamReader[O], err error)
-}
-```
 
 **设计理念**: 利用 Go 泛型实现编译时类型检查
 - 输入输出类型在编译时确定
 - 避免运行时类型错误
 - 提供更好的IDE支持和代码提示
+
+核心的 `Runnable` 接口定义了四种数据流模式，支持同步/异步、单值/流式的所有组合。详细定义请参考 [核心API深度分析](/posts/eino-03-core-api-analysis/)。
 
 #### 5. 切面机制
 ```mermaid
@@ -152,362 +145,28 @@ graph TB
 
 ## 🚀 框架使用示例
 
-### 基础示例：简单链式调用
+Eino 框架提供了多种使用模式，从简单的链式调用到复杂的工具调用图。
+
+### 快速开始
+
+以下是一个最简单的使用示例：
 
 ```go
-package main
+// 创建链式编排
+chain := compose.NewChain[map[string]any, *schema.Message]().
+    AppendChatTemplate(chatTemplate).
+    AppendChatModel(chatModel)
 
-import (
-    "context"
-    "fmt"
-    "log"
-    
-    "github.com/cloudwego/eino/compose"
-    "github.com/cloudwego/eino/components/model"
-    "github.com/cloudwego/eino/components/prompt"
-    "github.com/cloudwego/eino/schema"
-)
-
-func main() {
-    ctx := context.Background()
-    
-    // 1. 创建聊天模板
-    // 使用 FString 格式化类型，支持 Python 风格的字符串格式化
-    chatTemplate, err := prompt.FromMessages(schema.FString,
-        schema.SystemMessage("你是一个有用的助手，专门回答关于 {topic} 的问题。"),
-        schema.UserMessage("{query}"),
-    )
-    if err != nil {
-        log.Fatal("创建聊天模板失败:", err)
-    }
-    
-    // 2. 创建聊天模型（这里使用模拟实现）
-    chatModel := &MockChatModel{}
-    
-    // 3. 创建链式编排
-    // Chain[I, O] 中 I 是输入类型，O 是输出类型
-    chain := compose.NewChain[map[string]any, *schema.Message]().
-        AppendChatTemplate(chatTemplate).  // 添加模板节点
-        AppendChatModel(chatModel)         // 添加模型节点
-    
-    // 4. 编译链
-    runnable, err := chain.Compile(ctx)
-    if err != nil {
-        log.Fatal("编译链失败:", err)
-    }
-    
-    // 5. 执行调用
-    input := map[string]any{
-        "topic": "Go语言编程",
-        "query": "什么是goroutine？",
-    }
-    
-    result, err := runnable.Invoke(ctx, input)
-    if err != nil {
-        log.Fatal("执行失败:", err)
-    }
-    
-    fmt.Printf("助手回复: %s\n", result.Content)
-}
-
-// MockChatModel 模拟聊天模型实现
-type MockChatModel struct{}
-
-func (m *MockChatModel) Generate(ctx context.Context, messages []*schema.Message, opts ...model.Option) (*schema.Message, error) {
-    // 模拟生成回复
-    return schema.AssistantMessage("Goroutine是Go语言的轻量级线程，由Go运行时管理。", nil), nil
-}
-
-func (m *MockChatModel) Stream(ctx context.Context, messages []*schema.Message, opts ...model.Option) (*schema.StreamReader[*schema.Message], error) {
-    // 模拟流式输出
-    chunks := []*schema.Message{
-        schema.AssistantMessage("Goroutine", nil),
-        schema.AssistantMessage("是Go语言的", nil),
-        schema.AssistantMessage("轻量级线程", nil),
-    }
-    return schema.StreamReaderFromArray(chunks), nil
-}
+// 编译并执行
+runnable, _ := chain.Compile(ctx)
+result, _ := runnable.Invoke(ctx, input)
 ```
 
-### 进阶示例：工具调用图
+详细的使用示例、工具调用、流式处理等高级功能请参考以下文档：
+- [核心API深度分析](/posts/eino-03-core-api-analysis/) - 详细的API使用和代码示例
+- [Components模块详解](/posts/eino-05-components-module/) - 各组件的使用方法
+- [Compose模块详解](/posts/eino-06-compose-module/) - 编排能力的使用指南
 
-```go
-package main
-
-import (
-    "context"
-    "encoding/json"
-    "fmt"
-    "log"
-    "time"
-    
-    "github.com/cloudwego/eino/compose"
-    "github.com/cloudwego/eino/components/tool"
-    "github.com/cloudwego/eino/schema"
-)
-
-func main() {
-    ctx := context.Background()
-    
-    // 1. 定义工具
-    weatherTool := &tool.Tool{
-        Info: tool.Info{
-            Name:        "get_weather",
-            Description: "获取指定城市的天气信息",
-            Parameters: map[string]any{
-                "type": "object",
-                "properties": map[string]any{
-                    "city": map[string]any{
-                        "type":        "string",
-                        "description": "城市名称",
-                    },
-                },
-                "required": []string{"city"},
-            },
-        },
-        InvokeFunc: func(ctx context.Context, params string) (string, error) {
-            var p struct {
-                City string `json:"city"`
-            }
-            if err := json.Unmarshal([]byte(params), &p); err != nil {
-                return "", err
-            }
-            
-            // 模拟天气查询
-            weather := map[string]any{
-                "city":        p.City,
-                "temperature": "22°C",
-                "condition":   "晴朗",
-                "humidity":    "65%",
-            }
-            
-            result, _ := json.Marshal(weather)
-            return string(result), nil
-        },
-    }
-    
-    // 2. 创建工具节点
-    toolsNode, err := compose.NewToolsNode(ctx, &compose.ToolsNodeConfig{
-        Tools: []*tool.Tool{weatherTool},
-    })
-    if err != nil {
-        log.Fatal("创建工具节点失败:", err)
-    }
-    
-    // 3. 创建图编排
-    graph := compose.NewGraph[map[string]any, *schema.Message]()
-    
-    // 添加聊天模型节点
-    chatModel := &ToolCallChatModel{}
-    err = graph.AddChatModelNode("chat_model", chatModel)
-    if err != nil {
-        log.Fatal("添加聊天模型节点失败:", err)
-    }
-    
-    // 添加工具节点
-    err = graph.AddToolsNode("tools", toolsNode)
-    if err != nil {
-        log.Fatal("添加工具节点失败:", err)
-    }
-    
-    // 4. 添加条件分支
-    // 根据模型输出决定是否调用工具
-    condition := func(ctx context.Context, msg *schema.Message) ([]string, error) {
-        if len(msg.ToolCalls) > 0 {
-            return []string{"tools"}, nil // 有工具调用，转到工具节点
-        }
-        return []string{compose.END}, nil // 没有工具调用，结束
-    }
-    
-    branch := compose.NewGraphBranch(condition, map[string]bool{
-        "tools":      true,
-        compose.END: true,
-    })
-    
-    // 5. 构建图结构
-    err = graph.AddEdge(compose.START, "chat_model")
-    if err != nil {
-        log.Fatal("添加边失败:", err)
-    }
-    
-    err = graph.AddBranch("chat_model", branch)
-    if err != nil {
-        log.Fatal("添加分支失败:", err)
-    }
-    
-    err = graph.AddEdge("tools", "chat_model") // 工具执行后回到模型
-    if err != nil {
-        log.Fatal("添加边失败:", err)
-    }
-    
-    // 6. 编译并执行
-    runnable, err := graph.Compile(ctx)
-    if err != nil {
-        log.Fatal("编译图失败:", err)
-    }
-    
-    input := map[string]any{
-        "messages": []*schema.Message{
-            schema.UserMessage("北京今天天气怎么样？"),
-        },
-    }
-    
-    result, err := runnable.Invoke(ctx, input)
-    if err != nil {
-        log.Fatal("执行失败:", err)
-    }
-    
-    fmt.Printf("最终回复: %s\n", result.Content)
-}
-
-// ToolCallChatModel 支持工具调用的模拟聊天模型
-type ToolCallChatModel struct{}
-
-func (m *ToolCallChatModel) Generate(ctx context.Context, messages []*schema.Message, opts ...model.Option) (*schema.Message, error) {
-    lastMsg := messages[len(messages)-1]
-    
-    // 如果是用户询问天气，生成工具调用
-    if lastMsg.Role == schema.User && contains(lastMsg.Content, "天气") {
-        toolCall := schema.ToolCall{
-            ID:   "call_weather_001",
-            Type: "function",
-            Function: schema.FunctionCall{
-                Name:      "get_weather",
-                Arguments: `{"city": "北京"}`,
-            },
-        }
-        
-        return schema.AssistantMessage("我来为您查询北京的天气信息。", []schema.ToolCall{toolCall}), nil
-    }
-    
-    // 如果有工具调用结果，生成最终回复
-    for _, msg := range messages {
-        if msg.Role == schema.Tool {
-            return schema.AssistantMessage("根据查询结果，北京今天天气晴朗，温度22°C，湿度65%。", nil), nil
-        }
-    }
-    
-    return schema.AssistantMessage("我无法理解您的问题，请重新描述。", nil), nil
-}
-
-func (m *ToolCallChatModel) Stream(ctx context.Context, messages []*schema.Message, opts ...model.Option) (*schema.StreamReader[*schema.Message], error) {
-    msg, err := m.Generate(ctx, messages, opts...)
-    if err != nil {
-        return nil, err
-    }
-    return schema.StreamReaderFromArray([]*schema.Message{msg}), nil
-}
-
-func contains(s, substr string) bool {
-    return len(s) >= len(substr) && (s == substr || len(s) > len(substr) && 
-        (s[:len(substr)] == substr || s[len(s)-len(substr):] == substr || 
-         findInString(s, substr)))
-}
-
-func findInString(s, substr string) bool {
-    for i := 0; i <= len(s)-len(substr); i++ {
-        if s[i:i+len(substr)] == substr {
-            return true
-        }
-    }
-    return false
-}
-```
-
-### 流式处理示例
-
-```go
-package main
-
-import (
-    "context"
-    "fmt"
-    "io"
-    "log"
-    
-    "github.com/cloudwego/eino/compose"
-    "github.com/cloudwego/eino/schema"
-)
-
-func main() {
-    ctx := context.Background()
-    
-    // 创建支持流式输出的处理链
-    processor := compose.InvokableLambda(func(ctx context.Context, input string) (*schema.Message, error) {
-        return schema.AssistantMessage(fmt.Sprintf("处理结果: %s", input), nil), nil
-    })
-    
-    chain := compose.NewChain[string, *schema.Message]().
-        AppendLambda("processor", processor)
-    
-    runnable, err := chain.Compile(ctx)
-    if err != nil {
-        log.Fatal("编译失败:", err)
-    }
-    
-    // 1. 普通调用 (Invoke)
-    fmt.Println("=== 普通调用 ===")
-    result, err := runnable.Invoke(ctx, "Hello World")
-    if err != nil {
-        log.Fatal("调用失败:", err)
-    }
-    fmt.Printf("结果: %s\n\n", result.Content)
-    
-    // 2. 流式输出 (Stream)
-    fmt.Println("=== 流式输出 ===")
-    stream, err := runnable.Stream(ctx, "Hello Stream")
-    if err != nil {
-        log.Fatal("流式调用失败:", err)
-    }
-    defer stream.Close()
-    
-    for {
-        chunk, err := stream.Recv()
-        if err == io.EOF {
-            break
-        }
-        if err != nil {
-            log.Fatal("接收流数据失败:", err)
-        }
-        fmt.Printf("流块: %s\n", chunk.Content)
-    }
-    
-    // 3. 流式输入处理 (Collect)
-    fmt.println("\n=== 流式输入处理 ===")
-    inputStream := schema.StreamReaderFromArray([]string{
-        "输入1", "输入2", "输入3",
-    })
-    
-    collectResult, err := runnable.Collect(ctx, inputStream)
-    if err != nil {
-        log.Fatal("流式输入处理失败:", err)
-    }
-    fmt.Printf("收集结果: %s\n\n", collectResult.Content)
-    
-    // 4. 流到流转换 (Transform)
-    fmt.Println("=== 流到流转换 ===")
-    inputStream2 := schema.StreamReaderFromArray([]string{
-        "转换输入1", "转换输入2",
-    })
-    
-    outputStream, err := runnable.Transform(ctx, inputStream2)
-    if err != nil {
-        log.Fatal("流转换失败:", err)
-    }
-    defer outputStream.Close()
-    
-    for {
-        chunk, err := outputStream.Recv()
-        if err == io.EOF {
-            break
-        }
-        if err != nil {
-            log.Fatal("接收转换流失败:", err)
-        }
-        fmt.Printf("转换结果: %s\n", chunk.Content)
-    }
-}
-```
 
 ## 🎯 适用场景
 
@@ -627,6 +286,19 @@ graph TB
 
 ---
 
-**下一篇**: [整体架构分析](/posts/eino-02-architecture-analysis/) - 深入分析Eino的分层架构设计和模块交互关系
+## 🔗 相关文档
+
+### 系列文档
+1. **[Eino 框架概述与设计理念](/posts/eino-01-framework-overview/)** - 本文档
+2. **[整体架构分析](/posts/eino-02-architecture-analysis/)** - 分层架构设计和模块交互关系  
+3. **[核心API深度分析](/posts/eino-03-core-api-analysis/)** - Runnable接口、编排API和Lambda函数
+4. **[Schema模块详解](/posts/eino-04-schema-module/)** - 消息系统、流处理和工具定义
+5. **[Components模块详解](/posts/eino-05-components-module/)** - 组件抽象和实现
+6. **[Compose模块详解](/posts/eino-06-compose-module/)** - 编排引擎和执行机制
+
+### 深入学习建议
+- 如果您是初次接触，建议按顺序阅读系列文档
+- 如果要了解具体API，请直接查看[核心API深度分析](/posts/eino-03-core-api-analysis/)
+- 如果要开发自定义组件，请参考[Components模块详解](/posts/eino-05-components-module/)
 
 **更新时间**: 2024-12-19 | **文档版本**: v1.0

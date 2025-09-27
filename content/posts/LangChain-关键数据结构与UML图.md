@@ -190,55 +190,9 @@ classDiagram
     note for ToolMessage : "工具执行结果\n必须包含调用ID"
 ```
 
-### 2.2 消息内容结构详解
+### 2.2 消息内容类型
 
-```python
-# 消息内容的详细结构定义
-from typing import Union, List, Dict, Any, Optional
-from pydantic import BaseModel, Field
-
-class TextContent(BaseModel):
-    """纯文本内容"""
-    type: str = "text"
-    text: str
-
-class ImageUrlContent(BaseModel):
-    """图片URL内容"""
-    type: str = "image_url"
-    image_url: Dict[str, str] = Field(description="包含'url'键的字典")
-
-class ImageContent(BaseModel):
-    """图片数据内容"""
-    type: str = "image"
-    source: Dict[str, Any] = Field(description="包含图片数据和格式信息")
-
-class AudioContent(BaseModel):
-    """音频内容"""
-    type: str = "audio"
-    source: Dict[str, Any] = Field(description="音频数据和格式信息")
-
-class VideoContent(BaseModel):
-    """视频内容"""
-    type: str = "video"
-    source: Dict[str, Any] = Field(description="视频数据和格式信息")
-
-class DocumentContent(BaseModel):
-    """文档内容"""
-    type: str = "document"
-    source: Dict[str, Any] = Field(description="文档数据和格式信息")
-
-# 联合类型定义
-MessageContent = Union[
-    str,  # 简单文本
-    TextContent,
-    ImageUrlContent,
-    ImageContent,
-    AudioContent,
-    VideoContent,
-    DocumentContent,
-    Dict[str, Any]  # 自定义内容类型
-]
-```
+LangChain支持多种消息内容类型，包括文本、图片、音频、视频和文档。详细的内容结构定义请参考核心模块详解文档。
 
 ### 2.3 工具调用数据结构
 
@@ -330,45 +284,9 @@ classDiagram
     note for ChatGenerationChunk : "流式聊天生成块\n支持增量合并"
 ```
 
-### 3.2 生成信息结构
+### 3.2 生成信息类型
 
-```python
-# 生成信息的详细结构
-from typing import Dict, Any, Optional
-from uuid import UUID
-
-class TokenUsage(BaseModel):
-    """Token使用统计"""
-    prompt_tokens: int = Field(description="提示词消耗的token数")
-    completion_tokens: int = Field(description="生成内容消耗的token数")
-    total_tokens: int = Field(description="总token数")
-
-class GenerationInfo(BaseModel):
-    """生成信息详情"""
-    finish_reason: Optional[str] = Field(
-        description="完成原因：stop, length, function_call, content_filter等"
-    )
-    logprobs: Optional[Dict[str, Any]] = Field(description="对数概率信息")
-    token_usage: Optional[TokenUsage] = Field(description="Token使用统计")
-    model_name: Optional[str] = Field(description="使用的模型名称")
-    system_fingerprint: Optional[str] = Field(description="系统指纹")
-
-class LLMOutput(BaseModel):
-    """LLM输出的元信息"""
-    token_usage: Optional[TokenUsage] = Field(description="总Token使用统计")
-    model_name: Optional[str] = Field(description="模型名称")
-    system_fingerprint: Optional[str] = Field(description="系统指纹")
-    created: Optional[int] = Field(description="创建时间戳")
-    
-class StreamEvent(BaseModel):
-    """流式事件"""
-    event: str = Field(description="事件类型")
-    name: str = Field(description="组件名称")
-    run_id: UUID = Field(description="运行ID")
-    tags: List[str] = Field(default_factory=list, description="标签")
-    metadata: Dict[str, Any] = Field(default_factory=dict, description="元数据")
-    data: Dict[str, Any] = Field(description="事件数据")
-```
+生成信息包括Token使用统计、完成原因、模型信息等。具体的数据结构定义可参考核心模块详解文档。
 
 ## 4. 回调系统数据结构
 
@@ -438,221 +356,14 @@ classDiagram
 
 ### 4.2 回调处理器基类
 
-```python
-# 回调处理器的详细结构
-from typing import Any, Dict, List, Optional, Union
-from uuid import UUID
-from abc import ABC, abstractmethod
+BaseCallbackHandler定义了LangChain执行过程中各种事件的回调接口，包括：
 
-class BaseCallbackHandler(ABC):
-    """
-    回调处理器基类
-    
-    定义了LangChain执行过程中各种事件的回调接口
-    所有自定义回调处理器都应继承此类
-    """
-    
-    ignore_llm: bool = False
-    """是否忽略LLM相关事件"""
-    
-    ignore_chain: bool = False
-    """是否忽略链相关事件"""
-    
-    ignore_agent: bool = False
-    """是否忽略Agent相关事件"""
-    
-    ignore_retriever: bool = False
-    """是否忽略检索器相关事件"""
-    
-    ignore_chat_model: bool = False
-    """是否忽略聊天模型相关事件"""
-    
-    raise_error: bool = False
-    """回调异常时是否抛出错误"""
-    
-    run_inline: bool = False
-    """是否同步执行回调"""
-    
-    # LLM事件回调
-    def on_llm_start(
-        self,
-        serialized: Dict[str, Any],
-        prompts: List[str],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """LLM开始生成时的回调"""
-        pass
-    
-    def on_llm_new_token(
-        self,
-        token: str,
-        *,
-        chunk: Optional[Union[GenerationChunk, ChatGenerationChunk]] = None,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """LLM生成新token时的回调"""
-        pass
-    
-    def on_llm_end(
-        self,
-        response: LLMResult,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """LLM完成生成时的回调"""
-        pass
-    
-    def on_llm_error(
-        self,
-        error: BaseException,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """LLM生成出错时的回调"""
-        pass
-    
-    # 聊天模型事件回调
-    def on_chat_model_start(
-        self,
-        serialized: Dict[str, Any],
-        messages: List[List[BaseMessage]],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """聊天模型开始生成时的回调"""
-        pass
-    
-    # 链事件回调
-    def on_chain_start(
-        self,
-        serialized: Dict[str, Any],
-        inputs: Dict[str, Any],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """链开始执行时的回调"""
-        pass
-    
-    def on_chain_end(
-        self,
-        outputs: Dict[str, Any],
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """链执行结束时的回调"""
-        pass
-    
-    def on_chain_error(
-        self,
-        error: BaseException,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """链执行出错时的回调"""
-        pass
-    
-    # 工具事件回调
-    def on_tool_start(
-        self,
-        serialized: Dict[str, Any],
-        input_str: str,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        tags: Optional[List[str]] = None,
-        metadata: Optional[Dict[str, Any]] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """工具开始执行时的回调"""
-        pass
-    
-    def on_tool_end(
-        self,
-        output: str,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """工具执行结束时的回调"""
-        pass
-    
-    def on_tool_error(
-        self,
-        error: BaseException,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """工具执行出错时的回调"""
-        pass
-    
-    # Agent事件回调
-    def on_agent_action(
-        self,
-        action: AgentAction,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Agent执行动作时的回调"""
-        pass
-    
-    def on_agent_finish(
-        self,
-        finish: AgentFinish,
-        *,
-        run_id: UUID,
-        parent_run_id: Optional[UUID] = None,
-        **kwargs: Any,
-    ) -> Any:
-        """Agent完成任务时的回调"""
-        pass
+- **LLM事件**: `on_llm_start`、`on_llm_new_token`、`on_llm_end`、`on_llm_error`
+- **链事件**: `on_chain_start`、`on_chain_end`、`on_chain_error`
+- **工具事件**: `on_tool_start`、`on_tool_end`、`on_tool_error`
+- **Agent事件**: `on_agent_action`、`on_agent_finish`
 
-class Run(BaseModel):
-    """执行记录"""
-    id: UUID = Field(description="运行ID")
-    name: str = Field(description="运行名称")
-    start_time: Optional[datetime] = Field(description="开始时间")
-    end_time: Optional[datetime] = Field(description="结束时间")
-    extra: Dict[str, Any] = Field(default_factory=dict, description="额外信息")
-    error: Optional[str] = Field(description="错误信息")
-    serialized: Dict[str, Any] = Field(description="序列化信息")
-    events: List[Dict[str, Any]] = Field(default_factory=list, description="事件列表")
-    inputs: Dict[str, Any] = Field(description="输入数据")
-    outputs: Optional[Dict[str, Any]] = Field(description="输出数据")
-    reference_example_id: Optional[UUID] = Field(description="参考示例ID")
-    parent_run_id: Optional[UUID] = Field(description="父运行ID")
-    tags: List[str] = Field(default_factory=list, description="标签")
-    run_type: str = Field(description="运行类型")
-    session_id: Optional[UUID] = Field(description="会话ID")
-    session_name: Optional[str] = Field(description="会话名称")
-```
+具体实现代码请参考核心模块详解文档。
 
 ## 5. 提示模板数据结构
 

@@ -20,32 +20,25 @@ weight: 1
 演示如何使用LangChain进行基础的LLM交互
 """
 from langchain_core.prompts import PromptTemplate
-from langchain_core.runnables import RunnableLambda
 from langchain_openai import ChatOpenAI
 
 # 创建提示模板
-# PromptTemplate是LangChain中用于结构化提示的核心类
-# 它允许动态插入变量，确保提示的一致性和可重用性
 prompt = PromptTemplate(
-    input_variables=["topic"],  # 定义输入变量
-    template="请简要解释 {topic} 的概念。"  # 模板字符串，{topic}会被替换
+    input_variables=["topic"],
+    template="请简要解释 {topic} 的概念。"
 )
 
 # 初始化聊天模型
-# ChatOpenAI是BaseChatModel的实现，提供与OpenAI ChatGPT的接口
 model = ChatOpenAI(
-    model="gpt-3.5-turbo",  # 指定模型版本
-    temperature=0.7,        # 控制输出的随机性 (0-1)
-    max_tokens=150         # 限制生成的最大token数
+    model="gpt-3.5-turbo",
+    temperature=0.7,
+    max_tokens=150
 )
 
 # 创建处理链
-# 使用LCEL (LangChain Expression Language) 语法将组件连接
-# "|" 操作符创建RunnableSequence，实现数据的管道式处理
 chain = prompt | model
 
 # 执行调用
-# invoke方法是Runnable接口的核心方法，执行整个处理链
 result = chain.invoke({"topic": "机器学习"})
 print(f"模型回复: {result.content}")
 
@@ -53,13 +46,11 @@ print(f"模型回复: {result.content}")
 import asyncio
 
 async def async_example():
-    """异步执行示例，适用于需要处理大量并发请求的场景"""
     result = await chain.ainvoke({"topic": "深度学习"})
     print(f"异步回复: {result.content}")
 
 # 批量处理示例
 topics = ["自然语言处理", "计算机视觉", "强化学习"]
-# batch方法自动并行处理多个输入，提高处理效率
 batch_results = chain.batch([{"topic": topic} for topic in topics])
 for i, result in enumerate(batch_results):
     print(f"话题 {topics[i]}: {result.content}")
@@ -96,28 +87,18 @@ documents = [
 ]
 
 # 2. 创建向量存储
-# OpenAIEmbeddings将文本转换为向量表示
 embeddings = OpenAIEmbeddings(model="text-embedding-ada-002")
-
-# InMemoryVectorStore是一个内存中的向量存储实现
-# 适用于小规模数据或原型开发
 vectorstore = InMemoryVectorStore(embedding=embeddings)
-
-# 添加文档到向量存储
-# 这个过程会自动计算每个文档的嵌入向量并存储
 document_ids = vectorstore.add_documents(documents)
 print(f"添加了 {len(document_ids)} 个文档到向量存储")
 
 # 3. 创建检索器
-# as_retriever方法将向量存储转换为检索器
-# 检索器实现了BaseRetriever接口，提供统一的检索API
 retriever = vectorstore.as_retriever(
-    search_type="similarity",    # 使用相似性搜索
-    search_kwargs={"k": 2}      # 返回最相似的2个文档
+    search_type="similarity",
+    search_kwargs={"k": 2}
 )
 
 # 4. 构建RAG提示模板
-# ChatPromptTemplate用于构造聊天格式的提示
 rag_prompt = ChatPromptTemplate.from_template("""
 基于以下上下文回答问题:
 
