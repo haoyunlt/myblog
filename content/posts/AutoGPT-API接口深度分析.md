@@ -15,18 +15,6 @@ slug: "AutoGPT-API接口深度分析"
 
 AutoGPT平台提供了完整的RESTful API和WebSocket接口，支持智能体管理、执行、商店、用户认证等核心功能。本文档将深入分析每个API端点的实现细节、调用链路和关键函数。
 
-## 目录
-
-1. [API架构概览](#api架构概览)
-2. [认证系统API](#认证系统api)
-3. [智能体管理API](#智能体管理api)
-4. [执行引擎API](#执行引擎api)
-5. [应用商店API](#应用商店api)
-6. [Block系统API](#block系统api)
-7. [WebSocket实时通信](#websocket实时通信)
-8. [外部集成API](#外部集成api)
-9. [API调用链路分析](#api调用链路分析)
-
 ## API架构概览
 
 ### 整体API架构图

@@ -1,4 +1,14 @@
-# GitHub MCP Server - API详细说明与调用链路分析
+---
+title: "GitHub MCP Server - API详细说明与调用链路分析"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['源码分析', '技术文档', 'API']
+categories: ['技术分析']
+description: "GitHub MCP Server - API详细说明与调用链路分析的深入技术分析文档"
+keywords: ['源码分析', '技术文档', 'API']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. API 总览
 

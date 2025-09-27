@@ -1,4 +1,14 @@
-# Home Assistant Core 源码深度解析 - 数据存储系统篇
+---
+title: "Home Assistant Core 源码深度解析 - 数据存储系统篇"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['智能家居', '自动化', 'Python', '源码分析', 'Home Assistant']
+categories: ['语音助手']
+description: "Home Assistant Core 源码深度解析 - 数据存储系统篇的深入技术分析文档"
+keywords: ['智能家居', '自动化', 'Python', '源码分析', 'Home Assistant']
+author: "技术分析师"
+weight: 1
+---
 
 ## 概述
 
@@ -2299,4 +2309,4 @@ Home Assistant的数据存储系统提供了完整的数据持久化解决方案
 ## 下一步分析
 
 接下来将继续分析其他重要模块：
-- [服务和自动化系统](./09-服务自动化分析.md) - 深入分析Home Assistant的服务调用和自动化引擎
+- [服务和自动化系统](/posts/09-服务自动化分析/) - 深入分析Home Assistant的服务调用和自动化引擎

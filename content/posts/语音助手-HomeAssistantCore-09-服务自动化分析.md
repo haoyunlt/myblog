@@ -1,4 +1,14 @@
-# Home Assistant Core 源码深度解析 - 服务与自动化系统篇
+---
+title: "Home Assistant Core 源码深度解析 - 服务与自动化系统篇"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['智能家居', '自动化', 'Python', '源码分析', 'Home Assistant']
+categories: ['语音助手']
+description: "Home Assistant Core 源码深度解析 - 服务与自动化系统篇的深入技术分析文档"
+keywords: ['智能家居', '自动化', 'Python', '源码分析', 'Home Assistant']
+author: "技术分析师"
+weight: 1
+---
 
 ## 概述
 
@@ -2367,14 +2377,14 @@ Home Assistant的服务与自动化系统提供了强大而灵活的行为执行
 
 至此，我们已经完成了Home Assistant Core项目的核心模块深入分析。整个文档体系包括：
 
-1. [整体架构分析](./01-整体架构分析.md) - 项目结构和设计理念
-2. [核心模块分析](./02-核心模块分析.md) - HomeAssistant、EventBus、StateMachine等
-3. [组件系统分析](./03-组件系统分析.md) - 动态加载和管理机制
-4. [实体平台分析](./04-实体平台分析.md) - 设备抽象和生命周期
-5. [API接口分析](./05-API接口分析.md) - REST和WebSocket API
-6. [数据存储分析](./06-数据存储分析.md) - 持久化和配置管理  
-7. [关键数据结构UML](./07-关键数据结构UML.md) - 核心数据模型
-8. [实战经验与最佳实践](./08-实战经验与最佳实践.md) - 开发指南
-9. [服务自动化分析](./09-服务自动化分析.md) - 行为执行引擎
+1. [整体架构分析](/posts/01-整体架构分析/) - 项目结构和设计理念
+2. [核心模块分析](/posts/02-核心模块分析/) - HomeAssistant、EventBus、StateMachine等
+3. [组件系统分析](/posts/03-组件系统分析/) - 动态加载和管理机制
+4. [实体平台分析](/posts/04-实体平台分析/) - 设备抽象和生命周期
+5. [API接口分析](/posts/05-API接口分析/) - REST和WebSocket API
+6. [数据存储分析](/posts/06-数据存储分析/) - 持久化和配置管理  
+7. [关键数据结构UML](/posts/07-关键数据结构UML/) - 核心数据模型
+8. [实战经验与最佳实践](/posts/08-实战经验与最佳实践/) - 开发指南
+9. [服务自动化分析](/posts/09-服务自动化分析/) - 行为执行引擎
 
 这套完整的技术文档为深入理解和掌握Home Assistant Core提供了全面的指导。

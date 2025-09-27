@@ -1597,7 +1597,6 @@ asyncio.run(team_collaboration_example())
 
 ### 6.5 关键函数：核心代码要点、调用链与时序图
 
-
 - BaseChatAgent.run / run_stream（任务执行入口）
 
 ```python
@@ -1744,7 +1743,6 @@ classDiagram
     Team <|.. BaseGroupChat
     BaseGroupChat o--> ChatAgentContainer : contains
 ```
-
 
 ## 7. 总结
 

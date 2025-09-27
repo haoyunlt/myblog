@@ -1,4 +1,14 @@
-# LiveKit Agents 数据结构与UML图
+---
+title: "LiveKit Agents 数据结构与UML图"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['WebRTC', '实时通信', 'LiveKit', '语音处理', '架构设计']
+categories: ['语音助手']
+description: "LiveKit Agents 数据结构与UML图的深入技术分析文档"
+keywords: ['WebRTC', '实时通信', 'LiveKit', '语音处理', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 核心数据结构概览
 

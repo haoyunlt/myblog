@@ -21,7 +21,7 @@ slug: "AutoGPT-文档索引"
 
 ### 🚀 快速开始
 
-#### [AutoGPT-框架完整使用手册](./AutoGPT-框架完整使用手册.md)
+#### [AutoGPT-框架完整使用手册](/posts/AutoGPT-框架完整使用手册/)
 **推荐优先阅读** ⭐⭐⭐⭐⭐
 - 从入门到精通的完整开发指南
 - API接口详解和调用示例
@@ -30,13 +30,13 @@ slug: "AutoGPT-文档索引"
 
 ### 🏗️ 架构设计
 
-#### [AutoGPT-平台架构总览](./AutoGPT-平台架构总览.md)
+#### [AutoGPT-平台架构总览](/posts/AutoGPT-平台架构总览/)
 - 整体系统架构设计
 - 核心组件关系图
 - 技术栈选型分析
 - 部署架构说明
 
-#### [AutoGPT-整体架构与模块交互图](./AutoGPT-整体架构与模块交互图.md)
+#### [AutoGPT-整体架构与模块交互图](/posts/AutoGPT-整体架构与模块交互图/)
 - 详细的模块交互关系
 - 数据流向分析
 - 接口设计说明
@@ -44,7 +44,7 @@ slug: "AutoGPT-文档索引"
 
 ### 🔧 核心模块深度分析
 
-#### [AutoGPT-后端执行引擎深度剖析](./AutoGPT-后端执行引擎深度剖析.md)
+#### [AutoGPT-后端执行引擎深度剖析](/posts/AutoGPT-后端执行引擎深度剖析/)
 **核心技术文档** ⭐⭐⭐⭐⭐
 - ExecutionManager执行管理器详解
 - ExecutionProcessor执行处理器源码分析
@@ -52,7 +52,7 @@ slug: "AutoGPT-文档索引"
 - 分布式任务调度机制
 - Redis队列和状态管理
 
-#### [AutoGPT-Block系统架构深度剖析](./AutoGPT-Block系统架构深度剖析.md)
+#### [AutoGPT-Block系统架构深度剖析](/posts/AutoGPT-Block系统架构深度剖析/)
 **插件开发必读** ⭐⭐⭐⭐⭐
 - Block插件化架构设计
 - 动态加载和注册机制
@@ -60,13 +60,13 @@ slug: "AutoGPT-文档索引"
 - 凭据管理和沙箱执行
 - 自定义Block开发指南
 
-#### [AutoGPT-前端架构模块深度分析](./AutoGPT-前端架构模块深度分析.md)
+#### [AutoGPT-前端架构模块深度分析](/posts/AutoGPT-前端架构模块深度分析/)
 - React + Next.js架构分析
 - 组件化设计模式
 - 状态管理和数据流
 - UI/UX设计原则
 
-#### [AutoGPT-共享库深度剖析](./AutoGPT-共享库深度剖析.md)
+#### [AutoGPT-共享库深度剖析](/posts/AutoGPT-共享库深度剖析/)
 **基础设施详解** ⭐⭐⭐⭐
 - JWT认证系统实现
 - 分布式限流机制
@@ -76,7 +76,7 @@ slug: "AutoGPT-文档索引"
 
 ### 🤖 AI Agent技术
 
-#### [AutoGPT-AI Agent智能体核心技术剖析](./AutoGPT-AI Agent智能体核心技术剖析.md)
+#### [AutoGPT-AI Agent智能体核心技术剖析](/posts/AutoGPT-AI Agent智能体核心技术剖析/)
 - Agent架构设计原理
 - 智能决策和规划算法
 - 多模态交互机制
@@ -84,7 +84,7 @@ slug: "AutoGPT-文档索引"
 
 ### 🌐 API接口文档
 
-#### [AutoGPT-API接口深度分析](./AutoGPT-API接口深度分析.md)
+#### [AutoGPT-API接口深度分析](/posts/AutoGPT-API接口深度分析/)
 - REST API完整规范
 - GraphQL接口设计
 - WebSocket实时通信
@@ -93,7 +93,7 @@ slug: "AutoGPT-文档索引"
 
 ### 📊 数据结构设计
 
-#### [AutoGPT-关键数据结构UML分析](./AutoGPT-关键数据结构UML分析.md)
+#### [AutoGPT-关键数据结构UML分析](/posts/AutoGPT-关键数据结构UML分析/)
 - 核心数据模型UML图
 - 数据库设计和关系
 - 数据一致性约束
@@ -101,7 +101,7 @@ slug: "AutoGPT-文档索引"
 
 ### 💡 最佳实践
 
-#### [AutoGPT-最佳实践与实战经验](./AutoGPT-最佳实践与实战经验.md)
+#### [AutoGPT-最佳实践与实战经验](/posts/AutoGPT-最佳实践与实战经验/)
 - 开发最佳实践总结
 - 性能优化技巧
 - 常见问题解决方案
@@ -109,7 +109,7 @@ slug: "AutoGPT-文档索引"
 
 ### 📋 工作总结
 
-#### [AutoGPT-文档完善工作总结](./AutoGPT-文档完善工作总结.md)
+#### [AutoGPT-文档完善工作总结](/posts/AutoGPT-文档完善工作总结/)
 - 文档完善工作报告
 - 技术分析成果总结
 - 后续改进建议
@@ -117,21 +117,21 @@ slug: "AutoGPT-文档索引"
 ## 🎯 阅读路径推荐
 
 ### 新手入门路径
-1. [框架完整使用手册](./AutoGPT-框架完整使用手册.md) - 快速上手
-2. [平台架构总览](./AutoGPT-平台架构总览.md) - 理解整体架构
-3. [API接口深度分析](./AutoGPT-API接口深度分析.md) - 学习接口调用
+1. [框架完整使用手册](/posts/AutoGPT-框架完整使用手册/) - 快速上手
+2. [平台架构总览](/posts/AutoGPT-平台架构总览/) - 理解整体架构
+3. [API接口深度分析](/posts/AutoGPT-API接口深度分析/) - 学习接口调用
 
 ### 开发者进阶路径
-1. [后端执行引擎深度剖析](./AutoGPT-后端执行引擎深度剖析.md) - 理解核心机制
-2. [Block系统架构深度剖析](./AutoGPT-Block系统架构深度剖析.md) - 插件开发
-3. [共享库深度剖析](./AutoGPT-共享库深度剖析.md) - 基础设施
-4. [最佳实践与实战经验](./AutoGPT-最佳实践与实战经验.md) - 优化技巧
+1. [后端执行引擎深度剖析](/posts/AutoGPT-后端执行引擎深度剖析/) - 理解核心机制
+2. [Block系统架构深度剖析](/posts/AutoGPT-Block系统架构深度剖析/) - 插件开发
+3. [共享库深度剖析](/posts/AutoGPT-共享库深度剖析/) - 基础设施
+4. [最佳实践与实战经验](/posts/AutoGPT-最佳实践与实战经验/) - 优化技巧
 
 ### 架构师学习路径
-1. [整体架构与模块交互图](./AutoGPT-整体架构与模块交互图.md) - 系统设计
-2. [关键数据结构UML分析](./AutoGPT-关键数据结构UML分析.md) - 数据建模
-3. [AI Agent智能体核心技术剖析](./AutoGPT-AI Agent智能体核心技术剖析.md) - AI技术
-4. [前端架构模块深度分析](./AutoGPT-前端架构模块深度分析.md) - 前端设计
+1. [整体架构与模块交互图](/posts/AutoGPT-整体架构与模块交互图/) - 系统设计
+2. [关键数据结构UML分析](/posts/AutoGPT-关键数据结构UML分析/) - 数据建模
+3. [AI Agent智能体核心技术剖析](/posts/AutoGPT-AI Agent智能体核心技术剖析/) - AI技术
+4. [前端架构模块深度分析](/posts/AutoGPT-前端架构模块深度分析/) - 前端设计
 
 ## 📈 文档特色
 

@@ -1,4 +1,14 @@
-# Envoy使用示例和最佳实践
+---
+title: "Envoy使用示例和最佳实践"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['代理', 'C++', 'Envoy', '负载均衡', '微服务', '最佳实践']
+categories: ['代理服务器']
+description: "Envoy使用示例和最佳实践的深入技术分析文档"
+keywords: ['代理', 'C++', 'Envoy', '负载均衡', '微服务', '最佳实践']
+author: "技术分析师"
+weight: 1
+---
 
 ## 概述
 
@@ -576,7 +586,6 @@ class ControlPlaneServer:
         self.nonce += 1
         return str(self.nonce)
 
-
 class AggregatedDiscoveryService(discovery_service_pb2_grpc.AggregatedDiscoveryServiceServicer):
     """聚合发现服务实现"""
     
@@ -619,7 +628,6 @@ class AggregatedDiscoveryService(discovery_service_pb2_grpc.AggregatedDiscoveryS
                 logger.info(f"发送集群配置，版本: {response.version_info}")
                 yield response
 
-
 def main():
     """主函数"""
     # 创建控制平面
@@ -647,7 +655,6 @@ def main():
     except KeyboardInterrupt:
         logger.info("正在关闭服务器...")
         server.stop(0)
-
 
 if __name__ == "__main__":
     main()

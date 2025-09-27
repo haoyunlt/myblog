@@ -2408,7 +2408,6 @@ ENTERPRISE_API_GOVERNANCE = {
 }
 ```
 
-
 ## 9. 关键函数核心代码与说明（精简摘录）
 
 以下为控制器模块中与鉴权、对话/完成接口、SSE流式返回和错误治理相关的关键函数精简代码摘录，聚焦主要控制流与异常路径，便于与源码交叉对照。
@@ -2519,7 +2518,6 @@ class APIErrorHandler:
 - ServiceAPIAuthMiddleware.validate_app_token：统一鉴权注入与错误分类。
 - APIErrorHandler.register_error_handlers：按层注册统一错误处理；标准化响应体。
 
-
 ## 10. 关键函数调用链（按接口）
 
 ```text
@@ -2548,7 +2546,6 @@ Web 前端接口 (/api/...)
   -> WebCompletionApi.post / WebConversationListApi.get
   -> WebAppGenerateService / WebConversationService
 ```
-
 
 ## 11. 统一时序图（精简版）
 
@@ -2588,7 +2585,6 @@ sequenceDiagram
   WebSvc-->>Client: SSE/阻塞结果
 ```
 
-
 ## 12. 关键结构与继承关系（类图）
 
 ```mermaid
@@ -2607,5 +2603,4 @@ classDiagram
   WebAuthMiddleware <.. WebConversationListApi : validate_web_user_token
   APIErrorHandler <.. ExternalApi : register_error_handlers
 ```
-
 

@@ -1,4 +1,14 @@
-# Eino Callbacks 模块详解
+---
+title: "Eino Callbacks 模块详解"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['Python', 'AI框架', 'LLM应用', 'Eino']
+categories: ['AI框架']
+description: "Eino Callbacks 模块详解的深入技术分析文档"
+keywords: ['Python', 'AI框架', 'LLM应用', 'Eino']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 概述
 
@@ -1627,6 +1637,6 @@ Callbacks 模块是 Eino 框架的重要组成部分，提供了强大的横切�
 
 ---
 
-**上一篇**: [ADK模块详解](eino-07-adk-module.md) | **下一篇**: [关键数据结构与继承关系](eino-09-data-structures.md)
+**上一篇**: [ADK模块详解](/posts/eino-07-adk-module/) | **下一篇**: [关键数据结构与继承关系](/posts/eino-09-data-structures/)
 
 **更新时间**: 2024-12-19 | **文档版本**: v1.0

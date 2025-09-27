@@ -1,4 +1,14 @@
-# FastAPI 源码剖析 - 关键数据结构 UML 图
+---
+title: "FastAPI 源码剖析 - 关键数据结构 UML 图"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['Python', 'Web框架', '源码分析', 'FastAPI', 'API', '架构设计']
+categories: ['Python框架', 'FastAPI']
+description: "FastAPI 源码剖析 - 关键数据结构 UML 图的深入技术分析文档"
+keywords: ['Python', 'Web框架', '源码分析', 'FastAPI', 'API', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 整体数据结构关系图
 

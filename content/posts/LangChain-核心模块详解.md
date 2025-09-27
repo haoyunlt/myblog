@@ -1,4 +1,14 @@
-# LangChain 源码剖析 - 核心模块详解
+---
+title: "LangChain 源码剖析 - 核心模块详解"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['源码分析', '技术文档']
+categories: ['技术分析']
+description: "LangChain 源码剖析 - 核心模块详解的深入技术分析文档"
+keywords: ['源码分析', '技术文档']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. Core模块 (langchain-core)
 
@@ -394,7 +404,6 @@ class RunnableSequence(RunnableSerializable[Input, Output]):
         # 流式执行最后一步
         yield from self.steps[-1].stream(current_input, config, **kwargs)
 
-
 class RunnableParallel(RunnableSerializable[Input, Dict[str, Any]]):
     """
     并行执行的Runnable组合
@@ -519,7 +528,6 @@ class RunnableConfig(TypedDict, total=False):
     configurable: Optional[Dict[str, Any]]
     """运行时可配置的参数字典"""
 
-
 def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     """
     确保配置对象存在
@@ -533,7 +541,6 @@ def ensure_config(config: Optional[RunnableConfig] = None) -> RunnableConfig:
     if config is None:
         return RunnableConfig()
     return config
-
 
 def patch_config(
     config: Optional[RunnableConfig],
@@ -563,7 +570,6 @@ def patch_config(
             new_config[key] = value
     
     return new_config
-
 
 def merge_configs(*configs: Optional[RunnableConfig]) -> RunnableConfig:
     """
@@ -1007,7 +1013,6 @@ class BaseMessage(BaseModel, ABC):
                 merged[key] = value
         return merged
 
-
 class HumanMessage(BaseMessage):
     """
     人类用户发送的消息
@@ -1018,7 +1023,6 @@ class HumanMessage(BaseMessage):
     @property
     def type(self) -> str:
         return "human"
-
 
 class AIMessage(BaseMessage):
     """
@@ -1037,7 +1041,6 @@ class AIMessage(BaseMessage):
     def type(self) -> str:
         return "ai"
 
-
 class SystemMessage(BaseMessage):
     """
     系统消息
@@ -1048,7 +1051,6 @@ class SystemMessage(BaseMessage):
     @property
     def type(self) -> str:
         return "system"
-
 
 class ToolMessage(BaseMessage):
     """
@@ -1064,7 +1066,6 @@ class ToolMessage(BaseMessage):
     def type(self) -> str:
         return "tool"
 
-
 class BaseMessageChunk(BaseMessage):
     """
     消息块基类
@@ -1076,7 +1077,6 @@ class BaseMessageChunk(BaseMessage):
     @classmethod
     def get_lc_namespace(cls) -> List[str]:
         return ["langchain", "schema", "messages"]
-
 
 # 消息转换工具函数
 def convert_to_messages(
@@ -1444,7 +1444,6 @@ class BaseTool(RunnableSerializable[Union[str, Dict, ToolCall], Any]):
             or len(self.args_schema.__fields__) <= 1
         )
 
-
 class ToolException(Exception):
     """
     工具执行异常
@@ -1562,7 +1561,6 @@ def tool(
             return _create_tool_from_function(func)
         return decorator
 
-
 def _create_schema_from_function(func: Callable, name: str) -> Type[BaseModel]:
     """
     从函数签名创建Pydantic参数模式
@@ -1599,7 +1597,6 @@ def _create_schema_from_function(func: Callable, name: str) -> Type[BaseModel]:
     # 创建动态模型
     return create_model(name, **fields)
 
-
 def _parse_function_docstring(docstring: str) -> str:
     """
     解析函数docstring提取工具描述
@@ -1631,7 +1628,6 @@ def _parse_function_docstring(docstring: str) -> str:
     else:
         return short_desc
 
-
 # 使用示例
 @tool
 def calculator(expression: str) -> str:
@@ -1653,7 +1649,6 @@ def calculator(expression: str) -> str:
     except Exception as e:
         return f"计算错误: {e}"
 
-
 @tool("天气查询", description="查询指定城市的当前天气")
 def get_weather(city: str) -> str:
     """查询天气信息"""
@@ -1664,7 +1659,6 @@ def get_weather(city: str) -> str:
         "深圳": "小雨，25°C"
     }
     return weather_data.get(city, f"无法获取{city}的天气信息")
-
 
 # 使用Pydantic模式的高级工具
 from pydantic import BaseModel, Field

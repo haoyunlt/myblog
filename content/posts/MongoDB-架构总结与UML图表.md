@@ -1,4 +1,14 @@
-# MongoDB 源码深度剖析 - 架构总结与UML图表
+---
+title: "MongoDB 源码深度剖析 - 架构总结与UML图表"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['MongoDB', '数据库', 'C++', '源码分析', 'NoSQL', '架构设计']
+categories: ['数据库']
+description: "MongoDB 源码深度剖析 - 架构总结与UML图表的深入技术分析文档"
+keywords: ['MongoDB', '数据库', 'C++', '源码分析', 'NoSQL', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 系统整体架构总结
 

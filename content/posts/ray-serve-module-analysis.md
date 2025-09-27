@@ -1,6 +1,15 @@
-# Ray Serve 模型服务模块深度剖析
+---
+title: "Ray Serve 模型服务模块深度剖析"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['Python', '分布式计算', 'Ray', '机器学习']
+categories: ['分布式计算']
+description: "Ray Serve 模型服务模块深度剖析的深入技术分析文档"
+keywords: ['Python', '分布式计算', 'Ray', '机器学习']
+author: "技术分析师"
+weight: 1
+---
 
-## 目录
 - [1. Ray Serve概述](#1-ray-serve概述)
 - [2. 核心架构设计](#2-核心架构设计)
 - [3. 部署系统详解](#3-部署系统详解)

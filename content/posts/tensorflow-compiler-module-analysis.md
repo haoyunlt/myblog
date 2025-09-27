@@ -1,14 +1,14 @@
-# TensorFlow Compiler模块源码剖析
-
-## 目录
-1. [模块概述](#模块概述)
-2. [XLA编译器](#xla编译器)
-3. [JIT编译系统](#jit编译系统)
-4. [MLIR基础设施](#mlir基础设施)
-5. [图优化框架](#图优化框架)
-6. [AOT编译](#aot编译)
-7. [关键API和调用链](#关键api和调用链)
-8. [最佳实践](#最佳实践)
+---
+title: "TensorFlow Compiler模块源码剖析"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['源码分析', '技术文档']
+categories: ['技术分析']
+description: "TensorFlow Compiler模块源码剖析的深入技术分析文档"
+keywords: ['源码分析', '技术文档']
+author: "技术分析师"
+weight: 1
+---
 
 ## 模块概述
 

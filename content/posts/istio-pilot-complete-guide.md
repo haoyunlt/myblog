@@ -1685,7 +1685,6 @@ func (g CdsGenerator) Generate(proxy *model.Proxy, w *model.WatchedResource, req
 - ADS交互：`DiscoveryServer.StreamAggregatedResources` → `onAck/onNack | UpdateWatched` → `pushXds`
 - 服务发现：`kube.Controller.onEndpointSliceEvent` → `XDSUpdater.EDSUpdate` → `XDSServer.ConfigUpdate` → `debounce` → `Push(EDS)`
 
-
 ### A.3 关键结构体关系（类结构图）
 
 ```mermaid

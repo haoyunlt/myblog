@@ -1,4 +1,14 @@
-# Kubernetes 关键数据结构详细分析
+---
+title: "Kubernetes 关键数据结构详细分析"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['容器编排', 'DevOps', 'Go', 'Kubernetes', '架构设计']
+categories: ['容器编排']
+description: "Kubernetes 关键数据结构详细分析的深入技术分析文档"
+keywords: ['容器编排', 'DevOps', 'Go', 'Kubernetes', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 📚 文档概述
 

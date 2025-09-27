@@ -1,4 +1,14 @@
-# TensorFlow 源码剖析文档集
+---
+title: "TensorFlow 源码剖析文档集"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['源码分析', '技术文档']
+categories: ['技术分析']
+description: "TensorFlow 源码剖析文档集的深入技术分析文档"
+keywords: ['源码分析', '技术文档']
+author: "技术分析师"
+weight: 1
+---
 
 ## 文档概述
 
@@ -8,34 +18,34 @@
 
 ### 📚 主要文档
 
-1. **[TensorFlow源码剖析总览](./tensorflow-source-analysis.md)**
+1. **[TensorFlow源码剖析总览](/posts/tensorflow-source-analysis/)**
    - 项目整体架构和核心特性
    - 模块层次结构分析
    - API层次和执行流程概述
    - 各子模块功能介绍
 
-2. **[Core模块源码剖析](./core-module-analysis.md)**
+2. **[Core模块源码剖析](/posts/core-module-analysis/)**
    - 核心运行时系统详解
    - Framework子模块：操作注册、张量管理
    - Common Runtime子模块：会话管理、图执行
    - Kernels子模块：操作内核实现
    - 关键API调用链分析
 
-3. **[Python模块源码剖析](./python-module-analysis.md)**
+3. **[Python模块源码剖析](/posts/python-module-analysis/)**
    - Python API架构和层次设计
    - Framework子模块：图构建、张量操作
    - Eager Execution实现机制
    - Keras高级API详解
    - Python-C++绑定技术
 
-4. **[使用示例和最佳实践](./examples-and-best-practices.md)**
+4. **[使用示例和最佳实践](/posts/examples-and-best-practices/)**
    - 框架使用示例和代码演示
    - 核心API详细使用方法
    - 性能优化实践技巧
    - 自定义操作开发指南
    - 分布式训练和模型部署
 
-5. **[架构图和UML图详解](./architecture-diagrams.md)**
+5. **[架构图和UML图详解](/posts/architecture-diagrams/)**
    - 完整系统架构图
    - 核心模块交互图
    - 执行流程时序图
@@ -45,17 +55,17 @@
 ## 🎯 学习路径建议
 
 ### 初学者路径
-1. 先阅读 **[总览文档](./tensorflow-source-analysis.md)** 了解整体架构
-2. 通过 **[使用示例](./examples-and-best-practices.md)** 学习基础用法
-3. 参考 **[架构图](./architecture-diagrams.md)** 理解模块关系
+1. 先阅读 **[总览文档](/posts/tensorflow-source-analysis/)** 了解整体架构
+2. 通过 **[使用示例](/posts/examples-and-best-practices/)** 学习基础用法
+3. 参考 **[架构图](/posts/architecture-diagrams/)** 理解模块关系
 
 ### 进阶开发者路径
-1. 深入学习 **[Core模块分析](./core-module-analysis.md)** 了解底层实现
-2. 研究 **[Python模块分析](./python-module-analysis.md)** 掌握API设计
-3. 实践 **[最佳实践](./examples-and-best-practices.md)** 中的高级技术
+1. 深入学习 **[Core模块分析](/posts/core-module-analysis/)** 了解底层实现
+2. 研究 **[Python模块分析](/posts/python-module-analysis/)** 掌握API设计
+3. 实践 **[最佳实践](/posts/examples-and-best-practices/)** 中的高级技术
 
 ### 架构师路径
-1. 全面理解 **[架构图](./architecture-diagrams.md)** 中的设计模式
+1. 全面理解 **[架构图](/posts/architecture-diagrams/)** 中的设计模式
 2. 分析各模块的 **设计决策和权衡**
 3. 学习 **分布式架构** 和 **性能优化** 策略
 

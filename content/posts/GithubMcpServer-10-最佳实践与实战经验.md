@@ -1,4 +1,14 @@
-# GitHub MCP Server - 最佳实践与实战经验
+---
+title: "GitHub MCP Server - 最佳实践与实战经验"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['源码分析', '技术文档', '最佳实践']
+categories: ['技术分析']
+description: "GitHub MCP Server - 最佳实践与实战经验的深入技术分析文档"
+keywords: ['源码分析', '技术文档', '最佳实践']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 部署最佳实践
 

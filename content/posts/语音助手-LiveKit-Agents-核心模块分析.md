@@ -1,4 +1,14 @@
-# LiveKit Agents 核心模块深入分析
+---
+title: "LiveKit Agents 核心模块深入分析"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['WebRTC', 'LiveKit', '语音处理', '实时通信']
+categories: ['语音助手']
+description: "LiveKit Agents 核心模块深入分析的深入技术分析文档"
+keywords: ['WebRTC', 'LiveKit', '语音处理', '实时通信']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 模块概览
 
@@ -549,7 +559,6 @@ class RoomInputOptions:
     pre_connect_audio_timeout: float = 3.0
     close_on_disconnect: bool = True
     delete_room_on_close: bool = True
-
 
 @dataclass 
 class RoomOutputOptions:

@@ -1,4 +1,14 @@
-# Moby项目源码剖析 - 关键数据结构分析
+---
+title: "Moby项目源码剖析 - 关键数据结构分析"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['容器化', 'DevOps', 'Docker', 'Go', '源码分析', '架构设计']
+categories: ['容器化']
+description: "Moby项目源码剖析 - 关键数据结构分析的深入技术分析文档"
+keywords: ['容器化', 'DevOps', 'Docker', 'Go', '源码分析', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 数据结构设计概述
 

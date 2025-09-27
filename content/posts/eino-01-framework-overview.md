@@ -1,4 +1,14 @@
-# Eino 框架概述与设计理念
+---
+title: "Eino 框架概述与设计理念"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['Python', 'AI框架', 'LLM应用', 'Eino']
+categories: ['AI框架']
+description: "Eino 框架概述与设计理念的深入技术分析文档"
+keywords: ['Python', 'AI框架', 'LLM应用', 'Eino']
+author: "技术分析师"
+weight: 1
+---
 
 ## 📖 文档概述
 
@@ -617,6 +627,6 @@ graph TB
 
 ---
 
-**下一篇**: [整体架构分析](eino-02-architecture-analysis.md) - 深入分析Eino的分层架构设计和模块交互关系
+**下一篇**: [整体架构分析](/posts/eino-02-architecture-analysis/) - 深入分析Eino的分层架构设计和模块交互关系
 
 **更新时间**: 2024-12-19 | **文档版本**: v1.0

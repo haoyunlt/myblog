@@ -1,4 +1,14 @@
-# Python3 f-string进阶特性深度源码分析
+---
+title: "Python3 f-string进阶特性深度源码分析"
+date: 2025-09-28T01:46:41+08:00
+draft: false
+tags: ['源码分析', 'Python']
+categories: ['Python']
+description: "Python3 f-string进阶特性深度源码分析的深入技术分析文档"
+keywords: ['源码分析', 'Python']
+author: "技术分析师"
+weight: 1
+---
 
 ## 📋 概述
 

@@ -1,4 +1,14 @@
-# MySQL Router Mock Server - 核心模块详细分析
+---
+title: "MySQL Router Mock Server - 核心模块详细分析"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['源码分析', '技术文档']
+categories: ['技术分析']
+description: "MySQL Router Mock Server - 核心模块详细分析的深入技术分析文档"
+keywords: ['源码分析', '技术文档']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. MySQLServerMock 主服务模块
 

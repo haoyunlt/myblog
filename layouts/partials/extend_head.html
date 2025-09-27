@@ -168,6 +168,11 @@ window.addEventListener('load', function() {
                 document.querySelectorAll('.mermaid svg').forEach(function(svg) {
                     svg.style.maxWidth = '100%';
                     svg.style.height = 'auto';
+                    // 修复移动端Chrome SVG显示问题
+                    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                    svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+                    svg.style.display = 'block';
+                    svg.style.margin = '0 auto';
                 });
             }).catch(function(error) {
                 console.error('Mermaid渲染失败:', error);
@@ -706,5 +711,69 @@ document.addEventListener('DOMContentLoaded', function() {
     if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
         document.documentElement.style.setProperty('--animation-duration', '0.1s');
     }
+});
+</script>
+
+{{- /* SVG图片加载修复脚本 - 移动端Chrome兼容性 */ -}}
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // 修复移动端Chrome SVG图片加载问题
+    function fixSVGImages() {
+        const svgImages = document.querySelectorAll('img[src$=".svg"]');
+        
+        svgImages.forEach(function(img) {
+            if (!img.complete || img.naturalWidth === 0) {
+                // 为SVG图片添加必要的属性
+                img.style.maxWidth = '100%';
+                img.style.height = 'auto';
+                img.style.display = 'block';
+                
+                // 重新设置src以触发重新加载
+                const originalSrc = img.src;
+                img.src = '';
+                setTimeout(function() {
+                    img.src = originalSrc;
+                }, 10);
+            }
+        });
+    }
+    
+    // 立即执行一次
+    fixSVGImages();
+    
+    // 在图片加载完成后再执行一次
+    window.addEventListener('load', fixSVGImages);
+    
+    // 处理Mermaid静态图片的错误回退
+    const mermaidContainers = document.querySelectorAll('.mermaid-image-container');
+    
+    mermaidContainers.forEach(function(container) {
+        const img = container.querySelector('.mermaid-generated-image');
+        const fallback = container.querySelector('.mermaid-fallback');
+        
+        if (img && fallback) {
+            // 设置图片加载超时检测
+            let imageLoaded = false;
+            
+            img.onload = function() {
+                imageLoaded = true;
+                img.style.display = 'block';
+                fallback.style.display = 'none';
+            };
+            
+            img.onerror = function() {
+                img.style.display = 'none';
+                fallback.style.display = 'block';
+            };
+            
+            // 超时检测（3秒后如果还没加载完成，显示fallback）
+            setTimeout(function() {
+                if (!imageLoaded && img.naturalWidth === 0) {
+                    img.style.display = 'none';
+                    fallback.style.display = 'block';
+                }
+            }, 3000);
+        }
+    });
 });
 </script>

@@ -1,4 +1,14 @@
-# LiveKit Agents 最佳实践与实战案例
+---
+title: "LiveKit Agents 最佳实践与实战案例"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['WebRTC', 'LiveKit', '最佳实践', '语音处理', '实时通信']
+categories: ['语音助手']
+description: "LiveKit Agents 最佳实践与实战案例的深入技术分析文档"
+keywords: ['WebRTC', 'LiveKit', '最佳实践', '语音处理', '实时通信']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 性能优化最佳实践
 
@@ -266,7 +276,6 @@ class RestaurantUserData:
         }
         return yaml.dump(data, default_flow_style=False)
 
-
 class GreeterAgent(Agent):
     """
     迎宾代理 - 多代理系统的入口点
@@ -322,7 +331,6 @@ class GreeterAgent(Agent):
         userdata.prev_agent = self
         
         return takeaway_agent, f"正在为您转接到外卖服务。{reason}"
-
 
 class ReservationAgent(Agent):
     """

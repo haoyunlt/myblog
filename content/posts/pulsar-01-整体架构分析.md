@@ -1,4 +1,14 @@
-# Apache Pulsar 源码剖析：整体架构分析
+---
+title: "Apache Pulsar 源码剖析：整体架构分析"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['Java', 'Apache Pulsar', '消息队列', '流处理', '源码分析']
+categories: ['消息队列']
+description: "Apache Pulsar 源码剖析：整体架构分析的深入技术分析文档"
+keywords: ['Java', 'Apache Pulsar', '消息队列', '流处理', '源码分析']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 项目概述
 

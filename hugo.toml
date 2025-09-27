@@ -80,7 +80,7 @@ enableEmoji = true
   mermaid = true
   
   # 首页模式：list, profile, 或 home
-  homeInfoParams = { Title = "欢迎来到tommie博客", Content = "深耕技术源码剖析与架构设计，专注AI框架、分布式系统、数据库内核等领域的深度技术分享。从CPython解释器到LangGraph状态图引擎，从AutoGen多智能体到分布式存储架构，用代码与图表诠释技术之美，助力开发者深入理解底层原理与最佳实践。" }
+  homeInfoParams = { Title = "欢迎来到tommie笔记", Content = "深耕技术源码剖析与架构设计，专注AI框架、分布式系统、数据库内核等领域的深度技术分享。从CPython解释器到LangGraph状态图引擎，从AutoGen多智能体到分布式存储架构，用代码与图表诠释技术之美，助力开发者深入理解底层原理与最佳实践。" }
   
   # 社交链接
   [[params.socialIcons]]
@@ -165,3 +165,15 @@ enableEmoji = true
   category = "categories"
   tag = "tags"
   series = "series"
+
+# 媒体类型配置（修复移动端SVG加载问题）
+[mediaTypes]
+  [mediaTypes."image/svg+xml"]
+    suffixes = ["svg"]
+
+# 输出格式配置
+[outputFormats]
+  [outputFormats.SVG]
+    mediaType = "image/svg+xml"
+    isPlainText = false
+    isHTML = false

@@ -1898,6 +1898,6 @@ func getCurrentGoroutineID() string {
 4. **避免复制**：通过指针传递WaitGroup，避免复制
 5. **谨慎重用**：确保所有Wait()返回后再重用WaitGroup
 
-> **更多最佳实践**：详细的并发编程最佳实践和高级优化技巧，请参考 [Go并发编程最佳实践指南](golang-concurrency-best-practices.md)。
+> **更多最佳实践**：详细的并发编程最佳实践和高级优化技巧，请参考 [Go并发编程最佳实践指南](/posts/golang-concurrency-best-practices/)。
 
 sync.WaitGroup通过简洁的API和高效的实现，为Go并发编程提供了强大的任务协调能力。理解其实现原理和使用模式，有助于编写更可靠、更高效的并发程序。

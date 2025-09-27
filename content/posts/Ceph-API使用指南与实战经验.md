@@ -1,4 +1,14 @@
-# Ceph分布式存储系统源码剖析 - API使用指南与实战经验
+---
+title: "Ceph分布式存储系统源码剖析 - API使用指南与实战经验"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['C++', 'Ceph', '分布式存储', '对象存储', '源码分析', '最佳实践', 'API']
+categories: ['分布式存储']
+description: "Ceph分布式存储系统源码剖析 - API使用指南与实战经验的深入技术分析文档"
+keywords: ['C++', 'Ceph', '分布式存储', '对象存储', '源码分析', '最佳实践', 'API']
+author: "技术分析师"
+weight: 1
+---
 
 ## 概述
 
@@ -1289,7 +1299,6 @@ class CephS3Client:
                 print(f"Error getting bucket policy: {e}")
             return None
 
-
 def main():
     """
     主函数 - 演示S3 API的完整使用流程
@@ -1367,7 +1376,6 @@ def main():
         client.delete_object(bucket_name, obj_key)
     
     print("\nS3 API demonstration completed!")
-
 
 if __name__ == '__main__':
     main()
@@ -1968,7 +1976,6 @@ class CephErrorHandler:
         
         return wrapper
 
-
 class RobustCephClient:
     """
     具有健壮错误处理的Ceph客户端
@@ -2345,7 +2352,6 @@ class CephMonitoringSystem:
             
             time.sleep(interval)
 
-
 # 使用示例
 def setup_monitoring():
     """
@@ -2372,7 +2378,6 @@ def setup_monitoring():
     
     # 开始监控(每30秒检查一次)
     monitoring.monitoring_loop(interval=30)
-
 
 if __name__ == '__main__':
     setup_monitoring()

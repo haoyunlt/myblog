@@ -1199,6 +1199,6 @@ func benchmarkMutexPerformance() {
 3. **合理分片**：高竞争场景使用分片锁减少竞争
 4. **性能监控**：使用pprof分析锁竞争热点
 
-> **更多最佳实践**：详细的并发编程最佳实践和高级优化技巧，请参考 [Go并发编程最佳实践指南](golang-concurrency-best-practices.md)。
+> **更多最佳实践**：详细的并发编程最佳实践和高级优化技巧，请参考 [Go并发编程最佳实践指南](/posts/golang-concurrency-best-practices/)。
 
 sync.Mutex作为Go并发编程的基石，其精巧的设计和优化为高性能并发程序提供了坚实的基础。理解其实现原理有助于编写更高效、更可靠的并发代码。

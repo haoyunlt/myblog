@@ -1850,7 +1850,6 @@ def cache_invalidate_then_write(key: str, write: Callable[[], None]):
 4. **可测试性**：支持单元测试和集成测试
 5. **可扩展性**：便于添加新的业务功能
 
-
 ## 7. 关键函数核心代码与说明（精简摘录）
 
 ```python

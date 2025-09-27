@@ -1,4 +1,14 @@
-# Home Assistant Core 源码深度解析 - API接口篇
+---
+title: "Home Assistant Core 源码深度解析 - API接口篇"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['智能家居', '自动化', 'Python', 'API', '源码分析', 'Home Assistant']
+categories: ['语音助手']
+description: "Home Assistant Core 源码深度解析 - API接口篇的深入技术分析文档"
+keywords: ['智能家居', '自动化', 'Python', 'API', '源码分析', 'Home Assistant']
+author: "技术分析师"
+weight: 1
+---
 
 ## 概述
 
@@ -1683,6 +1693,6 @@ def register_custom_commands():
 ## 下一步分析
 
 接下来将继续深入分析：
-- [组件系统详解](./03-组件系统分析.md)
-- [实体平台架构](./04-实体平台分析.md)
-- [配置存储系统](./06-数据存储分析.md)
+- [组件系统详解](/posts/03-组件系统分析/)
+- [实体平台架构](/posts/04-实体平台分析/)
+- [配置存储系统](/posts/06-数据存储分析/)

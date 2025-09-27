@@ -305,13 +305,11 @@ func (tr *storeTxnCommon) rangeKeys(ctx context.Context, key, end []byte, curRev
 * `ReadOnlySafe` 是 etcd 默认策略；`ReadOnlyLeaseBased` 依赖 leader lease 时间界限，适用性更苛刻，etcd 默认不采用。
 * follower 收到 `Range(linearizable)` 通常**引导至 leader**，不要指望 follower 承接线性读负载。
 
-
 ## 10. 小结
 
 * 线性一致读的本质：**一次心跳仲裁拿到“读下限”（committed）**，并保证**本地已应用不落后**，之后再做 MVCC 快照读。
 * 一致性与延迟可通过 `linearizable` / `serializable` 切换、请求聚合、直连 leader 等手段平衡。
 * 真正的性能瓶颈常在 **apply/后端存储**，辅以**索引设计与分页**可显著改善尾延迟。
-
 
 ## 附录：关键函数卡片与调用链/时序/结构体关系与合并要点
 
@@ -428,7 +426,6 @@ classDiagram
 * MVCC 一致视图：读在快照 `curRev` 上进行，写通过回写读缓冲实现“立即可读”。
 * 失败与重试：leader 变更触发重试；网络抖动影响心跳确认与尾延迟。
 
-
 * `EtcdServer.sendReadIndex(requestID uint64) error`
   * 作用：封装 `node.ReadIndex` 的触发与上下文管理，附带 `requestID`。
 
@@ -443,7 +440,6 @@ classDiagram
 
 * `backend.ReadTx.UnsafeRange(bucket, key, end, limit)`
   * 作用：在只读事务中按编码后的 revision bytes 范围读取底层存储值。
-
 
 * `readonly`
   * 字段：`option`、请求队列、`acks` 跟踪；与 `raftLog.committed` 配合确定读下限。

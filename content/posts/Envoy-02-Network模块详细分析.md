@@ -1,4 +1,14 @@
-# Network模块详细分析
+---
+title: "Network模块详细分析"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['代理', 'C++', 'Envoy', '负载均衡', '微服务']
+categories: ['代理服务器']
+description: "Network模块详细分析的深入技术分析文档"
+keywords: ['代理', 'C++', 'Envoy', '负载均衡', '微服务']
+author: "技术分析师"
+weight: 1
+---
 
 ## 模块概览
 

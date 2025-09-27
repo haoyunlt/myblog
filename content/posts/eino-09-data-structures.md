@@ -1,4 +1,14 @@
-# Eino 关键数据结构与继承关系
+---
+title: "Eino 关键数据结构与继承关系"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['AI框架', 'Eino', 'Python', 'LLM应用', '架构设计']
+categories: ['AI框架']
+description: "Eino 关键数据结构与继承关系的深入技术分析文档"
+keywords: ['AI框架', 'Eino', 'Python', 'LLM应用', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 📖 文档概述
 
@@ -1059,7 +1069,7 @@ func (m *Message) Format(ctx context.Context, vs map[string]any, formatType Form
 
 ---
 
-**上一篇**: [Callbacks模块详解](eino-08-callbacks-module.md)
-**下一篇**: [实战经验与最佳实践](eino-10-best-practices.md) - 性能优化和生产实践指南
+**上一篇**: [Callbacks模块详解](/posts/eino-08-callbacks-module/)
+**下一篇**: [实战经验与最佳实践](/posts/eino-10-best-practices/) - 性能优化和生产实践指南
 
 **更新时间**: 2024-12-19 | **文档版本**: v1.0

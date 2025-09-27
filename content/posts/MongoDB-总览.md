@@ -1,4 +1,14 @@
-# MongoDB 源码深度剖析 - 总览篇
+---
+title: "MongoDB 源码深度剖析 - 总览篇"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['MongoDB', '数据库', 'C++', '源码分析', 'NoSQL']
+categories: ['数据库']
+description: "MongoDB 源码深度剖析 - 总览篇的深入技术分析文档"
+keywords: ['MongoDB', '数据库', 'C++', '源码分析', 'NoSQL']
+author: "技术分析师"
+weight: 1
+---
 
 ## 项目概述
 

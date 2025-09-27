@@ -1,4 +1,14 @@
-# FastAPI 源码剖析 - 路由系统深度分析
+---
+title: "FastAPI 源码剖析 - 路由系统深度分析"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['Python', 'Web框架', '源码分析', 'FastAPI', 'API']
+categories: ['Python框架', 'FastAPI']
+description: "FastAPI 源码剖析 - 路由系统深度分析的深入技术分析文档"
+keywords: ['Python', 'Web框架', '源码分析', 'FastAPI', 'API']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 路由系统概览
 

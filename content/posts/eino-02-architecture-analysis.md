@@ -1,4 +1,14 @@
-# Eino 整体架构分析
+---
+title: "Eino 整体架构分析"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['Python', 'AI框架', 'LLM应用', 'Eino']
+categories: ['AI框架']
+description: "Eino 整体架构分析的深入技术分析文档"
+keywords: ['Python', 'AI框架', 'LLM应用', 'Eino']
+author: "技术分析师"
+weight: 1
+---
 
 ## 📖 文档概述
 
@@ -761,7 +771,7 @@ func RegisterSerializer(name string, serializer Serializer) {
 
 ---
 
-**上一篇**: [框架概述与设计理念](eino-01-framework-overview.md)
-**下一篇**: [核心API深度分析](eino-03-core-api-analysis.md) - 深入分析Runnable接口和编排API
+**上一篇**: [框架概述与设计理念](/posts/eino-01-framework-overview/)
+**下一篇**: [核心API深度分析](/posts/eino-03-core-api-analysis/) - 深入分析Runnable接口和编排API
 
 **更新时间**: 2024-12-19 | **文档版本**: v1.0

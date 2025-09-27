@@ -1,4 +1,14 @@
-# VLLM核心模块详细分析
+---
+title: "VLLM核心模块详细分析"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['Python', 'LLM', 'vLLM', 'AI推理']
+categories: ['AI推理']
+description: "VLLM核心模块详细分析的深入技术分析文档"
+keywords: ['Python', 'LLM', 'vLLM', 'AI推理']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 引擎模块 (Engine Module)
 

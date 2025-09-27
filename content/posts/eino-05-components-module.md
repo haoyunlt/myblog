@@ -1,4 +1,14 @@
-# Eino Components 模块详解
+---
+title: "Eino Components 模块详解"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['Python', 'AI框架', 'LLM应用', 'Eino']
+categories: ['AI框架']
+description: "Eino Components 模块详解的深入技术分析文档"
+keywords: ['Python', 'AI框架', 'LLM应用', 'Eino']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 概述
 
@@ -1452,6 +1462,6 @@ Components 模块提供了良好的扩展机制：
 
 ---
 
-**上一篇**: [Schema模块详解](eino-04-schema-module.md) | **下一篇**: [Compose模块详解](eino-06-compose-module.md)
+**上一篇**: [Schema模块详解](/posts/eino-04-schema-module/) | **下一篇**: [Compose模块详解](/posts/eino-06-compose-module/)
 
 **更新时间**: 2024-12-19 | **文档版本**: v1.0

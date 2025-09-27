@@ -2151,6 +2151,56 @@ img:hover {
     filter: brightness(1.1);
 }
 
+/* SVG图片修复 - 针对移动端Chrome */
+img[src$=".svg"] {
+    width: auto;
+    height: auto;
+    max-width: 100%;
+    display: block;
+    margin: 0 auto;
+}
+
+/* Mermaid静态图片容器 */
+.mermaid-image-container {
+    text-align: center;
+    margin: 2rem 0;
+    position: relative;
+}
+
+.mermaid-generated-image {
+    max-width: 100%;
+    height: auto;
+    border-radius: 8px;
+    box-shadow: var(--shadow-light);
+    background: var(--bg-primary);
+    padding: 1rem;
+}
+
+/* Mermaid fallback显示 */
+.mermaid-fallback {
+    background: var(--bg-secondary);
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    padding: 1rem;
+    margin: 1rem 0;
+}
+
+.mermaid-fallback details {
+    margin: 0;
+}
+
+.mermaid-fallback summary {
+    cursor: pointer;
+    color: var(--primary-color);
+    font-weight: 600;
+    margin-bottom: 0.5rem;
+}
+
+.mermaid-fallback pre {
+    margin: 0.5rem 0 0 0;
+    font-size: 0.85rem;
+}
+
 /* 表格行悬停效果 */
 table tr {
     transition: all 0.3s ease;

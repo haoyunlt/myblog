@@ -50,7 +50,7 @@ mindmap
 
 ### 1. 架构设计文档
 
-#### 📄 [dify-architecture-complete.md](./dify-architecture-complete.md)
+#### 📄 [dify-architecture-complete.md](/posts/dify-architecture-complete/)
 **完整架构指南**
 - **内容**：系统概览、深度设计、蜂巢架构、安全架构、性能架构、部署架构
 - **适用人群**：架构师、技术负责人、系统设计师
@@ -62,7 +62,7 @@ mindmap
 
 ### 2. 核心模块文档
 
-#### 📄 [dify-core-modules.md](./dify-core-modules.md)
+#### 📄 [dify-core-modules.md](/posts/dify-core-modules/)
 **核心模块深度解析**
 - **内容**：工作流引擎、RAG系统、智能体系统、模型运行时的详细分析
 - **适用人群**：模块开发者、系统架构师、AI工程师
@@ -74,7 +74,7 @@ mindmap
 
 ### 3. 开发实践文档
 
-#### 📄 [dify-development-guide.md](./dify-development-guide.md)
+#### 📄 [dify-development-guide.md](/posts/dify-development-guide/)
 **开发实践指南**
 - **内容**：环境搭建、框架使用、应用开发、性能优化、安全实践、监控运维
 - **适用人群**：前后端开发者、全栈工程师、运维工程师
@@ -86,7 +86,7 @@ mindmap
 
 ### 4. API参考文档
 
-#### 📄 [dify-api-reference.md](./dify-api-reference.md)
+#### 📄 [dify-api-reference.md](/posts/dify-api-reference/)
 **API参考手册**
 - **内容**：Service API、Console API、Web API的完整接口文档
 - **适用人群**：API集成开发者、第三方开发者、前端开发者
@@ -98,7 +98,7 @@ mindmap
 
 ### 5. 文档导航索引
 
-#### 📄 [dify-documentation-index.md](./dify-documentation-index.md) *(当前文档)*
+#### 📄 [dify-documentation-index.md](/posts/dify-documentation-index/) *(当前文档)*
 **文档索引导航**
 - **内容**：完整的文档导航、学习路径、使用建议
 - **适用人群**：所有用户

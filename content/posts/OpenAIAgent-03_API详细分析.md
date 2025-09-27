@@ -1,4 +1,14 @@
-# OpenAI Agents Python SDK API详细分析
+---
+title: "OpenAI Agents Python SDK API详细分析"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['Python', '源码分析', 'API']
+categories: ['Python']
+description: "OpenAI Agents Python SDK API详细分析的深入技术分析文档"
+keywords: ['Python', '源码分析', 'API']
+author: "技术分析师"
+weight: 1
+---
 
 ## 3.1 核心API概览
 

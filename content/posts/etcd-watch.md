@@ -355,12 +355,10 @@ func (s *watchableStore) moveVictims() (moved int) {
 4. `syncVictimsLoop` 尝试重发缓存事件，将恢复者回归 `unsynced/synced`。
 5. 客户端可随时 `CancelRequest` 或 `ProgressRequest`；服务端通过 `ctrlStream` 回应。
 
-
 ### 小结
 
 * Watch 通过 **synced / unsynced / victim 三组**协同，分别覆盖**实时推送、历史补齐、慢消费者补偿**，在**不阻塞主线**的前提下尽量保证**不丢事件**。
 * 工程上把重心放在：**前缀/主题拆分、快消费、进度推进、压缩重试、可观测性**。把这些做好，Watch 才能在高写入/高订阅的场景下长期稳定运行。
-
 
 ## 附录：关键函数卡片与调用链/时序/结构体关系
 
@@ -457,7 +455,6 @@ classDiagram
 * 三组协同：`synced` 实时推送，`unsynced` 历史回放，`victim` 慢客户端补偿。
 * 压缩与恢复：命中 `CompactRevision` 需从 `compactRev+1` 重新创建；可用进度通知推进水位。
 
-
 * `serverWatchStream.newResponseHeader(rev int64) *pb.ResponseHeader`
   * 作用：构造包含集群元信息与当前 revision 的响应头。
 
@@ -475,7 +472,6 @@ classDiagram
 
 * `cancelWatcher(w *watcher)`
   * 作用：从对应集合移除 watcher 并清理状态。
-
 
 * `serverWatchStream`
   * 字段：`ctrlStream`、`watchStream`、`progress`（进度请求跟踪）、`prevKV`、`fragment`（分片发送跟踪）。

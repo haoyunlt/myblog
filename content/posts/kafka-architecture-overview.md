@@ -1506,14 +1506,14 @@ sequenceDiagram
 
 本文档系列将每个核心模块的实现细节：
 
-1. **[Kafka Broker核心模块详解](kafka-broker-core.md)** - BrokerServer、KafkaApis、ReplicaManager等核心组件
-2. **[Kafka客户端实现解析](kafka-client-implementation.md)** - Producer和Consumer的详细实现机制
-3. **[协调器模块深度分析](kafka-coordinator-modules.md)** - Group、Transaction、Share协调器实现
-4. **[存储引擎技术解析](kafka-storage-engine.md)** - 日志段管理、索引机制、远程存储
-5. **[网络通信架构详解](kafka-network-architecture.md)** - SocketServer、RequestChannel、协议处理
-6. **[KRaft一致性算法实现](kafka-kraft-consensus.md)** - RaftManager、元数据管理、一致性保证
-7. **[Kafka Streams流处理引擎](kafka-streams-engine.md)** - 拓扑构建、状态管理、处理器API
-8. **[Kafka Connect连接器框架](kafka-connect-framework.md)** - Source/Sink连接器、分布式执行
+1. **[Kafka Broker核心模块详解](/posts/kafka-broker-core/)** - BrokerServer、KafkaApis、ReplicaManager等核心组件
+2. **[Kafka客户端实现解析](/posts/kafka-client-implementation/)** - Producer和Consumer的详细实现机制
+3. **[协调器模块深度分析](/posts/kafka-coordinator-modules/)** - Group、Transaction、Share协调器实现
+4. **[存储引擎技术解析](/posts/kafka-storage-engine/)** - 日志段管理、索引机制、远程存储
+5. **[网络通信架构详解](/posts/kafka-network-architecture/)** - SocketServer、RequestChannel、协议处理
+6. **[KRaft一致性算法实现](/posts/kafka-kraft-consensus/)** - RaftManager、元数据管理、一致性保证
+7. **[Kafka Streams流处理引擎](/posts/kafka-streams-engine/)** - 拓扑构建、状态管理、处理器API
+8. **[Kafka Connect连接器框架](/posts/kafka-connect-framework/)** - Source/Sink连接器、分布式执行
 
 ## 6. 总结
 
@@ -1525,7 +1525,6 @@ Apache Kafka通过精心设计的分布式架构，成功解决了大规模数�
 - **异步处理**：全链路异步设计，提供优异的性能表现
 - **可观测性**：丰富的监控指标和日志，便于运维管理
 - **API友好**：统一的协议规范和多语言客户端支持
-
 
 通过深入理解Kafka的架构设计和实现原理，我们能够更好地运用这一强大的流处理平台，构建高效可靠的实时数据系统。
 

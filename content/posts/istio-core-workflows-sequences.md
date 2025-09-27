@@ -1138,7 +1138,6 @@ echo "=== 检查完成 ==="
 
 ## 附录A：关键函数与结构
 
-
 ### A.1 与时序强相关的关键函数
 
 ```go
@@ -1172,7 +1171,6 @@ func Analyze(ctx context.Context, clients []kube.Client, analyzers []Analyzer) (
 - 配置分发：`CRD Client.handleEvent` → `Server.configHandler` → `XDSServer.ConfigUpdate` → `debounce` → `Push` → `pushXds`
 - 服务发现：`onEndpointSliceEvent` → `XDSUpdater.EDSUpdate` → `ConfigUpdate` → `Push(EDS)`
 - 运维诊断：`istioctl proxy-config` → `Envoy admin` → 返回配置转储
-
 
 ### A.3 结构体关系
 

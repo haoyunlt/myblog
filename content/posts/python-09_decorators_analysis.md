@@ -1,6 +1,6 @@
 ---
 title: "Python3 装饰器深度源码分析"
-date: 2025-09-28T00:38:41+08:00
+date: 2025-09-28T01:46:41+08:00
 draft: false
 tags: ['源码分析', 'Python']
 categories: ['Python']

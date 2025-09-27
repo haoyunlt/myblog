@@ -2545,7 +2545,6 @@ class AutoGenBenchmarkSuite:
 
 ### 8.7 关键函数：核心代码要点、调用链与时序图
 
-
 - Python | RoutedAgent.on_message_impl（智能消息路由核心）
 
 ```python
@@ -2849,7 +2848,6 @@ classDiagram
     EventBus --> DeadLetterQueue : fallback
 ```
 
-
 ## 9. 总结
 
 ### 9.1 模式选择指南
@@ -2870,7 +2868,6 @@ classDiagram
 3. **上下文注入**: AgentInstantiationContext的依赖注入
 4. **按需创建**: EnsureAgentAsync的懒加载实现
 5. **订阅匹配**: 基于策略模式的灵活订阅系统
-
 
 通过掌握这些基于真实代码的高级模式和实现技巧，开发者可以构建出更加健壮、高效、可维护的企业级多代理系统。
 

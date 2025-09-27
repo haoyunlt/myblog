@@ -1,4 +1,14 @@
-# MySQL Router Mock Server 源码剖析 - 总体架构概述
+---
+title: "MySQL Router Mock Server 源码剖析 - 总体架构概述"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['源码分析', '技术文档']
+categories: ['技术分析']
+description: "MySQL Router Mock Server 源码剖析 - 总体架构概述的深入技术分析文档"
+keywords: ['源码分析', '技术文档']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 项目概述
 

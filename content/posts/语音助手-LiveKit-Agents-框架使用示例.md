@@ -1,4 +1,14 @@
-# LiveKit Agents 框架使用示例
+---
+title: "LiveKit Agents 框架使用示例"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['WebRTC', 'LiveKit', '语音处理', '实时通信']
+categories: ['语音助手']
+description: "LiveKit Agents 框架使用示例的深入技术分析文档"
+keywords: ['WebRTC', 'LiveKit', '语音处理', '实时通信']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 基础语音代理示例
 
@@ -81,7 +91,6 @@ class MyAgent(Agent):
         # 示例返回固定值
         return "今天天气晴朗，温度70华氏度。"
 
-
 async def entrypoint(ctx: JobContext):
     """
     应用程序入口点函数
@@ -114,7 +123,6 @@ async def entrypoint(ctx: JobContext):
         agent=MyAgent(),
         room=ctx.room,
     )
-
 
 if __name__ == "__main__":
     # 运行应用程序
@@ -203,7 +211,6 @@ class DynamicToolAgent(Agent):
         # 调用默认的LLM节点处理
         return Agent.default.llm_node(self, chat_ctx, tools, model_settings)
 
-
 async def _get_course_list_from_db() -> list[str]:
     """
     模拟数据库查询函数
@@ -221,7 +228,6 @@ async def _get_course_list_from_db() -> list[str]:
         "深度学习",
         "语音代理",
     ]
-
 
 async def entrypoint(ctx: JobContext):
     """动态工具创建示例入口点"""
@@ -337,7 +343,6 @@ class RealtimeAgent(Agent):
             instructions="向用户问好并提供帮助。"
         )
 
-
 async def entrypoint(ctx: JobContext):
     """实时API示例入口点"""
     
@@ -415,7 +420,6 @@ class IntroAgent(Agent):
         story_agent = StoryAgent(name, location)
         return story_agent, "让我们开始故事吧！"
 
-
 class StoryAgent(Agent):
     """
     故事代理 - 讲述个性化故事
@@ -440,13 +444,11 @@ class StoryAgent(Agent):
         """进入时开始讲故事"""
         await self.session.generate_reply()
 
-
 @dataclass 
 class StoryData:
     """用户故事数据结构"""
     name: str | None = None
     location: str | None = None
-
 
 async def entrypoint(ctx: JobContext):
     """多代理切换示例入口点"""

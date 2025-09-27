@@ -1,4 +1,14 @@
-# LangChain 源码剖析 - 关键数据结构与UML图
+---
+title: "LangChain 源码剖析 - 关键数据结构与UML图"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['源码分析', '技术文档', '架构设计']
+categories: ['技术分析']
+description: "LangChain 源码剖析 - 关键数据结构与UML图的深入技术分析文档"
+keywords: ['源码分析', '技术文档', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 核心数据结构概览
 
@@ -624,7 +634,6 @@ class BaseCallbackHandler(ABC):
         """Agent完成任务时的回调"""
         pass
 
-
 class Run(BaseModel):
     """执行记录"""
     id: UUID = Field(description="运行ID")
@@ -991,7 +1000,6 @@ class VectorStore(ABC):
             vectorstore=self,
             **kwargs,
         )
-
 
 class VectorStoreRetriever(BaseRetriever):
     """

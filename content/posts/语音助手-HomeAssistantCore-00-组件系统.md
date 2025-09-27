@@ -1,4 +1,14 @@
-# Home Assistant Core 源码深度解析 - 组件系统篇
+---
+title: "Home Assistant Core 源码深度解析 - 组件系统篇"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['智能家居', '自动化', 'Python', '源码分析', 'Home Assistant']
+categories: ['语音助手']
+description: "Home Assistant Core 源码深度解析 - 组件系统篇的深入技术分析文档"
+keywords: ['智能家居', '自动化', 'Python', '源码分析', 'Home Assistant']
+author: "技术分析师"
+weight: 1
+---
 
 ## 概述
 
@@ -1775,5 +1785,5 @@ Home Assistant的组件系统是一个高度模块化、可扩展的架构，通
 ## 下一步分析
 
 接下来将继续深入分析其他核心模块：
-- [实体和平台系统详解](./04-实体平台分析.md)
-- [配置和数据存储系统](./06-数据存储分析.md)
+- [实体和平台系统详解](/posts/04-实体平台分析/)
+- [配置和数据存储系统](/posts/06-数据存储分析/)

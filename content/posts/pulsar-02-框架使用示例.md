@@ -1,4 +1,14 @@
-# Apache Pulsar 框架使用示例
+---
+title: "Apache Pulsar 框架使用示例"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['消息队列', '流处理', 'Apache Pulsar', 'Java']
+categories: ['消息队列']
+description: "Apache Pulsar 框架使用示例的深入技术分析文档"
+keywords: ['消息队列', '流处理', 'Apache Pulsar', 'Java']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 环境准备
 

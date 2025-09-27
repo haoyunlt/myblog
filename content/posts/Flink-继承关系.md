@@ -1,4 +1,14 @@
-# Apache Flink 源码剖析 - 关键数据结构和继承关系
+---
+title: "Apache Flink 源码剖析 - 关键数据结构和继承关系"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['源码分析', '技术文档', '架构设计']
+categories: ['技术分析']
+description: "Apache Flink 源码剖析 - 关键数据结构和继承关系的深入技术分析文档"
+keywords: ['源码分析', '技术文档', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 类型系统架构
 

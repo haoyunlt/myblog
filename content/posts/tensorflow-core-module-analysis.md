@@ -1,14 +1,14 @@
-# TensorFlow Core模块源码剖析
-
-## 目录
-1. [模块概述](#模块概述)
-2. [核心架构](#核心架构)
-3. [Framework子模块](#framework子模块)
-4. [Common Runtime子模块](#common-runtime子模块)
-5. [Kernels子模块](#kernels子模块)
-6. [关键API和调用链](#关键api和调用链)
-7. [执行流程分析](#执行流程分析)
-8. [最佳实践](#最佳实践)
+---
+title: "TensorFlow Core模块源码剖析"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['源码分析', '技术文档']
+categories: ['技术分析']
+description: "TensorFlow Core模块源码剖析的深入技术分析文档"
+keywords: ['源码分析', '技术文档']
+author: "技术分析师"
+weight: 1
+---
 
 ## 模块概述
 

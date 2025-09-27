@@ -1,4 +1,14 @@
-# FastAPI 源码剖析 - 安全认证系统
+---
+title: "FastAPI 源码剖析 - 安全认证系统"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['Python', 'Web框架', '源码分析', 'FastAPI', 'API']
+categories: ['Python框架', 'FastAPI']
+description: "FastAPI 源码剖析 - 安全认证系统的深入技术分析文档"
+keywords: ['Python', 'Web框架', '源码分析', 'FastAPI', 'API']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 安全系统概述
 
@@ -344,7 +354,6 @@ class HTTPBearer(HTTPBase):
             scheme["description"] = self.description
         return scheme
 
-
 @dataclass
 class HTTPAuthorizationCredentials:
     """
@@ -465,7 +474,6 @@ class HTTPBasic(HTTPBase):
         
         return HTTPBasicCredentials(username=username, password=password)
 
-
 @dataclass  
 class HTTPBasicCredentials:
     """
@@ -581,7 +589,6 @@ class APIKeyHeader(APIKeyBase):
         if self.description:
             scheme["description"] = self.description
         return scheme
-
 
 # 类似地，还有 APIKeyCookie 和 APIKeyQuery
 
@@ -864,7 +871,6 @@ class SecurityScopes:
         """返回权限范围的详细表示"""
         return f"SecurityScopes(scopes={self.scopes})"
 
-
 # 在依赖函数中使用 SecurityScopes
 def verify_token_with_scopes(
     security_scopes: SecurityScopes,           # 自动注入所需权限
@@ -1037,7 +1043,6 @@ def get_openapi_security_schemes(
                     security_schemes[scheme_name] = security_scheme.get_openapi_security_scheme()
     
     return security_schemes
-
 
 def get_openapi_security_requirements(
     dependant: Dependant

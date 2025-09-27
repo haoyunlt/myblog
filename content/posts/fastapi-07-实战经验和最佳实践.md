@@ -1,4 +1,14 @@
-# FastAPI 源码剖析 - 实战经验和最佳实践
+---
+title: "FastAPI 源码剖析 - 实战经验和最佳实践"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['Python', 'Web框架', '源码分析', 'FastAPI', '最佳实践', 'API']
+categories: ['Python框架', 'FastAPI']
+description: "FastAPI 源码剖析 - 实战经验和最佳实践的深入技术分析文档"
+keywords: ['Python', 'Web框架', '源码分析', 'FastAPI', '最佳实践', 'API']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 项目结构最佳实践
 

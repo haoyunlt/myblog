@@ -1,4 +1,14 @@
-# Eino Schema模块详解
+---
+title: "Eino Schema模块详解"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['Python', 'AI框架', 'LLM应用', 'Eino']
+categories: ['AI框架']
+description: "Eino Schema模块详解的深入技术分析文档"
+keywords: ['Python', 'AI框架', 'LLM应用', 'Eino']
+author: "技术分析师"
+weight: 1
+---
 
 ## 📖 文档概述
 
@@ -1724,7 +1734,7 @@ func EfficientMessageConcat(msgs []*schema.Message) (*schema.Message, error) {
 
 ---
 
-**上一篇**: [核心API深度分析](eino-03-core-api-analysis.md)
-**下一篇**: [Components模块详解](eino-05-components-module.md) - 深入分析组件抽象和实现
+**上一篇**: [核心API深度分析](/posts/eino-03-core-api-analysis/)
+**下一篇**: [Components模块详解](/posts/eino-05-components-module/) - 深入分析组件抽象和实现
 
 **更新时间**: 2024-12-19 | **文档版本**: v1.0

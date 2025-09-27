@@ -1,4 +1,14 @@
-# GitHub MCP Server - 数据结构UML图与详细说明
+---
+title: "GitHub MCP Server - 数据结构UML图与详细说明"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['源码分析', '技术文档', '架构设计']
+categories: ['技术分析']
+description: "GitHub MCP Server - 数据结构UML图与详细说明的深入技术分析文档"
+keywords: ['源码分析', '技术文档', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 核心数据结构概览
 

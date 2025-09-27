@@ -1,4 +1,14 @@
-# Home Assistant Core 源码深度解析 - 实体平台系统篇
+---
+title: "Home Assistant Core 源码深度解析 - 实体平台系统篇"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['智能家居', '自动化', 'Python', '源码分析', 'Home Assistant']
+categories: ['语音助手']
+description: "Home Assistant Core 源码深度解析 - 实体平台系统篇的深入技术分析文档"
+keywords: ['智能家居', '自动化', 'Python', '源码分析', 'Home Assistant']
+author: "技术分析师"
+weight: 1
+---
 
 ## 概述
 
@@ -2260,4 +2270,4 @@ def debug_entity_update(func):
 ## 下一步分析
 
 接下来将继续分析：
-- [配置和数据存储系统](./06-数据存储分析.md) - 深入分析配置管理和数据持久化机制
+- [配置和数据存储系统](/posts/06-数据存储分析/) - 深入分析配置管理和数据持久化机制

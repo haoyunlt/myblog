@@ -1,4 +1,14 @@
-# ClickHouse 架构分析与接口时序图
+---
+title: "ClickHouse 架构分析与接口时序图"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['源码分析', '技术文档']
+categories: ['技术分析']
+description: "ClickHouse 架构分析与接口时序图的深入技术分析文档"
+keywords: ['源码分析', '技术文档']
+author: "技术分析师"
+weight: 1
+---
 
 ## 项目概述
 

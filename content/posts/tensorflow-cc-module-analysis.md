@@ -1,14 +1,14 @@
-# TensorFlow C++ API模块源码剖析
-
-## 目录
-1. [模块概述](#模块概述)
-2. [ClientSession客户端](#clientsession客户端)
-3. [Scope作用域系统](#scope作用域系统)
-4. [操作构建器](#操作构建器)
-5. [梯度计算框架](#梯度计算框架)
-6. [SavedModel API](#savedmodel-api)
-7. [关键API调用链](#关键api调用链)
-8. [最佳实践](#最佳实践)
+---
+title: "TensorFlow C++ API模块源码剖析"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['源码分析', '技术文档', 'API']
+categories: ['技术分析']
+description: "TensorFlow C++ API模块源码剖析的深入技术分析文档"
+keywords: ['源码分析', '技术文档', 'API']
+author: "技术分析师"
+weight: 1
+---
 
 ## 模块概述
 

@@ -1,14 +1,14 @@
-# TensorFlow Python模块源码剖析
-
-## 目录
-1. [模块概述](#模块概述)
-2. [Python API架构](#python-api架构)
-3. [Framework子模块](#framework子模块)
-4. [Eager Execution](#eager-execution)
-5. [Keras高级API](#keras高级api)
-6. [Python-C++绑定机制](#python-c绑定机制)
-7. [关键API调用链](#关键api调用链)
-8. [最佳实践](#最佳实践)
+---
+title: "TensorFlow Python模块源码剖析"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['Python', '源码分析']
+categories: ['Python']
+description: "TensorFlow Python模块源码剖析的深入技术分析文档"
+keywords: ['Python', '源码分析']
+author: "技术分析师"
+weight: 1
+---
 
 ## 模块概述
 

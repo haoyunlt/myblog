@@ -1,4 +1,14 @@
-# Eino ADK 模块详解
+---
+title: "Eino ADK 模块详解"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['Python', 'AI框架', 'LLM应用', 'Eino']
+categories: ['AI框架']
+description: "Eino ADK 模块详解的深入技术分析文档"
+keywords: ['Python', 'AI框架', 'LLM应用', 'Eino']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 概述
 
@@ -1953,6 +1963,6 @@ ADK (Agent Development Kit) 模块是 Eino 框架的智能体开发核心，提�
 
 ---
 
-**上一篇**: [Compose模块详解](eino-06-compose-module.md) | **下一篇**: [Callbacks模块详解](eino-08-callbacks-module.md)
+**上一篇**: [Compose模块详解](/posts/eino-06-compose-module/) | **下一篇**: [Callbacks模块详解](/posts/eino-08-callbacks-module/)
 
 **更新时间**: 2024-12-19 | **文档版本**: v1.0

@@ -2290,10 +2290,7 @@ Dify应用核心模块的设计体现了以下特点：
 
 基于应用核心模块的设计，可扩展和定制AI应用功能以适配需求。
 
-
-
 ## 8. 关键函数核心代码与说明（精简摘录）
-
 
 ```python
 class ChatAppRunner(AppRunner):
@@ -2455,7 +2452,6 @@ class AppQueueManager:
 - MessageBasedTaskPipeline.process：三阶段处理与事件监听；差错分层处理。
 - AppQueueManager.publish/listen：事件发布与消费，补全元数据与订阅通知。
 
-
 ## 9. 关键函数调用链（按应用类型）
 
 ```text
@@ -2486,7 +2482,6 @@ WorkflowAppRunner.run
   -> WorkflowExecutor.run
   -> QueueWorkflowCompletedEvent / 错误处理
 ```
-
 
 ## 10. 统一时序图（精简版）
 
@@ -2532,7 +2527,6 @@ sequenceDiagram
   Runner-->>Queue: 转发到应用队列
 ```
 
-
 ## 11. 关键结构与继承关系（类图）
 
 ```mermaid
@@ -2566,6 +2560,4 @@ classDiagram
   AppConfig <|-- EasyUIBasedAppConfig
   EasyUIBasedAppConfig <|-- ChatAppConfig
 ```
-
-
 

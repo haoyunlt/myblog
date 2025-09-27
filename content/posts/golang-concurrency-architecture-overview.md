@@ -845,17 +845,17 @@ graph LR
 
 ### 5.1 核心同步模块
 
-1. **[sync.Mutex模块](golang-concurrency-mutex.md)**
+1. **[sync.Mutex模块](/posts/golang-concurrency-mutex/)**
    - 互斥锁的实现机制
    - 饥饿模式与自旋优化
    - 快速路径与慢路径分析
 
-2. **[sync.RWMutex模块](golang-concurrency-rwmutex.md)**
+2. **[sync.RWMutex模块](/posts/golang-concurrency-rwmutex/)**
    - 读写锁的设计原理
    - 写者优先机制
    - 性能优化策略
 
-3. **[sync.WaitGroup模块](golang-concurrency-waitgroup.md)**
+3. **[sync.WaitGroup模块](/posts/golang-concurrency-waitgroup/)**
    - 计数同步机制
    - 状态管理与错误检测
    - 使用模式与最佳实践
@@ -898,7 +898,7 @@ graph LR
 
 ### 5.5 实践指导模块
 
-10. **[最佳实践模块](golang-concurrency-best-practices.md)**
+10. **[最佳实践模块](/posts/golang-concurrency-best-practices/)**
     - 性能优化策略
     - 常见陷阱避免
     - 实战案例分析

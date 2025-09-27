@@ -1,4 +1,14 @@
-# Python3 高级特性源码深度分析总览
+---
+title: "Python3 高级特性源码深度分析总览"
+date: 2025-09-28T01:46:41+08:00
+draft: false
+tags: ['源码分析', 'Python']
+categories: ['Python']
+description: "Python3 高级特性源码深度分析总览的深入技术分析文档"
+keywords: ['源码分析', 'Python']
+author: "技术分析师"
+weight: 1
+---
 
 ## 📋 概述
 

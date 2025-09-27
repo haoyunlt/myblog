@@ -1,4 +1,14 @@
-# CPython 框架使用示例和最佳实践
+---
+title: "CPython 框架使用示例和最佳实践"
+date: 2025-09-28T01:46:41+08:00
+draft: false
+tags: ['源码分析', 'Python', '最佳实践']
+categories: ['Python']
+description: "CPython 框架使用示例和最佳实践的深入技术分析文档"
+keywords: ['源码分析', 'Python', '最佳实践']
+author: "技术分析师"
+weight: 1
+---
 
 ## 概述
 

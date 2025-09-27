@@ -83,7 +83,6 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 - 强化可观测：为Operator控制循环与渲染阶段接入指标/日志/事件；
 - 回滚设计：保留上一个修订，预置自动回退条件（基于Prometheus规则）。
 
-
 ## 附录A：关键函数与结构
 
 ### A.1 关键函数核心代码（Reconcile 概念片段）

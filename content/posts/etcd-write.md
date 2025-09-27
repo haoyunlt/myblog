@@ -483,7 +483,6 @@ classDiagram
 * 复制与提交：进度管理、窗口限流与快照回退影响复制尾延迟与稳定性。
 * 应用与可见：应用后通过写缓冲→读缓冲写回实现“写后可读”，并通过 watch 派发事件。
 
-
 * `raft.maybeSendAppend(to, sendIfEmpty)` / `Progress.UpdateOnEntriesSend(...)`
   * 作用：基于 follower 复制状态/窗口决定是否发送 Append 及其批量大小。
 
@@ -502,7 +501,6 @@ classDiagram
 * `lessor.Attach/Detach`（租约）
   * 作用：写路径中为键与租约建立/解除关联，影响过期与回收。
 
-
 * `tracker.Progress`
   * 字段：`Match/Next/State/Inflights`；决定复制阶段与窗口控制。
 * `Inflights`
@@ -511,7 +509,6 @@ classDiagram
   * 字段：`Entries/Messages/CommittedEntries/HardState/Snapshot/ReadStates`。
 * `store`
   * 字段：`currentRev`、写读缓冲与提交阈值；直接影响可见性与提交节奏。
-
 
 * 提案到返回需经历：持久化→复制多数派→提交→应用→可见→应答。
 * 复制稳定性受 `Progress/Inflights` 与网络/磁盘共同影响；背压保护 commit-apply 差距。

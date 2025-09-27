@@ -1,4 +1,14 @@
-# FastAPI 源码剖析 - 依赖注入系统
+---
+title: "FastAPI 源码剖析 - 依赖注入系统"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['Python', 'Web框架', '源码分析', 'FastAPI', 'API']
+categories: ['Python框架', 'FastAPI']
+description: "FastAPI 源码剖析 - 依赖注入系统的深入技术分析文档"
+keywords: ['Python', 'Web框架', '源码分析', 'FastAPI', 'API']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 依赖注入概述
 
@@ -278,7 +288,6 @@ class Dependant:
     # === 缓存控制 ===
     use_cache: bool = True  # 是否使用缓存
 
-
 @dataclass  
 class SecurityRequirement:
     """
@@ -484,7 +493,6 @@ def get_dependant(
     
     return dependant
 
-
 def get_sub_dependant(
     *,
     depends: params.Depends,                          # Depends 对象
@@ -568,7 +576,6 @@ class SolvedDependency:
     background_tasks: Optional[BackgroundTasks] = None
     security_scopes: List[str] = field(default_factory=list)
     response: Optional[Response] = None
-
 
 async def solve_dependencies(
     *,

@@ -1,4 +1,14 @@
-# MySQL Router Mock Server - 数据结构和最佳实践
+---
+title: "MySQL Router Mock Server - 数据结构和最佳实践"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['源码分析', '技术文档', '最佳实践', '架构设计']
+categories: ['技术分析']
+description: "MySQL Router Mock Server - 数据结构和最佳实践的深入技术分析文档"
+keywords: ['源码分析', '技术文档', '最佳实践', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 1. 核心数据结构UML图和详细说明
 

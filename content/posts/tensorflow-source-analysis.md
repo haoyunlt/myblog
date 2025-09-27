@@ -1,13 +1,14 @@
-# TensorFlow 源码剖析总览
-
-## 目录
-1. [项目概述](#项目概述)
-2. [整体架构](#整体架构)
-3. [核心模块分析](#核心模块分析)
-4. [API层次结构](#api层次结构)
-5. [关键数据结构](#关键数据结构)
-6. [执行流程](#执行流程)
-7. [模块详细分析](#模块详细分析)
+---
+title: "TensorFlow 源码剖析总览"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['源码分析', '技术文档']
+categories: ['技术分析']
+description: "TensorFlow 源码剖析总览的深入技术分析文档"
+keywords: ['源码分析', '技术文档']
+author: "技术分析师"
+weight: 1
+---
 
 ## 项目概述
 
@@ -317,12 +318,12 @@ result = compute_sum(tf.constant([1, 2, 3]), tf.constant([4, 5, 6]))
 
 本文档将在以下子文档中详细分析各个模块：
 
-1. [Core模块分析](./core-module-analysis.md) - 核心运行时和框架
-2. [Python模块分析](./python-module-analysis.md) - Python API和绑定
-3. [Compiler模块分析](./compiler-module-analysis.md) - 编译器和优化
-4. [C++ API分析](./cc-module-analysis.md) - C++ API
-5. [TensorFlow Lite分析](./lite-module-analysis.md) - 移动和嵌入式部署
-6. [使用示例和最佳实践](./examples-and-best-practices.md)
+1. [Core模块分析](/posts/core-module-analysis/) - 核心运行时和框架
+2. [Python模块分析](/posts/python-module-analysis/) - Python API和绑定
+3. [Compiler模块分析](/posts/compiler-module-analysis/) - 编译器和优化
+4. [C++ API分析](/posts/cc-module-analysis/) - C++ API
+5. [TensorFlow Lite分析](/posts/lite-module-analysis/) - 移动和嵌入式部署
+6. [使用示例和最佳实践](/posts/examples-and-best-practices/)
 
 ## 总结
 

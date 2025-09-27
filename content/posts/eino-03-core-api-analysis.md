@@ -1,4 +1,14 @@
-# Eino 核心API深度分析
+---
+title: "Eino 核心API深度分析"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['AI框架', 'Eino', 'Python', 'LLM应用', 'API']
+categories: ['AI框架']
+description: "Eino 核心API深度分析的深入技术分析文档"
+keywords: ['AI框架', 'Eino', 'Python', 'LLM应用', 'API']
+author: "技术分析师"
+weight: 1
+---
 
 ## 📖 文档概述
 
@@ -1428,7 +1438,7 @@ func CreateBufferedStream[T any](data []T, bufferSize int) *schema.StreamReader[
 
 ---
 
-**上一篇**: [整体架构分析](eino-02-architecture-analysis.md)
-**下一篇**: [Schema模块详解](eino-04-schema-module.md) - 深入分析消息系统和流处理机制
+**上一篇**: [整体架构分析](/posts/eino-02-architecture-analysis/)
+**下一篇**: [Schema模块详解](/posts/eino-04-schema-module/) - 深入分析消息系统和流处理机制
 
 **更新时间**: 2024-12-19 | **文档版本**: v1.0

@@ -564,7 +564,6 @@ from fastapi.openapi.utils import get_openapi
 
 from .jwt_utils import bearer_jwt_auth
 
-
 def add_auth_responses_to_openapi(app: FastAPI) -> None:
     """
     Set up custom OpenAPI schema generation that adds 401 responses
@@ -1771,7 +1770,6 @@ class JSONFormatter(logging.Formatter):
 # file: autogpt_platform/autogpt_libs/autogpt_libs/logging/filters.py
 import logging
 
-
 class BelowLevelFilter(logging.Filter):
     """Filter for logging levels below a certain threshold."""
 
@@ -1790,7 +1788,6 @@ from __future__ import annotations
 import json
 import logging
 
-
 class JsonFileHandler(logging.FileHandler):
     def format(self, record: logging.LogRecord) -> str:
         record.json_data = json.loads(record.getMessage())
@@ -1804,7 +1801,6 @@ class JsonFileHandler(logging.FileHandler):
 ```python
 # file: autogpt_platform/autogpt_libs/autogpt_libs/logging/utils.py
 import re
-
 
 def remove_color_codes(s: str) -> str:
     return re.sub(r"\x1B(?:[@-Z\\-_]|\[[0-?]*[ -/]*[@-~])", "", s)
@@ -2464,7 +2460,6 @@ Credentials = Annotated[
     Field(discriminator="type"),
 ]
 
-
 CredentialsType = Literal["api_key", "oauth2"]
 ```
 
@@ -2474,11 +2469,9 @@ class UserMetadata(BaseModel):
     integration_credentials: list[Credentials] = Field(default_factory=list)
     integration_oauth_states: list[OAuthState] = Field(default_factory=list)
 
-
 class UserMetadataRaw(TypedDict, total=False):
     integration_credentials: list[dict]
     integration_oauth_states: list[dict]
-
 
 class UserIntegrations(BaseModel):
     credentials: list[Credentials] = Field(default_factory=list)
@@ -2587,7 +2580,6 @@ async def me(user = Depends(requires_user)):
 ```
 
 ## 附：汇总
-
 
 ### 关键函数调用路径
 

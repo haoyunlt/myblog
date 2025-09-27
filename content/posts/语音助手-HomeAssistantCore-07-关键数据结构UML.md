@@ -1,4 +1,14 @@
-# Home Assistant Core 源码深度解析 - 关键数据结构UML图
+---
+title: "Home Assistant Core 源码深度解析 - 关键数据结构UML图"
+date: 2025-09-28T00:47:17+08:00
+draft: false
+tags: ['智能家居', '自动化', 'Python', '源码分析', 'Home Assistant', '架构设计']
+categories: ['语音助手']
+description: "Home Assistant Core 源码深度解析 - 关键数据结构UML图的深入技术分析文档"
+keywords: ['智能家居', '自动化', 'Python', '源码分析', 'Home Assistant', '架构设计']
+author: "技术分析师"
+weight: 1
+---
 
 ## 概述
 
@@ -1159,7 +1169,7 @@ location_name = hass.config.location_name
 ## 下一步分析
 
 基于这些核心数据结构的理解，可以进一步探索：
-- [组件系统实现](./03-组件系统分析.md)
-- [实体平台架构](./04-实体平台分析.md)  
-- [存储和持久化机制](./06-数据存储分析.md)
-- [实战开发指南](./08-实战经验总结.md)
+- [组件系统实现](/posts/03-组件系统分析/)
+- [实体平台架构](/posts/04-实体平台分析/)  
+- [存储和持久化机制](/posts/06-数据存储分析/)
+- [实战开发指南](/posts/08-实战经验总结/)

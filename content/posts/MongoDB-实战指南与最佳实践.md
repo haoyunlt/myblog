@@ -1,4 +1,14 @@
-# MongoDB 源码剖析 - 实战指南与最佳实践
+---
+title: "MongoDB 源码剖析 - 实战指南与最佳实践"
+date: 2025-09-28T00:47:16+08:00
+draft: false
+tags: ['MongoDB', '数据库', 'C++', '源码分析', '最佳实践', 'NoSQL']
+categories: ['数据库']
+description: "MongoDB 源码剖析 - 实战指南与最佳实践的深入技术分析文档"
+keywords: ['MongoDB', '数据库', 'C++', '源码分析', '最佳实践', 'NoSQL']
+author: "技术分析师"
+weight: 1
+---
 
 ## 实战指南总览
 
