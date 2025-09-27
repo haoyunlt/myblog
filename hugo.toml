@@ -80,7 +80,7 @@ enableEmoji = true
   mermaid = true
   
   # 首页模式：list, profile, 或 home
-  homeInfoParams = { Title = "欢迎来到我的博客", Content = "这里记录我的技术学习、思考和生活感悟。专注于高质量的内容分享，希望能对你有所帮助。" }
+  homeInfoParams = { Title = "欢迎来到我的博客", Content = "深耕技术源码剖析与架构设计，专注AI框架、分布式系统、数据库内核等领域的深度技术分享。从CPython解释器到LangGraph状态图引擎，从AutoGen多智能体到分布式存储架构，用代码与图表诠释技术之美，助力开发者深入理解底层原理与最佳实践。" }
   
   # 社交链接
   [[params.socialIcons]]
