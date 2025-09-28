@@ -3,7 +3,7 @@ title: "Kubernetes 框架使用示例指南"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['DevOps', 'Go', 'Kubernetes', '容器编排']
-categories: ['容器编排']
+categories: ['kubernetes', '容器编排']
 description: "Kubernetes 框架使用示例指南的深入技术分析文档"
 keywords: ['DevOps', 'Go', 'Kubernetes', '容器编排']
 author: "技术分析师"

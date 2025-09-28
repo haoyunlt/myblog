@@ -3,7 +3,7 @@ title: "OpenAI Agents Python SDK 框架使用示例"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['Python', '源码分析']
-categories: ['Python']
+categories: ['openaiagent', 'Python']
 description: "OpenAI Agents Python SDK 框架使用示例的深入技术分析文档"
 keywords: ['Python', '源码分析']
 author: "技术分析师"

@@ -12,7 +12,7 @@ toc: true
 tocOpen: true
 showReadingTime: true
 showWordCount: true
-weight: 70
+weight: 30
 slug: "dify-controllers-module"
 ---
 

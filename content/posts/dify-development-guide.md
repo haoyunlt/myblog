@@ -11,7 +11,7 @@ toc: true
 tocOpen: true
 showReadingTime: true
 showWordCount: true
-weight: 30
+weight: 15
 slug: "dify-development-guide"
 ---
 

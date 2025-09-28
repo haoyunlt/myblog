@@ -3,7 +3,7 @@ title: "Kubernetes 实战经验与最佳实践指南"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['容器编排', 'DevOps', 'Go', '最佳实践', 'Kubernetes']
-categories: ['容器编排']
+categories: ['kubernetes', '容器编排']
 description: "Kubernetes 实战经验与最佳实践指南的深入技术分析文档"
 keywords: ['容器编排', 'DevOps', 'Go', '最佳实践', 'Kubernetes']
 author: "技术分析师"

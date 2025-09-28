@@ -3,7 +3,7 @@ title: "Apache Flink 源码剖析 - flink-table 模块分析"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['源码分析', '技术文档']
-categories: ['技术分析']
+categories: ['flink', '技术分析']
 description: "Apache Flink 源码剖析 - flink-table 模块分析的深入技术分析文档"
 keywords: ['源码分析', '技术文档']
 author: "技术分析师"

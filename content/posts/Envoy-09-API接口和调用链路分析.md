@@ -3,7 +3,7 @@ title: "Envoy API接口和调用链路深度分析"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['代理', 'C++', 'Envoy', '负载均衡', '微服务', 'API']
-categories: ['代理服务器']
+categories: ['envoy', '代理服务器']
 description: "Envoy API接口和调用链路深度分析的深入技术分析文档"
 keywords: ['代理', 'C++', 'Envoy', '负载均衡', '微服务', 'API']
 author: "技术分析师"

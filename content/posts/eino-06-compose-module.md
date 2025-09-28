@@ -3,7 +3,7 @@ title: "Eino Compose 模块详解"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['Python', 'AI框架', 'LLM应用', 'Eino']
-categories: ['AI框架']
+categories: ['eino', 'AI框架']
 description: "Eino Compose 模块详解的深入技术分析文档"
 keywords: ['Python', 'AI框架', 'LLM应用', 'Eino']
 author: "技术分析师"

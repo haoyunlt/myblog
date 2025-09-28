@@ -3,7 +3,7 @@ title: "关键数据结构和UML图分析"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['代理', 'C++', 'Envoy', '负载均衡', '微服务', '架构设计']
-categories: ['代理服务器']
+categories: ['envoy', '代理服务器']
 description: "关键数据结构和UML图分析的深入技术分析文档"
 keywords: ['代理', 'C++', 'Envoy', '负载均衡', '微服务', '架构设计']
 author: "技术分析师"

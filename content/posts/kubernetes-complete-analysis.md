@@ -3,7 +3,7 @@ title: "Kubernetes 架构与源码完整剖析"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['容器编排', 'DevOps', 'Go', '源码分析', 'Kubernetes']
-categories: ['容器编排']
+categories: ['kubernetes', '容器编排']
 description: "Kubernetes 架构与源码完整剖析的深入技术分析文档"
 keywords: ['容器编排', 'DevOps', 'Go', '源码分析', 'Kubernetes']
 author: "技术分析师"

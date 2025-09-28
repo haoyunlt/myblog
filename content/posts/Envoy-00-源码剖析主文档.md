@@ -3,7 +3,7 @@ title: "Envoy 源码剖析主文档"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['代理', 'C++', 'Envoy', '负载均衡', '微服务', '源码分析']
-categories: ['代理服务器']
+categories: ['envoy', '代理服务器']
 description: "Envoy 源码剖析主文档的深入技术分析文档"
 keywords: ['代理', 'C++', 'Envoy', '负载均衡', '微服务', '源码分析']
 author: "技术分析师"

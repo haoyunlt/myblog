@@ -3,7 +3,7 @@ title: "Apache Flink 源码剖析 - 对外 API 深入分析"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['源码分析', '技术文档', 'API']
-categories: ['技术分析']
+categories: ['flink', '技术分析']
 description: "Apache Flink 源码剖析 - 对外 API 深入分析的深入技术分析文档"
 keywords: ['源码分析', '技术文档', 'API']
 author: "技术分析师"

@@ -3,7 +3,7 @@ title: "LangChain 源码剖析 - 文档索引"
 date: 2025-09-28T00:47:15+08:00
 draft: false
 tags: ['源码分析', '技术文档', '索引']
-categories: ['技术分析']
+categories: ['langchain', '技术分析']
 description: "LangChain 源码剖析系列文档的索引指南"
 keywords: ['源码分析', '技术文档', '索引']
 author: "技术分析师"

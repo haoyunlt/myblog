@@ -3,7 +3,7 @@ title: "Chatwoot 实战经验与最佳实践"
 date: 2025-09-28T00:45:10+08:00
 draft: false
 tags: ['Ruby', '最佳实践', 'Rails', '客服系统', 'Chatwoot']
-categories: ['聊天助手']
+categories: ['AI聊天助手']
 description: "Chatwoot 实战经验与最佳实践的深入技术分析文档"
 keywords: ['Ruby', '最佳实践', 'Rails', '客服系统', 'Chatwoot']
 author: "技术分析师"

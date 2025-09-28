@@ -3,7 +3,7 @@ title: "Chatwoot 客服系统源码深度剖析"
 date: 2025-09-28T00:38:33+08:00
 draft: false
 tags: ['Chatwoot', 'Rails', '源码分析', '客服系统', 'Ruby']
-categories: ['聊天助手']
+categories: ['AI聊天助手']
 description: "Chatwoot 客服系统源码深度剖析的深入技术分析文档"
 keywords: ['Chatwoot', 'Rails', '源码分析', '客服系统', 'Ruby']
 author: "技术分析师"

@@ -3,7 +3,7 @@ title: "Eino 核心API深度分析"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['AI框架', 'Eino', 'Python', 'LLM应用', 'API']
-categories: ['AI框架']
+categories: ['eino', 'AI框架']
 description: "Eino 核心API深度分析的深入技术分析文档"
 keywords: ['AI框架', 'Eino', 'Python', 'LLM应用', 'API']
 author: "技术分析师"

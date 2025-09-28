@@ -11,7 +11,7 @@ toc: true
 tocOpen: true
 showReadingTime: true
 showWordCount: true
-weight: 50
+weight: 65
 slug: "dify-best-practices-guide"
 ---
 

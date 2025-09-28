@@ -34,7 +34,7 @@
   {{- end }}
   
   <div class="categories-grid">
-    {{- $categoryOrder := slice "dify" "语音助手" "voicehelper" "聊天助手" "autogpt" "autogen" "openaiagent" "qwenagent" "eino" "githubmcpserver" "langgraph" "langchain" "metagpt" "vllm" "tensorrtllm" "python" "golang" "tensorflow" "ray" "fastapi" "grpc" "kitex" "nginx" "kafka" "flink" "pulsar" "kubernetes" "docker" "etcd" "istio" "envoy" "mongodb" "mysql" "clickhouse" "rocksdb" "leveldb" "pgvector" "milvus" "ceph" "minio" "elasticsearch" "netpoll" "openmanus" }}
+    {{- $categoryOrder := slice "ai语音助手" "ai聊天助手" "dify" "autogpt" "autogen" "openaiagent" "qwenagent" "eino" "githubmcpserver" "langgraph" "langchain" "metagpt" "vllm" "tensorrtllm" "python" "golang" "tensorflow" "ray" "fastapi" "grpc" "kitex" "nginx" "kafka" "flink" "pulsar" "kubernetes" "docker" "etcd" "istio" "envoy" "mongodb" "mysql" "clickhouse" "rocksdb" "leveldb" "pgvector" "milvus" "ceph" "minio" "elasticsearch" "netpoll" "openmanus" }}
     {{- range $categoryOrder }}
       {{- $category := . }}
       {{- $posts := index $categories $category }}
@@ -48,14 +48,12 @@
         <span class="category-count">{{ $postCount }} 篇文章</span>
       </div>
       <div class="category-description">
-        {{- if eq $category "dify" }}
+        {{- if eq $category "ai语音助手" }}
+        <p>🎤 智能语音助手系统 - Home Assistant、LiveKit、VoiceHelper实时语音处理技术栈</p>
+        {{- else if eq $category "ai聊天助手" }}
+        <p>💬 AI聊天助手平台 - Chatwoot开源客服系统架构设计与源码实现详解</p>
+        {{- else if eq $category "dify" }}
           <p>🤖 Dify低代码LLM应用开发平台 - 工作流引擎架构与核心模块源码深度剖析</p>
-        {{- else if eq $category "AI语音助手" }}
-          <p>🎤 智能语音助手系统 - Home Assistant与LiveKit实时语音处理技术栈</p>
-        {{- else if eq $category "voicehelper" }}
-          <p>🎧 语音助手核心架构 - WebRTC、语音识别与自然语言处理集成方案</p>
-        {{- else if eq $category "AI聊天助手" }}
-          <p>💬 Chatwoot开源客服平台 - Ruby on Rails架构设计与源码实现详解</p>
         {{- else if eq $category "autogpt" }}
           <p>🚀 AutoGPT自主智能体 - Block系统架构与Plugin生态源码分析</p>
         {{- else if eq $category "autogen" }}
@@ -178,7 +176,7 @@
         <span class="category-count">{{ $postCount }} 篇文章</span>
       </div>
       <div class="category-description">
-        <p>{{ $category }} 相关技术文档和源码分析</p>
+        <p>{{ if eq $category "语音助手" }}AI语音助手{{ else if eq $category "聊天助手" }}AI聊天助手{{ else }}{{ $category }}{{ end }} 相关技术文档和源码分析</p>
       </div>
       <div class="category-posts">
         <div class="recent-posts">

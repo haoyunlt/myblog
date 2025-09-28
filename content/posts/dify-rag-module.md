@@ -12,7 +12,7 @@ toc: true
 tocOpen: true
 showReadingTime: true
 showWordCount: true
-weight: 70
+weight: 45
 slug: "dify-rag-module"
 ---
 
@@ -1124,6 +1124,1057 @@ class MarkdownExtractor(BaseExtractor):
                 "extraction_method": "single_document"
             }
         )
+
+class TextExtractor(BaseExtractor):
+    """
+    纯文本文档提取器
+    支持各种编码的纯文本文件处理
+    """
+    
+    def __init__(self, file_path: str, autodetect_encoding: bool = True, **kwargs):
+        super().__init__(file_path, **kwargs)
+        self.autodetect_encoding = autodetect_encoding
+        self.target_encoding = kwargs.get('target_encoding', 'utf-8')
+
+    def extract(self) -> list[Document]:
+        """
+        提取纯文本文件内容
+        自动检测编码并处理各种文本格式
+        
+        Returns:
+            list[Document]: 提取的文档对象列表
+        """
+        try:
+            # 检测文件编码
+            encoding = (
+                self._detect_encoding(self.file_path) 
+                if self.autodetect_encoding 
+                else self.target_encoding
+            )
+            
+            # 读取文件内容
+            with open(self.file_path, 'r', encoding=encoding) as file:
+                content = file.read()
+            
+            if not content.strip():
+                logger.warning(f"文本文件 {self.file_path} 内容为空")
+                return []
+            
+            # 清理和处理文本
+            cleaned_content = self._clean_text(content)
+            
+            document = Document(
+                page_content=cleaned_content,
+                metadata={
+                    "source": self.file_path,
+                    "file_type": "text",
+                    "encoding": encoding,
+                    "character_count": len(cleaned_content),
+                    "line_count": len(cleaned_content.split('\n')),
+                    "extraction_method": "direct_read"
+                }
+            )
+            
+            return [document]
+            
+        except UnicodeDecodeError as e:
+            logger.error(f"文本文件编码错误: {e}")
+            # 尝试使用错误容忍模式重新读取
+            try:
+                with open(self.file_path, 'r', encoding='utf-8', errors='ignore') as file:
+                    content = file.read()
+                
+                document = Document(
+                    page_content=self._clean_text(content),
+                    metadata={
+                        "source": self.file_path,
+                        "file_type": "text",
+                        "encoding": "utf-8_fallback",
+                        "extraction_method": "fallback_read",
+                        "encoding_issues": True
+                    }
+                )
+                return [document]
+                
+            except Exception as fallback_error:
+                raise Exception(f"无法读取文本文件 {self.file_path}: {fallback_error}")
+        
+        except Exception as e:
+            logger.error(f"文本文件提取失败: {e}")
+            raise Exception(f"无法提取文本文件 {self.file_path}: {e}")
+
+class HtmlExtractor(BaseExtractor):
+    """
+    HTML文档提取器
+    支持网页内容的智能提取和清理
+    """
+    
+    def __init__(self, file_path: str, **kwargs):
+        super().__init__(file_path, **kwargs)
+        self.extract_links = kwargs.get('extract_links', False)
+        self.extract_images = kwargs.get('extract_images', False)
+        self.preserve_structure = kwargs.get('preserve_structure', True)
+
+    def extract(self) -> list[Document]:
+        """
+        提取HTML文档内容
+        使用BeautifulSoup解析并提取主要内容
+        
+        Returns:
+            list[Document]: 提取的文档对象列表
+        """
+        try:
+            from bs4 import BeautifulSoup
+            import requests
+            
+            # 读取HTML文件
+            with open(self.file_path, 'r', encoding='utf-8') as file:
+                html_content = file.read()
+            
+            # 解析HTML
+            soup = BeautifulSoup(html_content, 'html.parser')
+            
+            # 移除script和style标签
+            for tag in soup(['script', 'style', 'nav', 'header', 'footer']):
+                tag.decompose()
+            
+            # 提取文本内容
+            if self.preserve_structure:
+                content_parts = self._extract_structured_content(soup)
+            else:
+                content_parts = [soup.get_text(strip=True)]
+            
+            documents = []
+            for i, content in enumerate(content_parts):
+                if content.strip():
+                    # 清理文本
+                    cleaned_content = self._clean_html_text(content)
+                    
+                    # 提取元数据
+                    metadata = self._extract_html_metadata(soup)
+                    metadata.update({
+                        "source": self.file_path,
+                        "file_type": "html",
+                        "section": i + 1 if len(content_parts) > 1 else None,
+                        "extraction_method": "beautifulsoup"
+                    })
+                    
+                    # 如果需要，提取链接和图片信息
+                    if self.extract_links:
+                        metadata["links"] = self._extract_links(soup)
+                    if self.extract_images:
+                        metadata["images"] = self._extract_images(soup)
+                    
+                    document = Document(
+                        page_content=cleaned_content,
+                        metadata=metadata
+                    )
+                    documents.append(document)
+            
+            return documents if documents else []
+            
+        except ImportError:
+            raise Exception("需要安装 beautifulsoup4: pip install beautifulsoup4")
+        except Exception as e:
+            logger.error(f"HTML文档提取失败: {e}")
+            raise Exception(f"无法提取HTML文件 {self.file_path}: {e}")
+
+    def _extract_structured_content(self, soup) -> list[str]:
+        """
+        提取结构化的HTML内容
+        按语义块分割内容
+        
+        Args:
+            soup: BeautifulSoup解析对象
+            
+        Returns:
+            list[str]: 结构化内容列表
+        """
+        content_parts = []
+        
+        # 按语义标签分割内容
+        semantic_tags = ['article', 'section', 'div', 'main', 'aside']
+        
+        for tag_name in semantic_tags:
+            elements = soup.find_all(tag_name)
+            for element in elements:
+                text = element.get_text(strip=True)
+                if len(text) > 100:  # 只保留有意义的内容块
+                    content_parts.append(text)
+        
+        # 如果没找到语义标签，按段落分割
+        if not content_parts:
+            paragraphs = soup.find_all(['p', 'div'])
+            for p in paragraphs:
+                text = p.get_text(strip=True)
+                if len(text) > 50:
+                    content_parts.append(text)
+        
+        # 最后备选：整体文本
+        if not content_parts:
+            content_parts = [soup.get_text(strip=True)]
+        
+        return content_parts
+
+    def _clean_html_text(self, text: str) -> str:
+        """
+        清理HTML提取的文本
+        移除多余空白和特殊字符
+        
+        Args:
+            text: 原始文本
+            
+        Returns:
+            str: 清理后的文本
+        """
+        import re
+        
+        # 移除多余的空白字符
+        text = re.sub(r'\s+', ' ', text)
+        
+        # 移除特殊HTML实体残留
+        text = re.sub(r'&[a-zA-Z0-9#]+;', ' ', text)
+        
+        # 移除多余的换行和空格
+        text = re.sub(r'\n\s*\n', '\n\n', text)
+        
+        return text.strip()
+
+    def _extract_html_metadata(self, soup) -> dict:
+        """
+        提取HTML元数据
+        包括标题、描述、关键词等信息
+        
+        Args:
+            soup: BeautifulSoup解析对象
+            
+        Returns:
+            dict: 元数据字典
+        """
+        metadata = {}
+        
+        # 提取标题
+        title_tag = soup.find('title')
+        if title_tag:
+            metadata["title"] = title_tag.get_text(strip=True)
+        
+        # 提取meta标签信息
+        meta_tags = soup.find_all('meta')
+        for meta in meta_tags:
+            name = meta.get('name') or meta.get('property')
+            content = meta.get('content')
+            if name and content:
+                if name in ['description', 'keywords', 'author']:
+                    metadata[name] = content
+                elif name.startswith('og:'):
+                    metadata[name] = content
+        
+        # 提取语言信息
+        html_tag = soup.find('html')
+        if html_tag and html_tag.get('lang'):
+            metadata["language"] = html_tag.get('lang')
+        
+        return metadata
+
+    def _extract_links(self, soup) -> list[dict]:
+        """提取链接信息"""
+        links = []
+        for link in soup.find_all('a', href=True):
+            links.append({
+                "url": link['href'],
+                "text": link.get_text(strip=True),
+                "title": link.get('title', '')
+            })
+        return links
+
+    def _extract_images(self, soup) -> list[dict]:
+        """提取图片信息"""
+        images = []
+        for img in soup.find_all('img', src=True):
+            images.append({
+                "src": img['src'],
+                "alt": img.get('alt', ''),
+                "title": img.get('title', '')
+            })
+        return images
+
+class CSVExtractor(BaseExtractor):
+    """
+    CSV文档提取器
+    支持各种CSV格式和编码的处理
+    """
+    
+    def __init__(self, file_path: str, autodetect_encoding: bool = True, **kwargs):
+        super().__init__(file_path, **kwargs)
+        self.autodetect_encoding = autodetect_encoding
+        self.delimiter = kwargs.get('delimiter', None)  # 自动检测分隔符
+        self.max_rows = kwargs.get('max_rows', 10000)
+        self.include_headers = kwargs.get('include_headers', True)
+
+    def extract(self) -> list[Document]:
+        """
+        提取CSV文档内容
+        将CSV数据转换为结构化文本
+        
+        Returns:
+            list[Document]: 提取的文档对象列表
+        """
+        try:
+            import pandas as pd
+            import csv
+            
+            # 检测编码
+            encoding = (
+                self._detect_encoding(self.file_path) 
+                if self.autodetect_encoding 
+                else 'utf-8'
+            )
+            
+            # 检测分隔符
+            if not self.delimiter:
+                self.delimiter = self._detect_delimiter()
+            
+            # 读取CSV文件
+            df = pd.read_csv(
+                self.file_path,
+                encoding=encoding,
+                delimiter=self.delimiter,
+                nrows=self.max_rows,
+                dtype=str,  # 统一使用字符串类型
+                keep_default_na=False  # 保持空值为空字符串
+            )
+            
+            if df.empty:
+                logger.warning(f"CSV文件 {self.file_path} 内容为空")
+                return []
+            
+            # 转换为结构化文本
+            csv_text = self._dataframe_to_structured_text(df)
+            
+            document = Document(
+                page_content=csv_text,
+                metadata={
+                    "source": self.file_path,
+                    "file_type": "csv",
+                    "encoding": encoding,
+                    "delimiter": self.delimiter,
+                    "rows": len(df),
+                    "columns": len(df.columns),
+                    "column_names": df.columns.tolist(),
+                    "extraction_method": "pandas"
+                }
+            )
+            
+            return [document]
+            
+        except Exception as e:
+            logger.error(f"CSV文档提取失败: {e}")
+            raise Exception(f"无法提取CSV文件 {self.file_path}: {e}")
+
+    def _detect_delimiter(self) -> str:
+        """
+        自动检测CSV分隔符
+        
+        Returns:
+            str: 检测到的分隔符
+        """
+        try:
+            import csv
+            
+            with open(self.file_path, 'r', encoding='utf-8') as file:
+                # 读取前几行进行分隔符检测
+                sample = file.read(1024)
+                sniffer = csv.Sniffer()
+                delimiter = sniffer.sniff(sample).delimiter
+                return delimiter
+                
+        except Exception:
+            # 检测失败时使用常见分隔符
+            common_delimiters = [',', ';', '\t', '|']
+            
+            try:
+                with open(self.file_path, 'r', encoding='utf-8') as file:
+                    first_line = file.readline()
+                    
+                    # 统计各分隔符出现次数
+                    delimiter_counts = {
+                        delim: first_line.count(delim) 
+                        for delim in common_delimiters
+                    }
+                    
+                    # 返回出现次数最多的分隔符
+                    return max(delimiter_counts, key=delimiter_counts.get)
+                    
+            except Exception:
+                return ','  # 默认使用逗号
+
+    def _dataframe_to_structured_text(self, df: 'pd.DataFrame') -> str:
+        """
+        将DataFrame转换为结构化文本
+        
+        Args:
+            df: pandas DataFrame对象
+            
+        Returns:
+            str: 结构化文本
+        """
+        text_parts = []
+        
+        # 添加列信息
+        if self.include_headers:
+            text_parts.append("列信息:")
+            for i, col in enumerate(df.columns, 1):
+                non_empty_count = df[col].astype(str).str.strip().str.len().gt(0).sum()
+                text_parts.append(f"  {i}. {col} (有效值: {non_empty_count}/{len(df)})")
+            text_parts.append("")
+        
+        # 添加数据内容
+        text_parts.append("数据内容:")
+        text_parts.append("-" * 60)
+        
+        # 添加表头
+        header_row = " | ".join(str(col) for col in df.columns)
+        text_parts.append(header_row)
+        text_parts.append("-" * len(header_row))
+        
+        # 添加数据行
+        for index, row in df.iterrows():
+            row_values = []
+            for col in df.columns:
+                value = str(row[col]).strip()
+                if not value:
+                    value = "[空]"
+                # 限制单元格内容长度
+                if len(value) > 50:
+                    value = value[:47] + "..."
+                row_values.append(value)
+            
+            row_text = " | ".join(row_values)
+            text_parts.append(row_text)
+        
+        # 添加统计信息
+        text_parts.append("")
+        text_parts.append("数据统计:")
+        text_parts.append(f"  总行数: {len(df)}")
+        text_parts.append(f"  总列数: {len(df.columns)}")
+        
+        # 数值列统计
+        numeric_cols = df.select_dtypes(include=['int64', 'float64']).columns
+        if len(numeric_cols) > 0:
+            text_parts.append(f"  数值列: {', '.join(numeric_cols)}")
+        
+        return "\n".join(text_parts)
+
+class JSONExtractor(BaseExtractor):
+    """
+    JSON文档提取器
+    支持复杂JSON结构的智能解析和文本转换
+    """
+    
+    def __init__(self, file_path: str, **kwargs):
+        super().__init__(file_path, **kwargs)
+        self.max_depth = kwargs.get('max_depth', 10)
+        self.extract_arrays = kwargs.get('extract_arrays', True)
+        self.flatten_structure = kwargs.get('flatten_structure', False)
+
+    def extract(self) -> list[Document]:
+        """
+        提取JSON文档内容
+        将JSON结构转换为可读文本
+        
+        Returns:
+            list[Document]: 提取的文档对象列表
+        """
+        try:
+            import json
+            
+            # 读取JSON文件
+            with open(self.file_path, 'r', encoding='utf-8') as file:
+                json_data = json.load(file)
+            
+            if self.flatten_structure:
+                # 扁平化结构处理
+                documents = self._extract_flattened_content(json_data)
+            else:
+                # 结构化文本处理
+                text_content = self._json_to_structured_text(json_data)
+                
+                document = Document(
+                    page_content=text_content,
+                    metadata={
+                        "source": self.file_path,
+                        "file_type": "json",
+                        "structure_type": self._analyze_json_structure(json_data),
+                        "extraction_method": "structured_text"
+                    }
+                )
+                documents = [document]
+            
+            return documents
+            
+        except json.JSONDecodeError as e:
+            logger.error(f"JSON格式错误: {e}")
+            raise Exception(f"JSON文件 {self.file_path} 格式错误: {e}")
+        except Exception as e:
+            logger.error(f"JSON文档提取失败: {e}")
+            raise Exception(f"无法提取JSON文件 {self.file_path}: {e}")
+
+    def _json_to_structured_text(
+        self, 
+        data: any, 
+        indent: int = 0, 
+        key_path: str = ""
+    ) -> str:
+        """
+        将JSON数据转换为结构化文本
+        
+        Args:
+            data: JSON数据
+            indent: 缩进级别
+            key_path: 当前键路径
+            
+        Returns:
+            str: 结构化文本
+        """
+        lines = []
+        indent_str = "  " * indent
+        
+        if isinstance(data, dict):
+            if key_path:
+                lines.append(f"{indent_str}{key_path}:")
+            
+            for key, value in data.items():
+                current_path = f"{key_path}.{key}" if key_path else key
+                
+                if isinstance(value, (dict, list)):
+                    lines.append(f"{indent_str}{key}:")
+                    lines.append(self._json_to_structured_text(
+                        value, indent + 1, current_path
+                    ))
+                else:
+                    lines.append(f"{indent_str}{key}: {self._format_value(value)}")
+        
+        elif isinstance(data, list):
+            if not self.extract_arrays:
+                lines.append(f"{indent_str}[数组包含 {len(data)} 个项目]")
+            else:
+                for i, item in enumerate(data):
+                    current_path = f"{key_path}[{i}]" if key_path else f"[{i}]"
+                    
+                    if isinstance(item, (dict, list)):
+                        lines.append(f"{indent_str}项目 {i + 1}:")
+                        lines.append(self._json_to_structured_text(
+                            item, indent + 1, current_path
+                        ))
+                    else:
+                        lines.append(f"{indent_str}项目 {i + 1}: {self._format_value(item)}")
+        
+        else:
+            lines.append(f"{indent_str}{self._format_value(data)}")
+        
+        return "\n".join(filter(None, lines))
+
+    def _format_value(self, value: any) -> str:
+        """
+        格式化JSON值
+        
+        Args:
+            value: JSON值
+            
+        Returns:
+            str: 格式化后的字符串
+        """
+        if value is None:
+            return "[空值]"
+        elif isinstance(value, bool):
+            return "是" if value else "否"
+        elif isinstance(value, str):
+            # 限制字符串长度
+            if len(value) > 100:
+                return f'"{value[:97]}..."'
+            return f'"{value}"'
+        else:
+            return str(value)
+
+    def _extract_flattened_content(self, json_data: any) -> list[Document]:
+        """
+        提取扁平化的JSON内容
+        将复杂结构分解为多个文档
+        
+        Args:
+            json_data: JSON数据
+            
+        Returns:
+            list[Document]: 文档列表
+        """
+        documents = []
+        flat_data = self._flatten_json(json_data)
+        
+        # 按类别分组
+        categories = {}
+        for key, value in flat_data.items():
+            category = key.split('.')[0]
+            if category not in categories:
+                categories[category] = {}
+            categories[category][key] = value
+        
+        # 为每个类别创建文档
+        for category, items in categories.items():
+            if items:
+                content_lines = [f"类别: {category}\n"]
+                
+                for key, value in items.items():
+                    formatted_value = self._format_value(value)
+                    content_lines.append(f"{key}: {formatted_value}")
+                
+                document = Document(
+                    page_content="\n".join(content_lines),
+                    metadata={
+                        "source": self.file_path,
+                        "file_type": "json",
+                        "category": category,
+                        "item_count": len(items),
+                        "extraction_method": "flattened"
+                    }
+                )
+                documents.append(document)
+        
+        return documents
+
+    def _flatten_json(self, data: any, prefix: str = "") -> dict:
+        """
+        扁平化JSON数据
+        
+        Args:
+            data: JSON数据
+            prefix: 键前缀
+            
+        Returns:
+            dict: 扁平化后的键值对
+        """
+        result = {}
+        
+        if isinstance(data, dict):
+            for key, value in data.items():
+                new_key = f"{prefix}.{key}" if prefix else key
+                
+                if isinstance(value, (dict, list)):
+                    result.update(self._flatten_json(value, new_key))
+                else:
+                    result[new_key] = value
+        
+        elif isinstance(data, list):
+            for i, item in enumerate(data):
+                new_key = f"{prefix}[{i}]" if prefix else f"[{i}]"
+                
+                if isinstance(item, (dict, list)):
+                    result.update(self._flatten_json(item, new_key))
+                else:
+                    result[new_key] = item
+        
+        else:
+            result[prefix] = data
+        
+        return result
+
+    def _analyze_json_structure(self, data: any) -> str:
+        """
+        分析JSON结构类型
+        
+        Args:
+            data: JSON数据
+            
+        Returns:
+            str: 结构类型描述
+        """
+        if isinstance(data, dict):
+            return "对象" if len(data) < 10 else "复杂对象"
+        elif isinstance(data, list):
+            return "数组" if len(data) < 100 else "大型数组"
+        else:
+            return "简单值"
+
+class UnstructuredBaseExtractor(BaseExtractor):
+    """
+    基于Unstructured服务的文档提取器基类
+    为各种Unstructured提取器提供通用功能
+    """
+    
+    def __init__(
+        self, 
+        file_path: str, 
+        api_url: str, 
+        api_key: str, 
+        **kwargs
+    ):
+        super().__init__(file_path, **kwargs)
+        self.api_url = api_url.rstrip('/')
+        self.api_key = api_key
+        self.timeout = kwargs.get('timeout', 60)
+        self.max_retries = kwargs.get('max_retries', 3)
+
+    def _call_unstructured_api(
+        self, 
+        endpoint: str, 
+        additional_params: dict = None
+    ) -> list[Document]:
+        """
+        调用Unstructured API进行文档处理
+        
+        Args:
+            endpoint: API端点
+            additional_params: 额外的API参数
+            
+        Returns:
+            list[Document]: 提取的文档对象列表
+        """
+        import requests
+        
+        url = f"{self.api_url}/{endpoint}"
+        
+        # 准备请求参数
+        files = {
+            'files': (
+                Path(self.file_path).name, 
+                open(self.file_path, 'rb'), 
+                'application/octet-stream'
+            )
+        }
+        
+        headers = {
+            'accept': 'application/json',
+            'unstructured-api-key': self.api_key
+        }
+        
+        # 默认参数
+        data = {
+            'strategy': 'hi_res',  # 高分辨率策略
+            'hi_res_model_name': 'yolox',  # 布局检测模型
+            'pdf_infer_table_structure': True,  # 推断表格结构
+            'extract_images_in_pdf': False,  # 是否提取PDF中的图片
+            'coordinates': True,  # 包含坐标信息
+            'output_format': 'application/json'
+        }
+        
+        # 添加额外参数
+        if additional_params:
+            data.update(additional_params)
+        
+        # 执行请求（带重试机制）
+        for attempt in range(self.max_retries):
+            try:
+                response = requests.post(
+                    url, 
+                    files=files, 
+                    data=data, 
+                    headers=headers, 
+                    timeout=self.timeout
+                )
+                
+                if response.status_code == 200:
+                    return self._parse_unstructured_response(response.json())
+                else:
+                    logger.warning(f"Unstructured API错误 (尝试 {attempt + 1}): {response.status_code}")
+                    if attempt == self.max_retries - 1:
+                        raise Exception(f"Unstructured API调用失败: {response.text}")
+                    
+            except requests.RequestException as e:
+                logger.warning(f"网络请求失败 (尝试 {attempt + 1}): {e}")
+                if attempt == self.max_retries - 1:
+                    raise Exception(f"Unstructured API网络错误: {e}")
+            
+            finally:
+                files['files'][1].close()  # 关闭文件句柄
+        
+        raise Exception("Unstructured API调用达到最大重试次数")
+
+    def _parse_unstructured_response(self, response_data: list) -> list[Document]:
+        """
+        解析Unstructured API响应
+        将结构化数据转换为Document对象
+        
+        Args:
+            response_data: API响应数据
+            
+        Returns:
+            list[Document]: 文档对象列表
+        """
+        documents = []
+        
+        # 按页面分组内容
+        pages = {}
+        for element in response_data:
+            page_number = element.get('metadata', {}).get('page_number', 1)
+            if page_number not in pages:
+                pages[page_number] = []
+            pages[page_number].append(element)
+        
+        # 为每页创建文档
+        for page_num, elements in pages.items():
+            # 按元素类型分组
+            content_parts = {
+                'titles': [],
+                'text': [],
+                'tables': [],
+                'lists': []
+            }
+            
+            for element in elements:
+                element_type = element.get('type', 'Text')
+                text_content = element.get('text', '').strip()
+                
+                if not text_content:
+                    continue
+                
+                if element_type in ['Title', 'Header']:
+                    content_parts['titles'].append(text_content)
+                elif element_type == 'Table':
+                    content_parts['tables'].append(text_content)
+                elif element_type in ['List', 'ListItem']:
+                    content_parts['lists'].append(text_content)
+                else:
+                    content_parts['text'].append(text_content)
+            
+            # 组合页面内容
+            page_content_lines = []
+            
+            # 添加标题
+            if content_parts['titles']:
+                page_content_lines.extend(content_parts['titles'])
+                page_content_lines.append('')
+            
+            # 添加正文
+            if content_parts['text']:
+                page_content_lines.extend(content_parts['text'])
+                page_content_lines.append('')
+            
+            # 添加列表
+            if content_parts['lists']:
+                page_content_lines.append('列表内容:')
+                page_content_lines.extend(content_parts['lists'])
+                page_content_lines.append('')
+            
+            # 添加表格
+            if content_parts['tables']:
+                page_content_lines.append('表格内容:')
+                page_content_lines.extend(content_parts['tables'])
+            
+            page_content = '\n'.join(page_content_lines).strip()
+            
+            if page_content:
+                document = Document(
+                    page_content=page_content,
+                    metadata={
+                        "source": self.file_path,
+                        "page": page_num,
+                        "total_elements": len(elements),
+                        "extraction_method": "unstructured_api",
+                        "element_types": list(set(el.get('type', 'Text') for el in elements))
+                    }
+                )
+                documents.append(document)
+        
+        return documents
+
+class UnstructuredPDFExtractor(UnstructuredBaseExtractor):
+    """Unstructured PDF提取器"""
+    
+    def extract(self) -> list[Document]:
+        additional_params = {
+            'pdf_infer_table_structure': True,
+            'include_page_breaks': True,
+            'chunking_strategy': None  # 不在API层面分块
+        }
+        return self._call_unstructured_api('general/v0/general', additional_params)
+
+class UnstructuredWordExtractor(UnstructuredBaseExtractor):
+    """Unstructured Word文档提取器"""
+    
+    def extract(self) -> list[Document]:
+        additional_params = {
+            'include_page_breaks': True,
+            'extract_image_block_types': ['Image', 'Table']
+        }
+        return self._call_unstructured_api('general/v0/general', additional_params)
+
+class UnstructuredPPTExtractor(UnstructuredBaseExtractor):
+    """Unstructured PPT提取器"""
+    
+    def extract(self) -> list[Document]:
+        additional_params = {
+            'include_page_breaks': True,
+            'extract_image_block_types': ['Image']
+        }
+        return self._call_unstructured_api('general/v0/general', additional_params)
+
+class ExtractorFactory:
+    """
+    文档提取器工厂
+    根据文件类型和配置自动选择合适的提取器
+    """
+    
+    # 支持的文件格式映射
+    EXTRACTOR_MAPPING = {
+        # 文档格式
+        '.pdf': {'standard': PdfExtractor, 'unstructured': UnstructuredPDFExtractor},
+        '.docx': {'standard': WordExtractor, 'unstructured': UnstructuredWordExtractor},
+        '.doc': {'unstructured': UnstructuredWordExtractor},
+        '.pptx': {'unstructured': UnstructuredPPTExtractor},
+        '.ppt': {'unstructured': UnstructuredPPTExtractor},
+        
+        # 表格格式
+        '.xlsx': {'standard': ExcelExtractor},
+        '.xls': {'standard': ExcelExtractor},
+        '.csv': {'standard': CSVExtractor},
+        
+        # 文本格式
+        '.txt': {'standard': TextExtractor},
+        '.md': {'standard': MarkdownExtractor},
+        '.markdown': {'standard': MarkdownExtractor},
+        '.html': {'standard': HtmlExtractor},
+        '.htm': {'standard': HtmlExtractor},
+        '.json': {'standard': JSONExtractor},
+        
+        # 其他格式
+        '.xml': {'unstructured': UnstructuredBaseExtractor},
+        '.epub': {'unstructured': UnstructuredBaseExtractor},
+        '.msg': {'unstructured': UnstructuredBaseExtractor},
+        '.eml': {'unstructured': UnstructuredBaseExtractor},
+    }
+    
+    @classmethod
+    def create_extractor(
+        cls,
+        file_path: str,
+        etl_type: str = "dify",
+        unstructured_api_url: str = None,
+        unstructured_api_key: str = None,
+        **kwargs
+    ) -> BaseExtractor:
+        """
+        创建文档提取器实例
+        
+        Args:
+            file_path: 文件路径
+            etl_type: ETL类型 ("dify" 或 "Unstructured")
+            unstructured_api_url: Unstructured API URL
+            unstructured_api_key: Unstructured API Key
+            **kwargs: 额外参数
+            
+        Returns:
+            BaseExtractor: 提取器实例
+            
+        Raises:
+            ValueError: 不支持的文件格式或配置错误
+        """
+        file_extension = Path(file_path).suffix.lower()
+        
+        if file_extension not in cls.EXTRACTOR_MAPPING:
+            raise ValueError(f"不支持的文件格式: {file_extension}")
+        
+        available_extractors = cls.EXTRACTOR_MAPPING[file_extension]
+        
+        # 选择提取器类型
+        if etl_type == "Unstructured":
+            if 'unstructured' not in available_extractors:
+                logger.warning(f"文件格式 {file_extension} 不支持Unstructured提取器，使用标准提取器")
+                extractor_class = available_extractors.get('standard')
+            else:
+                extractor_class = available_extractors['unstructured']
+                
+                # 验证Unstructured配置
+                if not unstructured_api_url or not unstructured_api_key:
+                    raise ValueError("使用Unstructured提取器需要配置API URL和API Key")
+                
+                # 添加API配置到kwargs
+                kwargs.update({
+                    'api_url': unstructured_api_url,
+                    'api_key': unstructured_api_key
+                })
+        else:
+            extractor_class = available_extractors.get('standard')
+        
+        if not extractor_class:
+            raise ValueError(f"文件格式 {file_extension} 没有可用的提取器")
+        
+        # 创建提取器实例
+        try:
+            return extractor_class(file_path, **kwargs)
+        except Exception as e:
+            logger.error(f"创建提取器失败: {e}")
+            raise ValueError(f"无法创建 {file_extension} 格式的提取器: {e}")
+    
+    @classmethod
+    def get_supported_formats(cls) -> dict[str, list[str]]:
+        """
+        获取支持的文件格式列表
+        
+        Returns:
+            dict: 按类别分组的支持格式
+        """
+        format_categories = {
+            'document_formats': ['.pdf', '.docx', '.doc', '.pptx', '.ppt'],
+            'spreadsheet_formats': ['.xlsx', '.xls', '.csv'],
+            'text_formats': ['.txt', '.md', '.markdown', '.html', '.htm', '.json'],
+            'other_formats': ['.xml', '.epub', '.msg', '.eml']
+        }
+        
+        return format_categories
+    
+    @classmethod
+    def is_supported_format(cls, file_path: str) -> bool:
+        """
+        检查文件格式是否受支持
+        
+        Args:
+            file_path: 文件路径
+            
+        Returns:
+            bool: 是否支持该格式
+        """
+        file_extension = Path(file_path).suffix.lower()
+        return file_extension in cls.EXTRACTOR_MAPPING
+
+**多格式文档提取器功能特性总览**：
+
+| 文档类型 | 标准提取器 | Unstructured提取器 | 特殊功能 |
+|---------|-----------|-------------------|----------|
+| **PDF** | PdfExtractor | UnstructuredPDFExtractor | OCR支持、表格识别、坐标信息 |
+| **Word** | WordExtractor | UnstructuredWordExtractor | 表格提取、样式保持、图片处理 |
+| **Excel** | ExcelExtractor | - | 多工作表、数据统计、格式化输出 |
+| **HTML** | HtmlExtractor | - | 语义解析、链接提取、元数据提取 |
+| **Markdown** | MarkdownExtractor | UnstructuredMarkdownExtractor | 结构保持、章节分割、格式转换 |
+| **CSV** | CSVExtractor | - | 编码检测、分隔符自动识别、结构化输出 |
+| **JSON** | JSONExtractor | - | 结构化解析、扁平化选项、类型识别 |
+| **文本** | TextExtractor | - | 编码检测、格式清理、统计信息 |
+| **PowerPoint** | - | UnstructuredPPTExtractor | 幻灯片解析、图片提取 |
+| **邮件** | - | UnstructuredMsgExtractor/EmailExtractor | 邮件头解析、附件处理 |
+
+**提取器性能对比与选择建议**：
+
+```python
+# 生产环境提取器选择策略
+EXTRACTOR_SELECTION_STRATEGY = {
+    "高精度需求": {
+        "推荐": "Unstructured引擎",
+        "适用场景": "复杂布局PDF、学术论文、合同文档",
+        "性能特点": "准确率高但处理速度较慢",
+        "成本考虑": "需要API调用费用"
+    },
+    
+    "高性能需求": {
+        "推荐": "内置标准引擎",
+        "适用场景": "简单文档、大批量处理、实时处理",
+        "性能特点": "处理速度快但精度一般",
+        "成本考虑": "无额外API费用"
+    },
+    
+    "平衡选择": {
+        "策略": "智能切换机制",
+        "实现": "根据文档复杂度动态选择引擎",
+        "效果": "在精度和性能之间找到最佳平衡"
+    }
+}
 ```
 
 ## 3. 文本分割与处理系统

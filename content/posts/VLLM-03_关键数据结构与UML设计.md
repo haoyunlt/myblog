@@ -3,7 +3,7 @@ title: "VLLM关键数据结构与UML设计"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['Python', 'LLM', 'AI推理', 'vLLM', '架构设计']
-categories: ['AI推理']
+categories: ['vllm', 'AI推理']
 description: "VLLM关键数据结构与UML设计的深入技术分析文档"
 keywords: ['Python', 'LLM', 'AI推理', 'vLLM', '架构设计']
 author: "技术分析师"

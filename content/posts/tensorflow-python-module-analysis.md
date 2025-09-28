@@ -3,7 +3,7 @@ title: "TensorFlow Python模块源码剖析"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['Python', '源码分析']
-categories: ['Python']
+categories: ['tensorflow', 'Python']
 description: "TensorFlow Python模块源码剖析的深入技术分析文档"
 keywords: ['Python', '源码分析']
 author: "技术分析师"

@@ -3,7 +3,7 @@ title: "VLLM关键流程时序图分析"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['Python', 'LLM', 'vLLM', 'AI推理']
-categories: ['AI推理']
+categories: ['vllm', 'AI推理']
 description: "VLLM关键流程时序图分析的深入技术分析文档"
 keywords: ['Python', 'LLM', 'vLLM', 'AI推理']
 author: "技术分析师"

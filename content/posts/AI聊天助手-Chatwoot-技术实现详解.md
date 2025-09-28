@@ -3,7 +3,7 @@ title: "Chatwoot 技术实现详解"
 date: 2024-12-20T10:00:00+08:00
 draft: false
 tags: ["Chatwoot", "Ruby", "Rails", "客服系统", "技术实现", "实时通信", "消息处理"]
-categories: ["聊天助手"]
+categories: ["AI聊天助手"]
 description: "深入分析Chatwoot项目的核心技术实现，包括服务层架构、消息处理流程、实时通信、自动化规则引擎、多渠道消息路由和通知系统等关键技术细节。"
 keywords: ["Chatwoot", "客服系统", "Ruby on Rails", "WebSocket", "消息路由", "自动化规则", "通知系统"]
 author: "技术分析师"

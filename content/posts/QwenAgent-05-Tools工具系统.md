@@ -3,7 +3,7 @@ title: "QwenAgent-05 - Tools工具系统深度解析"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['源码分析', '技术文档']
-categories: ['技术分析']
+categories: ['qwenagent', '技术分析']
 description: "QwenAgent-05 - Tools工具系统深度解析的深入技术分析文档"
 keywords: ['源码分析', '技术文档']
 author: "技术分析师"

@@ -3,7 +3,7 @@ title: "Ceph分布式存储系统源码剖析 - RGW模块详解"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['C++', 'Ceph', '分布式存储', '对象存储', '源码分析']
-categories: ['分布式存储']
+categories: ['ceph', '分布式存储']
 description: "Ceph分布式存储系统源码剖析 - RGW模块详解的深入技术分析文档"
 keywords: ['C++', 'Ceph', '分布式存储', '对象存储', '源码分析']
 author: "技术分析师"

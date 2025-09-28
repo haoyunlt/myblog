@@ -12,7 +12,7 @@ toc: true
 tocOpen: true
 showReadingTime: true
 showWordCount: true
-weight: 70
+weight: 40
 slug: "dify-model-runtime-module"
 ---
 
@@ -443,9 +443,16 @@ class ModelPerformanceStats:
         }
 ```
 
-### 1.2 ModelInstance模型实例
+### 2.2 ModelInstance模型实例
 
-ModelInstance是模型调用的核心抽象，提供了统一的模型调用接口：
+ModelInstance是模型调用的核心抽象，提供了统一的模型调用接口。它封装了单个模型的完整调用逻辑，包括凭据管理、负载均衡和错误处理。
+
+**ModelInstance核心功能**：
+- 🔑 **凭据管理**：自动获取和验证模型访问凭据
+- ⚖️ **负载均衡**：支持多配置间的智能负载均衡  
+- 🔄 **错误重试**：对网络、限流等错误进行智能重试
+- 📊 **统一接口**：为6种模型类型提供一致的调用方式
+- 🎯 **类型安全**：通过方法重载确保类型安全
 
 ```python
 class ModelInstance:
@@ -963,6 +970,37 @@ class ModelInstance:
             credentials=self.credentials, 
             language=language
         )
+```
+
+**ModelInstance方法功能总览**：
+
+| 方法类别 | 方法名称 | 功能描述 | 参数要点 |
+|---------|---------|---------|---------|
+| **LLM调用** | `invoke_llm()` | 调用大语言模型 | 支持流式/非流式，工具调用，停止词 |
+| | `get_llm_num_tokens()` | 计算LLM令牌数 | 用于成本预估和上下文管理 |
+| **嵌入模型** | `invoke_text_embedding()` | 调用文本嵌入模型 | 支持文档/查询两种输入类型 |
+| | `get_text_embedding_num_tokens()` | 计算嵌入令牌数 | 返回每个文本的令牌数量 |
+| **重排序** | `invoke_rerank()` | 调用重排序模型 | 支持分数阈值和Top-N过滤 |
+| **语音处理** | `invoke_speech2text()` | 语音转文字 | 支持音频文件转录 |
+| | `invoke_tts()` | 文字转语音 | 支持多种音色和语音合成 |
+| | `get_tts_voices()` | 获取TTS音色列表 | 可按语言筛选可用音色 |
+| **内容安全** | `invoke_moderation()` | 内容审核 | 检测文本内容安全性 |
+| **核心机制** | `_round_robin_invoke()` | 轮询调用核心 | 负载均衡+错误处理+重试逻辑 |
+
+**负载均衡与容错机制**：
+```python
+# ModelInstance 的核心调用流程
+def _round_robin_invoke(self, function, *args, **kwargs):
+    """
+    实现智能的负载均衡调用：
+    1. 从 LBModelManager 获取下一个可用配置
+    2. 验证配置的合规性（策略检查）
+    3. 使用配置的凭据调用目标函数
+    4. 根据错误类型决定重试策略：
+       - 429 限流错误：冷却 60 秒，继续轮询
+       - 认证/连接错误：冷却 10 秒，继续轮询  
+       - 其他错误：直接抛出，不重试
+    """
 ```
 
 ## 3. 负载均衡管理器

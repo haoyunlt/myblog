@@ -3,7 +3,7 @@ title: "Eino 关键数据结构与继承关系"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['AI框架', 'Eino', 'Python', 'LLM应用', '架构设计']
-categories: ['AI框架']
+categories: ['eino', 'AI框架']
 description: "Eino 关键数据结构与继承关系的深入技术分析文档"
 keywords: ['AI框架', 'Eino', 'Python', 'LLM应用', '架构设计']
 author: "技术分析师"

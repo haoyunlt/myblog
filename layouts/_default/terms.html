@@ -1,0 +1,87 @@
+{{- define "main" }}
+
+<header class="page-header">
+  <h1>
+    {{- if eq .Data.Singular "category" }}📚 分类列表
+    {{- else if eq .Data.Singular "tag" }}🏷️ 标签列表  
+    {{- else }}{{ .Title }}
+    {{- end }}
+  </h1>
+  <div class="page-description">
+    {{- if eq .Data.Singular "category" }}
+    <p>按技术领域分类的所有文章</p>
+    {{- else if eq .Data.Singular "tag" }}
+    <p>所有文章标签</p>
+    {{- else }}
+    <p>{{ .Data.Singular }} 列表</p>
+    {{- end }}
+  </div>
+</header>
+
+{{- if .Content }}
+<div class="post-content">
+  {{ .Content }}
+</div>
+{{- end }}
+
+{{- range .Data.Terms.Alphabetical }}
+{{- $postCount := .Count }}
+<div class="term-entry">
+  <div class="term-header">
+    <h3 class="term-name">
+      <a href="{{ .Page.Permalink }}">{{ .Page.Title }}</a>
+    </h3>
+    <span class="term-count">{{ $postCount }} 篇文章</span>
+  </div>
+  
+  {{- if eq $.Data.Singular "category" }}
+  <div class="term-description">
+    {{- $category := .Page.Title | lower }}
+    {{- if eq $category "ai语音助手" }}
+    <p>🎤 智能语音助手系统 - Home Assistant、LiveKit、VoiceHelper实时语音处理技术栈</p>
+    {{- else if eq $category "ai聊天助手" }}
+    <p>💬 AI聊天助手平台 - Chatwoot开源客服系统架构设计与源码实现详解</p>
+    {{- else if eq $category "dify" }}
+    <p>🤖 Dify低代码LLM应用开发平台 - 工作流引擎架构与核心模块源码深度剖析</p>
+    {{- else if eq $category "autogpt" }}
+    <p>🚀 AutoGPT自主智能体 - Block系统架构与Plugin生态源码分析</p>
+    {{- else if eq $category "autogen" }}
+    <p>🔄 Microsoft AutoGen - 多智能体协作框架与对话编排机制深度解析</p>
+    {{- else if eq $category "python" }}
+    <p>🐍 Python深度解析 - CPython解释器内核、GIL机制与内存管理源码剖析</p>
+    {{- else if eq $category "golang" }}
+    <p>🐹 Go语言内核技术 - Runtime调度器、垃圾回收器与并发原语实现机制</p>
+    {{- else if eq $category "vllm" }}
+    <p>⚡ vLLM推理加速引擎 - PagedAttention与连续批处理优化技术</p>
+    {{- else if eq $category "mysql" }}
+    <p>🐬 MySQL数据库内核 - InnoDB存储引擎与查询优化器源码深度解析</p>
+    {{- else if eq $category "kubernetes" }}
+    <p>☸️ Kubernetes容器编排 - APIServer、调度器与控制器模式源码解析</p>
+    {{- else if eq $category "ceph" }}
+    <p>🗂️ Ceph分布式存储 - CRUSH算法与OSD存储节点管理机制深度解析</p>
+    {{- else }}
+    <p>📖 {{ $category }} 相关技术文档和源码分析</p>
+    {{- end }}
+  </div>
+  {{- end }}
+  
+  <div class="term-recent-posts">
+    <h4>最新文章</h4>
+    <ul>
+      {{- range first 5 (sort .Pages "Date" "desc") }}
+      <li>
+        <a href="{{ .Permalink }}" title="{{ .Title }}">
+          {{ .Title | truncate 60 }}
+        </a>
+        <time>{{ .Date.Format "2006-01-02" }}</time>
+      </li>
+      {{- end }}
+    </ul>
+    {{- if gt $postCount 5 }}
+    <a href="{{ .Page.Permalink }}" class="view-all">查看全部 {{ $postCount }} 篇文章 →</a>
+    {{- end }}
+  </div>
+</div>
+{{- end }}
+
+{{- end }}{{/* end main */}}

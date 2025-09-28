@@ -1,0 +1,391 @@
+{{- define "main" }}
+
+<header class="page-header">
+  <h1>📚 所有文章</h1>
+  <p class="page-description">按技术类目和推荐顺序整理的完整文章列表</p>
+</header>
+
+{{- $allPosts := where site.RegularPages "Type" "posts" }}
+{{- $postsByCategory := dict }}
+
+{{/* 按类目分组文章 */}}
+{{- range $allPosts }}
+  {{- range .Params.categories }}
+    {{- $category := . }}
+    {{- $posts := index $postsByCategory $category | default slice }}
+    {{- $posts = $posts | append $ }}
+    {{- $postsByCategory = merge $postsByCategory (dict $category $posts) }}
+  {{- end }}
+{{- end }}
+
+{{/* 定义类目展示顺序和名称 */}}
+{{- $categoryOrder := slice "AI语音助手" "AI聊天助手" "Dify" "AutoGPT" "AutoGen" "OpenAIAgent" "QwenAgent" "Eino" "GitHubMCPServer" "LangGraph" "LangChain" "MetaGPT" "vLLM" "TensorRT-LLM" "Python底层实现" "Go语言框架" "TensorFlow" "Ray" "FastAPI" "gRPC" "Kitex" "Nginx" "Kafka" "Flink" "Pulsar" "Kubernetes" "Docker" "Etcd" "Istio" "Envoy" "MongoDB" "MySQL" "ClickHouse" "RocksDB" "LevelDB" "PgVector" "Milvus" "Ceph" "MinIO" "ElasticSearch" "NetPoll" "OpenManus" }}
+
+{{- $categoryDisplayInfo := dict 
+  "AI语音助手" (dict "icon" "🎤" "desc" "智能语音助手系统 - Home Assistant、LiveKit、VoiceHelper实时语音处理技术栈")
+  "AI聊天助手" (dict "icon" "💬" "desc" "AI聊天助手平台 - Chatwoot开源客服系统架构设计与源码实现详解")
+  "Dify" (dict "icon" "🤖" "desc" "Dify低代码LLM应用开发平台 - 工作流引擎架构与核心模块源码深度剖析")
+  "AutoGPT" (dict "icon" "🚀" "desc" "AutoGPT自主智能体 - Block系统架构与Plugin生态源码分析")
+  "AutoGen" (dict "icon" "🔄" "desc" "Microsoft AutoGen - 多智能体协作框架与对话编排机制深度解析")
+  "OpenAIAgent" (dict "icon" "🧠" "desc" "OpenAI Agent开发实战 - Function Calling与Tool Use最佳实践")
+  "QwenAgent" (dict "icon" "🤖" "desc" "阿里通义千问智能体 - ReAct推理与工具调用框架技术实现")
+  "Eino" (dict "icon" "⚡" "desc" "字节跳动Eino框架 - 企业级大模型应用开发与部署实践")
+  "GitHubMCPServer" (dict "icon" "🔧" "desc" "GitHub MCP服务器 - Model Context Protocol协议实现与集成方案")
+  "LangGraph" (dict "icon" "📊" "desc" "LangGraph状态图引擎 - 复杂AI工作流编排与执行控制机制")
+  "LangChain" (dict "icon" "🔗" "desc" "LangChain应用框架 - Chain组合模式与Memory管理核心架构")
+  "MetaGPT" (dict "icon" "🎯" "desc" "MetaGPT软件开发框架 - 多角色协作与代码生成流水线设计")
+  "vLLM" (dict "icon" "⚡" "desc" "vLLM推理加速引擎 - PagedAttention与连续批处理优化技术")
+  "TensorRT-LLM" (dict "icon" "🚄" "desc" "NVIDIA TensorRT-LLM - GPU推理优化与模型量化部署实践")
+  "Python底层实现" (dict "icon" "🐍" "desc" "Python深度解析 - CPython解释器内核、GIL机制与内存管理源码剖析")
+  "Go语言框架" (dict "icon" "🐹" "desc" "Go语言内核技术 - Runtime调度器、垃圾回收器与并发原语实现机制")
+  "TensorFlow" (dict "icon" "🧮" "desc" "TensorFlow深度学习 - 计算图执行引擎与分布式训练架构源码分析")
+  "Ray" (dict "icon" "☀️" "desc" "Ray分布式计算 - 任务调度系统与Actor模型核心架构设计")
+  "FastAPI" (dict "icon" "🚀" "desc" "FastAPI高性能框架 - ASGI异步架构与依赖注入系统源码深度解析")
+  "gRPC" (dict "icon" "📡" "desc" "gRPC通信框架 - Protobuf序列化与HTTP/2双向流传输机制剖析")
+  "Kitex" (dict "icon" "🛠️" "desc" "字节跳动Kitex - 微服务治理与高性能RPC框架设计实践")
+  "Nginx" (dict "icon" "🌐" "desc" "Nginx高性能服务器 - 事件驱动架构与反向代理核心模块源码分析")
+  "Kafka" (dict "icon" "🔄" "desc" "Apache Kafka消息系统 - 分区存储引擎与Raft一致性协议实现机制")
+  "Flink" (dict "icon" "🌊" "desc" "Apache Flink流计算 - JobManager调度与TaskManager执行引擎架构")
+  "Pulsar" (dict "icon" "📨" "desc" "Apache Pulsar消息平台 - BookKeeper存储层与Broker架构深度分析")
+  "Kubernetes" (dict "icon" "☸️" "desc" "Kubernetes容器编排 - APIServer、调度器与控制器模式源码解析")
+  "Docker" (dict "icon" "🐳" "desc" "Docker容器技术 - 容器运行时、镜像存储与网络模型底层实现")
+  "Etcd" (dict "icon" "🗄️" "desc" "etcd分布式存储 - Raft共识算法与MVCC并发控制机制深度剖析")
+  "Istio" (dict "icon" "🕸️" "desc" "Istio服务网格 - Envoy数据平面与Pilot控制平面交互机制")
+  "Envoy" (dict "icon" "🔀" "desc" "Envoy代理服务器 - 过滤器链架构与L7负载均衡算法实现")
+  "MongoDB" (dict "icon" "🍃" "desc" "MongoDB文档数据库 - WiredTiger存储引擎与分片集群架构原理")
+  "MySQL" (dict "icon" "🐬" "desc" "MySQL数据库内核 - InnoDB存储引擎与查询优化器源码深度解析")
+  "ClickHouse" (dict "icon" "⚡" "desc" "ClickHouse列式数据库 - MergeTree引擎与分布式查询执行机制")
+  "RocksDB" (dict "icon" "🗿" "desc" "RocksDB存储引擎 - LSM-Tree架构与压缩合并策略核心算法剖析")
+  "LevelDB" (dict "icon" "📚" "desc" "LevelDB键值存储 - SSTable结构设计与Bloom Filter优化技术")
+  "PgVector" (dict "icon" "🔍" "desc" "pgvector向量扩展 - PostgreSQL向量检索与HNSW索引算法实现")
+  "Milvus" (dict "icon" "🧭" "desc" "Milvus向量数据库 - 分布式向量检索与AI原生存储架构设计")
+  "Ceph" (dict "icon" "🗂️" "desc" "Ceph分布式存储 - CRUSH算法与OSD存储节点管理机制深度解析")
+  "MinIO" (dict "icon" "📦" "desc" "MinIO对象存储 - S3兼容API与纠删码数据保护技术实现")
+  "ElasticSearch" (dict "icon" "🔎" "desc" "Elasticsearch搜索引擎 - Lucene倒排索引与分布式查询协调机制")
+  "NetPoll" (dict "icon" "🌐" "desc" "字节跳动NetPoll - 高性能网络库与epoll事件驱动架构优化")
+  "OpenManus" (dict "icon" "🤖" "desc" "OpenManus机器人平台 - 实时控制系统与传感器数据处理架构")
+}}
+
+<div class="posts-by-category">
+  {{/* 按预定义顺序显示类目 */}}
+  {{- range $categoryOrder }}
+    {{- $category := . }}
+    {{- $posts := index $postsByCategory $category }}
+    {{- if $posts }}
+      {{- $categoryInfo := index $categoryDisplayInfo $category }}
+      {{- $icon := index $categoryInfo "icon" | default "📖" }}
+      {{- $desc := index $categoryInfo "desc" | default (printf "%s 相关技术文档和源码分析" $category) }}
+      {{- $postCount := len $posts }}
+      {{- $sortedPosts := sort $posts ".Params.weight" "asc" }}
+      {{- $sortedPosts = $sortedPosts | default (sort $posts "Date" "desc") }}
+      
+<section class="category-section">
+  <div class="category-header">
+    <h2 class="category-title">
+      {{ $icon }} {{ $category }}
+      <span class="category-count">({{ $postCount }} 篇)</span>
+    </h2>
+    <p class="category-description">{{ $desc }}</p>
+  </div>
+  
+  <div class="category-posts-grid">
+    {{- range $index, $post := $sortedPosts }}
+    <article class="post-card">
+      <div class="post-card-header">
+        <h3 class="post-title">
+          <span class="post-number">{{ add $index 1 }}.</span>
+          <a href="{{ $post.Permalink }}">{{ $post.Title }}</a>
+        </h3>
+        {{- if $post.Params.weight }}
+        <span class="post-weight" title="推荐顺序">{{ $post.Params.weight }}</span>
+        {{- end }}
+      </div>
+      
+      {{- if $post.Summary }}
+      <div class="post-summary">
+        <p>{{ $post.Summary | plainify | htmlUnescape | truncate 120 }}</p>
+      </div>
+      {{- end }}
+      
+      <div class="post-meta">
+        <time class="post-date">📅 {{ $post.Date.Format "2006-01-02" }}</time>
+        {{- if $post.Params.tags }}
+        <div class="post-tags">
+          {{- range first 3 $post.Params.tags }}
+          <span class="tag">{{ . }}</span>
+          {{- end }}
+        </div>
+        {{- end }}
+      </div>
+    </article>
+    {{- end }}
+  </div>
+  
+  <div class="category-footer">
+    <a href="/categories/{{ $category | urlize }}/" class="view-category">
+      查看 {{ $category }} 分类页 →
+    </a>
+  </div>
+</section>
+    {{- end }}
+  {{- end }}
+
+  {{/* 显示其他未在预定义顺序中的类目 */}}
+  {{- range $category, $posts := $postsByCategory }}
+    {{- $isInOrder := false }}
+    {{- range $categoryOrder }}
+      {{- if eq . $category }}
+        {{- $isInOrder = true }}
+      {{- end }}
+    {{- end }}
+    {{- if not $isInOrder }}
+      {{- $postCount := len $posts }}
+      {{- $sortedPosts := sort $posts ".Params.weight" "asc" }}
+      {{- $sortedPosts = $sortedPosts | default (sort $posts "Date" "desc") }}
+
+<section class="category-section">
+  <div class="category-header">
+    <h2 class="category-title">
+      📖 {{ $category }}
+      <span class="category-count">({{ $postCount }} 篇)</span>
+    </h2>
+    <p class="category-description">{{ $category }} 相关技术文档和源码分析</p>
+  </div>
+  
+  <div class="category-posts-grid">
+    {{- range $index, $post := $sortedPosts }}
+    <article class="post-card">
+      <div class="post-card-header">
+        <h3 class="post-title">
+          <span class="post-number">{{ add $index 1 }}.</span>
+          <a href="{{ $post.Permalink }}">{{ $post.Title }}</a>
+        </h3>
+        {{- if $post.Params.weight }}
+        <span class="post-weight">{{ $post.Params.weight }}</span>
+        {{- end }}
+      </div>
+      
+      {{- if $post.Summary }}
+      <div class="post-summary">
+        <p>{{ $post.Summary | plainify | htmlUnescape | truncate 120 }}</p>
+      </div>
+      {{- end }}
+      
+      <div class="post-meta">
+        <time class="post-date">📅 {{ $post.Date.Format "2006-01-02" }}</time>
+        {{- if $post.Params.tags }}
+        <div class="post-tags">
+          {{- range first 3 $post.Params.tags }}
+          <span class="tag">{{ . }}</span>
+          {{- end }}
+        </div>
+        {{- end }}
+      </div>
+    </article>
+    {{- end }}
+  </div>
+  
+  <div class="category-footer">
+    <a href="/categories/{{ $category | urlize }}/" class="view-category">
+      查看 {{ $category }} 分类页 →
+    </a>
+  </div>
+</section>
+    {{- end }}
+  {{- end }}
+</div>
+
+<style>
+.page-header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.page-header h1 {
+  font-size: 2.5rem;
+  margin-bottom: 0.5rem;
+}
+
+.page-description {
+  font-size: 1.1rem;
+  color: var(--secondary);
+  margin-bottom: 0;
+}
+
+.posts-by-category {
+  max-width: 1200px;
+  margin: 0 auto;
+}
+
+.category-section {
+  margin-bottom: 3rem;
+  padding: 1.5rem;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--entry);
+}
+
+.category-header {
+  margin-bottom: 2rem;
+  padding-bottom: 1rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.category-title {
+  font-size: 1.8rem;
+  margin-bottom: 0.5rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.category-count {
+  font-size: 0.9rem;
+  color: var(--secondary);
+  font-weight: normal;
+}
+
+.category-description {
+  font-size: 1rem;
+  color: var(--secondary);
+  margin: 0;
+  line-height: 1.6;
+}
+
+.category-posts-grid {
+  display: grid;
+  gap: 1rem;
+  grid-template-columns: repeat(auto-fill, minmax(400px, 1fr));
+}
+
+.post-card {
+  padding: 1.2rem;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  background: var(--theme);
+  transition: all 0.3s ease;
+}
+
+.post-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  border-color: var(--primary);
+}
+
+.post-card-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  margin-bottom: 0.8rem;
+}
+
+.post-title {
+  font-size: 1.1rem;
+  margin: 0;
+  flex: 1;
+}
+
+.post-title a {
+  color: var(--content);
+  text-decoration: none;
+  display: block;
+  line-height: 1.4;
+}
+
+.post-title a:hover {
+  color: var(--primary);
+}
+
+.post-number {
+  color: var(--primary);
+  font-weight: bold;
+  margin-right: 0.5rem;
+}
+
+.post-weight {
+  background: var(--primary);
+  color: white;
+  padding: 2px 6px;
+  border-radius: 4px;
+  font-size: 0.8rem;
+  font-weight: bold;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+.post-summary {
+  margin-bottom: 0.8rem;
+}
+
+.post-summary p {
+  margin: 0;
+  color: var(--secondary);
+  line-height: 1.5;
+  font-size: 0.9rem;
+}
+
+.post-meta {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 0.85rem;
+  color: var(--secondary);
+}
+
+.post-date {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+}
+
+.post-tags {
+  display: flex;
+  gap: 0.3rem;
+  flex-wrap: wrap;
+}
+
+.tag {
+  background: var(--code-bg);
+  color: var(--content);
+  padding: 2px 6px;
+  border-radius: 3px;
+  font-size: 0.8rem;
+}
+
+.category-footer {
+  margin-top: 1.5rem;
+  text-align: center;
+  padding-top: 1rem;
+  border-top: 1px solid var(--border);
+}
+
+.view-category {
+  color: var(--primary);
+  text-decoration: none;
+  font-weight: 500;
+}
+
+.view-category:hover {
+  text-decoration: underline;
+}
+
+@media (max-width: 768px) {
+  .category-posts-grid {
+    grid-template-columns: 1fr;
+  }
+  
+  .post-card-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+  
+  .post-meta {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.5rem;
+  }
+}
+</style>
+
+{{- end }}

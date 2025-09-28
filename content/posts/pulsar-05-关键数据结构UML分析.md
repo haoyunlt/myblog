@@ -3,7 +3,7 @@ title: "Apache Pulsar 关键数据结构 UML 分析"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['Java', 'Apache Pulsar', '消息队列', '流处理', '架构设计']
-categories: ['消息队列']
+categories: ['pulsar', '消息队列']
 description: "Apache Pulsar 关键数据结构 UML 分析的深入技术分析文档"
 keywords: ['Java', 'Apache Pulsar', '消息队列', '流处理', '架构设计']
 author: "技术分析师"

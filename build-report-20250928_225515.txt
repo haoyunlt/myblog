@@ -1,0 +1,23 @@
+Hugo博客构建报告
+==================
+构建时间: Sun Sep 28 22:55:15 CST 2025
+Hugo版本: hugo v0.150.0+extended+withdeploy darwin/amd64 BuildDate=2025-09-08T13:01:12Z VendorInfo=brew
+构建配置: hugo.toml
+基础URL: https://www.tommienotes.com
+
+构建统计:
+- 总文件数:     1590
+- 总大小: 108M
+- HTML文件:     1183
+- CSS文件:        1
+- JS文件:        2
+- 图片文件:        0
+
+内容统计:
+- Markdown文件:      309
+- 文章数量:      305
+
+配置文件状态:
+- baseURL: https://www.tommienotes.com
+- title: tommie 笔记
+- 主题: PaperMod

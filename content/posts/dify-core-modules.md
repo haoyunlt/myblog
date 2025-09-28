@@ -11,7 +11,7 @@ toc: true
 tocOpen: true
 showReadingTime: true
 showWordCount: true
-weight: 20
+weight: 60
 slug: "dify-core-modules"
 ---
 

@@ -3,7 +3,7 @@ title: "OpenAI Agents SDK 关键数据结构UML图"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['源码分析', '技术文档', '架构设计']
-categories: ['技术分析']
+categories: ['openaiagent', '技术分析']
 description: "OpenAI Agents SDK 关键数据结构UML图的深入技术分析文档"
 keywords: ['源码分析', '技术文档', '架构设计']
 author: "技术分析师"

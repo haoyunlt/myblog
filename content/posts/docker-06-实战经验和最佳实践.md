@@ -3,7 +3,7 @@ title: "Moby项目源码剖析 - 实战经验和最佳实践"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['容器化', 'DevOps', 'Docker', 'Go', '源码分析', '最佳实践']
-categories: ['容器化']
+categories: ['docker', '容器化']
 description: "Moby项目源码剖析 - 实战经验和最佳实践的深入技术分析文档"
 keywords: ['容器化', 'DevOps', 'Docker', 'Go', '源码分析', '最佳实践']
 author: "技术分析师"

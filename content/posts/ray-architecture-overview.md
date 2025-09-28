@@ -3,7 +3,7 @@ title: "Ray分布式计算框架 - 源码深度剖析"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['机器学习', 'Python', 'Ray', '源码分析', '分布式计算']
-categories: ['分布式计算']
+categories: ['ray', '分布式计算']
 description: "Ray分布式计算框架 - 源码深度剖析的深入技术分析文档"
 keywords: ['机器学习', 'Python', 'Ray', '源码分析', '分布式计算']
 author: "技术分析师"

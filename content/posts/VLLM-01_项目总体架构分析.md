@@ -3,7 +3,7 @@ title: "VLLM项目源码剖析 - 总体架构分析"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['Python', 'LLM', 'AI推理', '源码分析', 'vLLM']
-categories: ['AI推理']
+categories: ['vllm', 'AI推理']
 description: "VLLM项目源码剖析 - 总体架构分析的深入技术分析文档"
 keywords: ['Python', 'LLM', 'AI推理', '源码分析', 'vLLM']
 author: "技术分析师"

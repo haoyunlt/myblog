@@ -3,7 +3,7 @@ title: "Eino 框架概述与设计理念"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['Python', 'AI框架', 'LLM应用', 'Eino']
-categories: ['AI框架']
+categories: ['eino', 'AI框架']
 description: "Eino 框架概述与设计理念的深入技术分析文档"
 keywords: ['Python', 'AI框架', 'LLM应用', 'Eino']
 author: "技术分析师"
