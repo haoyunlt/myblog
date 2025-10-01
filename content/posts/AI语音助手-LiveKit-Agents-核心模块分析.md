@@ -3,7 +3,7 @@ title: "LiveKit Agents 核心模块深入分析"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['WebRTC', 'LiveKit', '语音处理', '实时通信']
-categories: ['语音助手']
+categories: ['AI语音助手']
 description: "LiveKit Agents 核心模块深入分析的深入技术分析文档"
 keywords: ['WebRTC', 'LiveKit', '语音处理', '实时通信']
 author: "技术分析师"

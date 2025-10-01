@@ -3,7 +3,7 @@ title: "LiveKit Agents 源码剖析 - 总览"
 date: 2025-09-28T00:47:16+08:00
 draft: false
 tags: ['WebRTC', '源码分析', 'LiveKit', '语音处理', '实时通信']
-categories: ['语音助手']
+categories: ['AI语音助手']
 description: "LiveKit Agents 源码剖析 - 总览的深入技术分析文档"
 keywords: ['WebRTC', '源码分析', 'LiveKit', '语音处理', '实时通信']
 author: "技术分析师"

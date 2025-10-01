@@ -3,7 +3,7 @@ title: "LiveKit Agents 最佳实践与实战案例"
 date: 2025-09-28T00:47:17+08:00
 draft: false
 tags: ['WebRTC', 'LiveKit', '最佳实践', '语音处理', '实时通信']
-categories: ['语音助手']
+categories: ['AI语音助手']
 description: "LiveKit Agents 最佳实践与实战案例的深入技术分析文档"
 keywords: ['WebRTC', 'LiveKit', '最佳实践', '语音处理', '实时通信']
 author: "技术分析师"
