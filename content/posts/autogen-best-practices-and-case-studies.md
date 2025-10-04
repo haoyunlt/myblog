@@ -125,6 +125,7 @@ spec:
         prometheus.io/port: "8080"
     spec:
       containers:
+
       - name: chat-agent
         image: autogen/chat-agent:v1.2.0
         ports:
@@ -160,6 +161,7 @@ spec:
             port: 5000
           initialDelaySeconds: 5
           periodSeconds: 5
+
 ---
 apiVersion: v1
 kind: Service
@@ -170,6 +172,7 @@ spec:
   selector:
     app: autogen-chat-agent
   ports:
+
   - name: grpc
     port: 5000
     targetPort: 5000
@@ -177,6 +180,7 @@ spec:
     port: 8080
     targetPort: 8080
   type: ClusterIP
+
 ---
 apiVersion: networking.k8s.io/v1
 kind: Ingress
@@ -188,6 +192,7 @@ metadata:
     nginx.ingress.kubernetes.io/grpc-backend: "true"
 spec:
   tls:
+
   - hosts:
     - autogen.example.com
     secretName: autogen-tls
@@ -202,6 +207,7 @@ spec:
             name: autogen-chat-agent-service
             port:
               number: 5000
+
 ```
 
 ## 2. 性能优化实战
@@ -253,7 +259,7 @@ class BatchProcessingAgent(RoutedAgent):
         
         # 并行处理批次中的所有消息
         tasks = [
-            self._process_single_message(msg, ctx) 
+            self._process_single_message(msg, ctx)
             for msg, ctx in batch_to_process
         ]
         
@@ -592,6 +598,7 @@ class CustomerServiceRouter(RoutedAgent):
         咨询内容: {inquiry}
 
         可选类别:
+
         - faq: 常见问题
         - technical: 技术支持
         - billing: 账单问题
@@ -623,6 +630,7 @@ class CustomerServiceRouter(RoutedAgent):
         except Exception as e:
             logger.warning(f"LLM分类结果解析失败: {e}")
             return ClassificationResult(category='general', confidence=0.5)
+
 ```
 
 ### 3.2 内容创作平台案例
@@ -902,7 +910,7 @@ class AutoGenDevOpsManager:
         
         health_checks = [
             self._check_agent_runtime_health(),
-            self._check_grpc_connections_health(), 
+            self._check_grpc_connections_health(),
             self._check_database_health(),
             self._check_cache_health(),
             self._check_message_queue_health()

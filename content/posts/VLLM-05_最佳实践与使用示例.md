@@ -719,7 +719,7 @@ class VLLMEmbeddingService:
         
         # 搜索
         scores, indices = self.index.search(
-            query_embedding.astype('float32').reshape(1, -1), 
+            query_embedding.astype('float32').reshape(1, -1),
             top_k
         )
         
@@ -1017,7 +1017,7 @@ class OptimizedBatchProcessor:
     """优化的批处理器"""
     
     def __init__(
-        self, 
+        self,
         model_name: str,
         max_batch_size: int = 32,
         batch_timeout: float = 0.1,  # 批处理超时时间（秒）
@@ -1064,8 +1064,8 @@ class OptimizedBatchProcessor:
         print("批处理器已停止")
     
     def submit_request(
-        self, 
-        prompt: str, 
+        self,
+        prompt: str,
         sampling_params: SamplingParams = None,
         callback: callable = None
     ) -> str:
@@ -1113,8 +1113,8 @@ class OptimizedBatchProcessor:
         
         # 收集更多请求直到达到批次大小或超时
         while (
-            len(batch) < self.max_batch_size and 
-            time.time() < deadline and 
+            len(batch) < self.max_batch_size and
+            time.time() < deadline and
             not self.request_queue.empty()
         ):
             try:
@@ -1696,15 +1696,15 @@ class RobustVLLMService:
             self.logger.warning("Circuit breaker opened due to high error rate")
         
         # 检查是否可以关闭断路器
-        if (self.circuit_breaker_open and 
+        if (self.circuit_breaker_open and
             current_time - self.last_error_time > self.circuit_breaker_timeout):
             self.circuit_breaker_open = False
             self.error_counts.clear()
             self.logger.info("Circuit breaker closed, service restored")
     
     def generate_with_retry(
-        self, 
-        prompt: str, 
+        self,
+        prompt: str,
         max_retries: int = 3,
         **kwargs
     ) -> Optional[str]:
@@ -1882,6 +1882,7 @@ if __name__ == "__main__":
 #### 常见问题解决
 
 1. **OOM错误**：
+
    ```python
    # 降低GPU内存利用率
    llm = LLM(gpu_memory_utilization=0.7)
@@ -1891,9 +1892,10 @@ if __name__ == "__main__":
    
    # 启用CPU卸载
    llm = LLM(cpu_offload_gb=2)
-   ```
+```
 
 2. **性能问题**：
+
    ```python
    # 启用前缀缓存
    llm = LLM(enable_prefix_caching=True)
@@ -1903,9 +1905,10 @@ if __name__ == "__main__":
    
    # 优化数据类型
    llm = LLM(dtype="float16")
-   ```
+```
 
 3. **稳定性问题**：
+
    ```python
    # 保守的内存设置
    llm = LLM(
@@ -1913,6 +1916,6 @@ if __name__ == "__main__":
        swap_space=4,
        enforce_eager=True  # 如果CUDA Graph不稳定
    )
-   ```
+```
 
 这些最佳实践和使用示例为VLLM的高效使用提供了全面的指导，涵盖了从基础使用到生产部署的各个方面。通过这些实战经验，开发者可以更好地理解和应用VLLM框架。

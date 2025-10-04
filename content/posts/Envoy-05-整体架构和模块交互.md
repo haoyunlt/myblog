@@ -491,12 +491,14 @@ graph TB
 
 ```cpp
 /**
+
  * 主线程主要职责
  * - 配置管理和热更新
  * - xDS订阅和处理
  * - 集群状态管理
  * - 统计数据收集
  * - Admin接口处理
+
  */
 class MainThread {
 public:
@@ -528,11 +530,13 @@ private:
 
 ```cpp
 /**
+
  * Worker线程架构
  * - 处理客户端连接
  * - 执行请求/响应处理
  * - 管理连接池
  * - 本地统计收集
+
  */
 class WorkerThread {
 public:
@@ -608,10 +612,12 @@ graph TB
 
 ```cpp
 /**
+
  * 智能指针使用策略
  * - shared_ptr: 需要在多个地方共享的对象
  * - unique_ptr: 独占所有权的对象
  * - weak_ptr: 避免循环引用
+
  */
 class ObjectLifecycleManager {
 public:
@@ -644,12 +650,15 @@ private:
 
 ```cpp
 /**
+
  * 零拷贝缓冲区管理
  * 使用Buffer::Instance接口实现高效的数据传输
+
  */
 class BufferManager {
 public:
   /**
+
    * 移动语义避免数据拷贝
    */
   void transferData(Buffer::Instance& source, Buffer::Instance& destination) {
@@ -687,10 +696,12 @@ private:
 
 ```cpp
 /**
+
  * 关键路径性能优化
  * - 内联函数减少调用开销
  * - 分支预测优化
  * - 缓存友好的数据结构
+
  */
 class HotPathOptimization {
 public:
@@ -720,8 +731,10 @@ private:
 
 ```cpp
 /**
+
  * 无锁数据结构
  * 使用原子操作和无锁算法提升并发性能
+
  */
 class LockFreeOptimization {
 public:
@@ -799,8 +812,10 @@ graph TB
 
 ```cpp
 /**
+
  * 熔断器实现
  * 当错误率超过阈值时，快速失败以保护系统
+
  */
 class CircuitBreaker {
 public:

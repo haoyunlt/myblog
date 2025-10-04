@@ -94,17 +94,22 @@ graph TB
 namespace tflite {
 
 /**
+
  * TensorFlow Lite解释器类
- * 
+
+ *
+
  * 功能说明:
  * - 加载和执行TFLite模型
  * - 管理张量内存分配
  * - 提供推理接口
  * - 支持硬件加速
+
  */
 class Interpreter {
 public:
     /**
+
      * 构造函数
      * @param error_reporter 错误报告器
      */
@@ -139,7 +144,7 @@ public:
     /**
      * 分配张量内存
      * @return 分配状态
-     * 
+     *
      * 功能说明:
      * - 根据模型定义分配内存
      * - 优化内存布局
@@ -150,7 +155,7 @@ public:
     /**
      * 执行推理
      * @return 执行状态
-     * 
+     *
      * 功能说明:
      * - 按执行计划运行操作
      * - 处理输入输出数据
@@ -275,6 +280,7 @@ public:
 
 private:
     /**
+
      * 执行计划准备
      * @return 准备状态
      */
@@ -303,6 +309,7 @@ private:
     bool allow_fp32_relax_to_fp16_;            // 允许FP32降级到FP16
     bool has_dynamic_tensors_;                  // 是否有动态张量
     std::vector<std::unique_ptr<TfLiteDelegate, void(*)(TfLiteDelegate*)>> owned_delegates_;
+
 };
 
 } // namespace tflite
@@ -314,8 +321,9 @@ private:
 // TFLite基础使用示例
 void BasicTFLiteExample() {
     /**
+
      * TensorFlow Lite基础使用示例
-     * 
+     *
      * 功能说明:
      * - 加载TFLite模型
      * - 设置输入数据
@@ -413,6 +421,7 @@ void BasicTFLiteExample() {
         }
         std::cout << std::endl;
     }
+
 }
 ```
 
@@ -464,6 +473,7 @@ class TFLiteConverterV2(TFLiteFrozenGraphConverterV2):
     """TensorFlow Lite转换器V2版本
     
     功能说明:
+
     - 将TensorFlow模型转换为TFLite格式
     - 支持多种输入格式
     - 提供丰富的优化选项
@@ -667,6 +677,7 @@ class TFLiteConverterV2(TFLiteFrozenGraphConverterV2):
         )
         
         return tflite_model
+
 ```
 
 ### 3. 转换使用示例
@@ -678,6 +689,7 @@ def conversion_examples():
     TensorFlow Lite转换示例
     
     功能说明:
+
     - 演示不同的转换方式
     - 展示优化选项
     - 说明量化配置
@@ -807,6 +819,7 @@ def conversion_examples():
     convert_saved_model()
     convert_with_quantization()
     convert_with_custom_ops()
+
 ```
 
 ## 量化系统
@@ -859,6 +872,7 @@ class QuantizationHelper:
     TensorFlow Lite量化辅助类
     
     功能说明:
+
     - 提供各种量化方法
     - 支持不同的量化策略
     - 优化模型大小和性能
@@ -1022,7 +1036,7 @@ class QuantizationHelper:
         quantized_predictions = []
         for image in test_images:
             # 设置输入
-            interpreter.set_tensor(input_details[0]['index'], 
+            interpreter.set_tensor(input_details[0]['index'],
                                  np.expand_dims(image, axis=0).astype(input_details[0]['dtype']))
             
             # 执行推理
@@ -1133,8 +1147,9 @@ graph TB
 class GPUDelegateHelper {
 public:
     /**
+
      * GPU代理辅助类
-     * 
+     *
      * 功能说明:
      * - 创建和配置GPU代理
      * - 管理GPU内存
@@ -1262,6 +1277,7 @@ public:
         // 清理GPU代理
         TfLiteGpuDelegateV2Delete(gpu_delegate);
     }
+
 };
 ```
 
@@ -1272,8 +1288,9 @@ public:
 class NNAPIDelegateHelper {
 public:
     /**
+
      * NNAPI代理辅助类
-     * 
+     *
      * 功能说明:
      * - 使用Android NNAPI加速
      * - 支持多种AI芯片
@@ -1364,6 +1381,7 @@ public:
         // 清理NNAPI代理
         delete nnapi_delegate;
     }
+
 };
 ```
 
@@ -1378,6 +1396,7 @@ class MultiPlatformTFLite:
     多平台TensorFlow Lite支持
     
     功能说明:
+
     - 支持Android、iOS、Linux等平台
     - 自动选择最佳加速方案
     - 提供统一的API接口
@@ -1688,6 +1707,7 @@ class TFLiteOptimizer:
     TensorFlow Lite模型优化器
     
     功能说明:
+
     - 提供全面的优化策略
     - 平衡精度、大小和性能
     - 支持不同的部署场景
@@ -1874,7 +1894,7 @@ class TFLiteOptimizer:
         tflite_start = time.time()
         
         for image in test_images:
-            interpreter.set_tensor(input_details[0]['index'], 
+            interpreter.set_tensor(input_details[0]['index'],
                                  np.expand_dims(image, axis=0).astype(input_details[0]['dtype']))
             interpreter.invoke()
             output = interpreter.get_tensor(output_details[0]['index'])
@@ -1946,6 +1966,7 @@ TensorFlow Lite模块提供了完整的移动和嵌入式设备机器学习解�
 5. **多平台支持** - 统一的API，支持Android、iOS、Linux等平台
 
 通过深入理解TensorFlow Lite的设计和实现，可以：
+
 - 高效地将TensorFlow模型部署到移动设备
 - 选择合适的优化策略平衡精度和性能
 - 利用硬件加速提升推理速度

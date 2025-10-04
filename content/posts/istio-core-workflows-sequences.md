@@ -989,12 +989,12 @@ pilot_xds_clients{} < expected_proxy_count * 0.9
 
 # 数据平面关键指标  
 # 请求成功率
-sum(rate(istio_requests_total{response_code!~"5.*"}[5m])) / 
+sum(rate(istio_requests_total{response_code!~"5.*"}[5m])) /
 sum(rate(istio_requests_total[5m])) < 0.99
 
 # P99延迟
-histogram_quantile(0.99, 
-  sum(rate(istio_request_duration_milliseconds_bucket[5m])) 
+histogram_quantile(0.99,
+  sum(rate(istio_request_duration_milliseconds_bucket[5m]))
   by (le, source_service_name, destination_service_name)) > 1000
 
 # 证书过期告警

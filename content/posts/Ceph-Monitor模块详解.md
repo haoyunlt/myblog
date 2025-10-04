@@ -98,6 +98,7 @@ stateDiagram-v2
     
     note left of STATE_INIT
         初始化状态:
+
         - 加载配置
         - 初始化存储
         - 准备网络通信
@@ -116,6 +117,7 @@ stateDiagram-v2
         - 参与Paxos投票
         - 同步集群状态
     end note
+
 ```
 
 ## 2. 核心数据结构详解
@@ -124,14 +126,18 @@ stateDiagram-v2
 
 ```cpp
 /**
+
  * Monitor类 - Ceph监控器的核心实现
  * 文件: src/mon/Monitor.h:110-250
- * 
+
+ *
+
  * Monitor是集群状态管理的核心组件，负责：
  * 1. 维护集群所有组件的状态映射(OSDMap、MDSMap、MonMap等)
  * 2. 通过Paxos算法保证集群状态的一致性和持久化
  * 3. 处理来自OSD、MDS、客户端的各种请求
  * 4. 提供集群配置和认证服务
+
  */
 class Monitor : public Dispatcher,      // 消息分发器接口
                 public AuthClient,       // 认证客户端接口
@@ -141,6 +147,7 @@ public:
     // ===================== 基本属性 =====================
     
     /**
+
      * Monitor基本标识信息
      */
     std::string name;                    // Monitor名称，如 "a", "b", "c"
@@ -219,10 +226,12 @@ public:
     static const std::string MONITOR_NAME;           // Monitor存储名称
     static const std::string MONITOR_STORE_PREFIX;   // Monitor存储前缀
     
+
 private:
     // ===================== 内部状态管理 =====================
     
     /**
+
      * Monitor状态枚举
      */
     enum {
@@ -236,8 +245,10 @@ private:
     };
     int state;                          // 当前状态
     
+
 public:
     /**
+
      * 获取状态名称的静态函数
      * @param s 状态值
      * @return 对应的状态名称字符串
@@ -266,12 +277,13 @@ public:
      * @param mgr_m Manager专用消息传递器
      * @param map Monitor映射表
      */
-    Monitor(CephContext* cct_, 
-           std::string nm, 
+    Monitor(CephContext* cct_,
+           std::string nm,
            MonitorDBStore *s,
-           Messenger *m, 
-           Messenger *mgr_m, 
+           Messenger *m,
+           Messenger *mgr_m,
            MonMap *map);
+
 };
 ```
 
@@ -281,19 +293,24 @@ Paxos是Monitor实现一致性的核心算法。下面是Paxos类的详细分析
 
 ```cpp
 /**
+
  * Paxos类 - 分布式一致性算法的实现
  * 文件: src/mon/Paxos.h:174-400
- * 
+
+ *
+
  * Paxos算法的特点：
  * 1. 每次只生成一个新值，简化恢复逻辑
  * 2. 节点跟踪"已提交"的值，并慷慨地（可信地）共享它们
  * 3. 内置租约机制，允许节点确定何时安全"读取"最后提交值的副本
+
  */
 class Paxos {
 public:
     // ===================== 核心状态变量 =====================
     
     /**
+
      * Paxos提案编号 - 用于区分不同的提案轮次
      */
     version_t last_pn;                  // 最后使用的提案编号(Proposal Number)
@@ -446,6 +463,7 @@ private:
     // ===================== 内部工具方法 =====================
     
     /**
+
      * 获取存储接口
      * @return MonitorDBStore指针
      */
@@ -465,6 +483,7 @@ private:
      * @param last 结束版本
      */
     void share_state(MMonPaxos *m, version_t first, version_t last);
+
 };
 ```
 
@@ -472,17 +491,22 @@ private:
 
 ```cpp
 /**
+
  * PaxosService基类 - 基于Paxos的服务抽象
  * 文件: src/mon/PaxosService.h
- * 
+
+ *
+
  * PaxosService为构建在Paxos之上的各种Monitor服务提供基础框架
  * 包括OSDMonitor、MDSMonitor、AuthMonitor等
+
  */
 class PaxosService {
 public:
     // ===================== 服务生命周期 =====================
     
     /**
+
      * 创建初始状态 - 在首次启动时调用
      */
     virtual void create_initial() = 0;
@@ -523,12 +547,14 @@ public:
      */
     virtual version_t get_trim_to() const = 0;
     
+
 protected:
     Monitor *mon;                       // Monitor实例指针
     Paxos *paxos;                       // 关联的Paxos实例
     std::string service_name;           // 服务名称标识
     
     /**
+
      * 提议新的Paxos值
      * @param bl 要提议的值
      * @param callback 提交完成后的回调
@@ -540,6 +566,7 @@ protected:
      * @param s 输出的前缀集合
      */
     virtual void get_store_prefixes(std::set<std::string>& s) const = 0;
+
 };
 ```
 
@@ -604,10 +631,14 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * Elector类 - Monitor选举算法实现
  * 文件: src/mon/Elector.h
- * 
+
+ *
+
  * 选举算法确保在任何时候只有一个Monitor成为Leader
+
  */
 class Elector {
 public:
@@ -623,6 +654,7 @@ public:
     };
     
     /**
+
      * 选举策略枚举
      */
     enum election_strategy {
@@ -661,6 +693,7 @@ public:
      */
     void election_timeout();
     
+
 private:
     Monitor *mon;                       // Monitor实例引用
     LogClient *logclient;               // 日志客户端
@@ -670,10 +703,12 @@ private:
     std::map<int, MMonElection*> acked; // 已确认的选举消息
     
     /**
+
      * 计算选举胜者
      * @return 获胜的Monitor排名
      */
     int get_winner();
+
 };
 ```
 
@@ -687,7 +722,7 @@ sequenceDiagram
     
     Note over M1,M3: 触发选举(如Leader故障或启动)
     
-    M1->>M1: start_election() 
+    M1->>M1: start_election()
     M1->>M2: Propose消息(epoch, rank=1)
     M1->>M3: Propose消息(epoch, rank=1)
     
@@ -787,20 +822,25 @@ classDiagram
 
 ```cpp
 /**
+
  * OSDMonitor类 - OSD状态监控和管理服务
  * 文件: src/mon/OSDMonitor.h
- * 
+
+ *
+
  * OSDMonitor负责：
  * 1. 维护OSDMap（OSD映射表）
  * 2. 处理OSD的启动、故障、下线等状态变化
  * 3. 管理存储池(Pool)的创建、删除、配置
  * 4. 处理PG(Placement Group)相关操作
+
  */
 class OSDMonitor : public PaxosService {
 public:
     // ===================== 核心数据结构 =====================
     
     /**
+
      * OSD映射表 - 集群OSD的权威状态
      */
     OSDMap osdmap;                      // 当前已提交的OSDMap
@@ -818,7 +858,7 @@ public:
     /**
      * 处理OSD启动消息
      * @param op 包含OSD启动信息的操作请求
-     * 
+     *
      * OSD启动流程：
      * 1. 验证OSD身份和版本兼容性
      * 2. 分配或确认OSD编号
@@ -830,7 +870,7 @@ public:
     /**
      * 处理OSD故障报告
      * @param op 故障报告操作请求
-     * 
+     *
      * 故障处理逻辑：
      * 1. 验证故障报告的可信度（来源、时间等）
      * 2. 将目标OSD标记为DOWN
@@ -842,7 +882,7 @@ public:
     /**
      * 处理OSD心跳消息
      * @param op 心跳消息操作请求
-     * 
+     *
      * 心跳处理：
      * 1. 更新OSD的最后见到时间
      * 2. 处理OSD报告的性能统计
@@ -853,7 +893,7 @@ public:
     /**
      * 处理存储池操作请求
      * @param op 存储池操作请求
-     * 
+     *
      * 支持的操作：
      * - 创建存储池：分配pool ID，设置副本数等参数
      * - 删除存储池：清理pool数据，更新映射
@@ -865,7 +905,7 @@ public:
     
     /**
      * 处理等待的故障OSD
-     * 
+     *
      * 定期检查down_pending_out映射，对于超时的OSD：
      * 1. 将其标记为OUT（权重设为0）
      * 2. 触发CRUSH重新计算
@@ -882,7 +922,7 @@ public:
     
     /**
      * 计算新的PG分布
-     * 
+     *
      * 当OSDMap发生变化时：
      * 1. 使用CRUSH算法重新计算PG到OSD的映射
      * 2. 生成数据迁移计划
@@ -894,6 +934,7 @@ protected:
     // ===================== Paxos服务接口实现 =====================
     
     /**
+
      * 从Paxos更新OSDMap状态
      * @param need_bootstrap 是否需要重启标志
      */
@@ -909,6 +950,7 @@ protected:
      * 创建初始的OSDMap
      */
     void create_initial() override;
+
 };
 ```
 
@@ -916,17 +958,22 @@ protected:
 
 ```cpp
 /**
+
  * OSDMap类 - 集群OSD状态的权威映射
  * 文件: src/osd/OSDMap.h
- * 
+
+ *
+
  * OSDMap包含了集群中所有OSD的完整状态信息，
  * 是CRUSH算法进行数据分布计算的基础
+
  */
 class OSDMap {
 public:
     // ===================== 基本信息 =====================
     
     /**
+
      * 映射版本和标识
      */
     epoch_t epoch;                      // OSDMap版本号，每次更新递增
@@ -960,16 +1007,16 @@ public:
     /**
      * OSD状态查询方法
      */
-    bool is_up(int osd) const { 
-        return osd < (int)osd_state.size() && (osd_state[osd] & OSD_UP); 
+    bool is_up(int osd) const {
+        return osd < (int)osd_state.size() && (osd_state[osd] & OSD_UP);
     }
     
-    bool is_in(int osd) const { 
-        return osd < (int)osd_weight.size() && osd_weight[osd] > 0; 
+    bool is_in(int osd) const {
+        return osd < (int)osd_weight.size() && osd_weight[osd] > 0;
     }
     
-    bool exists(int osd) const { 
-        return osd < (int)osd_state.size() && (osd_state[osd] & OSD_EXISTS); 
+    bool exists(int osd) const {
+        return osd < (int)osd_state.size() && (osd_state[osd] & OSD_EXISTS);
     }
     
     // ===================== 存储池管理 =====================
@@ -1011,7 +1058,7 @@ public:
     void pg_to_up_acting_osds(const pg_t &pg,
                              std::vector<int> *up,
                              int *up_primary,
-                             std::vector<int> *acting, 
+                             std::vector<int> *acting,
                              int *acting_primary) const;
     
     /**
@@ -1060,6 +1107,7 @@ public:
      * @return 应用结果（成功/失败）
      */
     int apply_incremental(const Incremental &inc);
+
 };
 ```
 
@@ -1105,8 +1153,10 @@ graph TB
 
 ```cpp
 /**
+
  * Monitor消息分发实现
  * 文件: src/mon/Monitor.cc:4680-4760
+
  */
 void Monitor::dispatch_op(MonOpRequestRef op)
 {
@@ -1116,7 +1166,7 @@ void Monitor::dispatch_op(MonOpRequestRef op)
     // 检查会话权限
     if (!op->get_session()->is_capable("mon", MON_CAP_R)) {
         dout(5) << __func__ << " " << op->get_req()->get_source_inst()
-                << " not enough caps for " << *(op->get_req()) 
+                << " not enough caps for " << *(op->get_req())
                 << " -- dropping" << dendl;
         return;
     }
@@ -1187,15 +1237,17 @@ void Monitor::dispatch_op(MonOpRequestRef op)
             
         default:
             // 未知消息类型
-            dout(1) << "dropping unexpected message " << *(op->get_req()) 
+            dout(1) << "dropping unexpected message " << *(op->get_req())
                     << " from " << op->get_req()->get_source_inst() << dendl;
             return;
     }
 }
 
 /**
+
  * 命令处理实现
  * @param op 包含命令的操作请求
+
  */
 void Monitor::handle_command(MonOpRequestRef op)
 {
@@ -1227,7 +1279,7 @@ void Monitor::handle_command(MonOpRequestRef op)
         paxos_service[PAXOS_MDSMAP]->handle_command(op, cmdmap);
     } else {
         // 未知命令
-        reply_command(op, -EINVAL, 
+        reply_command(op, -EINVAL,
                      "unknown command '" + prefix + "'", 0);
     }
 }
@@ -1239,19 +1291,24 @@ void Monitor::handle_command(MonOpRequestRef op)
 
 ```cpp
 /**
+
  * MonitorDBStore类 - Monitor持久化存储抽象层
  * 文件: src/mon/MonitorDBStore.h
- * 
+
+ *
+
  * 为Monitor提供键值存储接口，支持事务和原子操作
  * 底层可以使用RocksDB、LevelDB等存储引擎
+
  */
 class MonitorDBStore {
 public:
     // ===================== 事务类 =====================
     
     /**
+
      * Transaction类 - 原子事务操作
-     * 
+     *
      * 支持批量的put、erase、rmprefix等操作，
      * 要么全部成功，要么全部失败
      */
@@ -1264,7 +1321,7 @@ public:
          * @param val 值
          */
         void put(const std::string& prefix,
-                const std::string& key, 
+                const std::string& key,
                 const ceph::buffer::list& val);
                 
         void put(const std::string& prefix,
@@ -1370,8 +1427,9 @@ protected:
     KeyValueDB *db;                     // 底层键值数据库
     
     /**
+
      * 存储键的组织结构：
-     * 
+     *
      * paxos:
      *   first_committed -> 1
      *   last_committed -> 100
@@ -1395,6 +1453,7 @@ protected:
      *   1 -> <auth_data_1>
      *   ...
      */
+
 };
 ```
 
@@ -1453,8 +1512,10 @@ graph TB
 
 ```cpp
 /**
+
  * Monitor性能计数器定义
  * 文件: src/mon/Monitor.h:91-102
+
  */
 enum {
     l_mon_first = 456000,
@@ -1470,7 +1531,9 @@ enum {
 };
 
 /**
+
  * Paxos性能计数器
+
  */
 enum {
     l_paxos_first = 45800,
@@ -1553,12 +1616,16 @@ graph TD
 
 ```cpp
 /**
+
  * Monitor故障恢复和同步机制
  * 文件: src/mon/Monitor.cc
+
  */
 
 /**
+
  * Monitor引导过程 - 用于故障恢复或重新加入集群
+
  */
 void Monitor::bootstrap()
 {
@@ -1585,9 +1652,11 @@ void Monitor::bootstrap()
 }
 
 /**
+
  * 探测其他Monitor节点
+
  */
-void Monitor::probe_peers() 
+void Monitor::probe_peers()
 {
     dout(10) << "probe_peers" << dendl;
     
@@ -1595,7 +1664,7 @@ void Monitor::probe_peers()
         if (i == rank) continue;
         
         // 向每个Monitor发送探测消息
-        MMonProbe *m = new MMonProbe(monmap->fsid, 
+        MMonProbe *m = new MMonProbe(monmap->fsid,
                                     MMonProbe::OP_PROBE,
                                     name, has_ever_joined);
         messenger->send_message(m, monmap->get_inst(i));
@@ -1608,7 +1677,9 @@ void Monitor::probe_peers()
 }
 
 /**
+
  * 处理探测响应并决定是否需要同步
+
  */
 void Monitor::handle_probe_reply(MonOpRequestRef op)
 {
@@ -1633,8 +1704,10 @@ void Monitor::handle_probe_reply(MonOpRequestRef op)
 }
 
 /**
+
  * 与其他Monitor同步数据
  * @param peer 要同步的Monitor编号
+
  */
 void Monitor::sync_with_peer(int peer)
 {
@@ -1651,7 +1724,9 @@ void Monitor::sync_with_peer(int peer)
 }
 
 /**
+
  * 处理同步数据
+
  */
 void Monitor::handle_sync(MonOpRequestRef op)
 {
@@ -1697,4 +1772,3 @@ Monitor模块是Ceph集群的控制中心，通过以下核心机制保证集群
 5. **故障恢复**：自动检测和恢复故障节点
 
 Monitor的设计体现了分布式系统的经典原则：通过冗余和一致性算法实现高可用性，通过明确的状态管理实现系统的可预测性。在下一篇文档中，我们将深入分析OSD模块的数据存储和恢复机制。
-

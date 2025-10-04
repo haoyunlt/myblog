@@ -168,7 +168,7 @@ func WrapClient[T controllers.ComparableObject](c kclient.Client[T], opts ...Col
 }
 
 // 创建新的Informer Collection
-func NewInformer[T controllers.ComparableObject](c kclient.Untyped, gvr schema.GroupVersionResource, 
+func NewInformer[T controllers.ComparableObject](c kclient.Untyped, gvr schema.GroupVersionResource,
     opts ...CollectionOption) Collection[T] {
     client := kclient.NewFiltered[T](c, kclient.Filter{
         ObjectFilter: opts.objectFilter,
@@ -235,8 +235,8 @@ func (sc *StaticCollection[T]) UpdateObject(obj T) {
 
 ```go
 // 一对一映射转换
-func NewCollection[I, O any](c Collection[I], 
-    f func(ctx HandlerContext, i I) *O, 
+func NewCollection[I, O any](c Collection[I],
+    f func(ctx HandlerContext, i I) *O,
     opts ...CollectionOption) Collection[O] {
     
     return newDerivedCollection[I, O](c, func(ctx HandlerContext, i I) []O {
@@ -248,15 +248,15 @@ func NewCollection[I, O any](c Collection[I],
 }
 
 // 一对多映射转换
-func NewManyCollection[I, O any](c Collection[I], 
-    f func(ctx HandlerContext, i I) []O, 
+func NewManyCollection[I, O any](c Collection[I],
+    f func(ctx HandlerContext, i I) []O,
     opts ...CollectionOption) Collection[O] {
     
     return newDerivedCollection[I, O](c, f, opts...)
 }
 
 // 单例Collection - 全局状态管理
-func NewSingleton[O any](f func(ctx HandlerContext) *O, 
+func NewSingleton[O any](f func(ctx HandlerContext) *O,
     opts ...CollectionOption) Collection[O] {
     
     // 创建一个虚拟的输入Collection来触发计算
@@ -312,7 +312,7 @@ func createServiceDependentCollection() Collection[EnhancedService] {
         // 获取相关的Pods
         allPods := ctx.Fetch(Pods)
         relatedPods := slices.FilterMatch(allPods, func(pod *v1.Pod) bool {
-            return pod.Namespace == svc.Namespace && 
+            return pod.Namespace == svc.Namespace &&
                    matchesSelector(pod.Labels, svc.Spec.Selector)
         })
         
@@ -526,7 +526,7 @@ func NewSum(name, description string) MetricBuilder {
 
 func NewGauge(name, description string) MetricBuilder {
     return MetricBuilder{
-        name:        name, 
+        name:        name,
         description: description,
         unit:        None,
     }
@@ -561,7 +561,7 @@ var (
         "requests_total",
         "The total number of requests",
     ).With(
-        ResponseCodeLabel.Value("200"), 
+        ResponseCodeLabel.Value("200"),
         MethodLabel.Value("GET"),
     )
     
@@ -900,7 +900,7 @@ var (
     
     DestinationRule = Resource{
         Group:         "networking.istio.io",
-        Version:       "v1beta1", 
+        Version:       "v1beta1",
         Kind:          "DestinationRule",
         Plural:        "destinationrules",
         ClusterScoped: false,
@@ -911,7 +911,7 @@ var (
     Gateway = Resource{
         Group:         "networking.istio.io",
         Version:       "v1beta1",
-        Kind:          "Gateway", 
+        Kind:          "Gateway",
         Plural:        "gateways",
         ClusterScoped: false,
         Proto:         &networking.Gateway{},
@@ -1185,7 +1185,7 @@ var (
     // 不同组件使用各自的日志作用域
     pilotLog = RegisterScope("pilot", "Pilot discovery service")
     xdsLog   = RegisterScope("xds", "XDS server")
-    adsLog   = RegisterScope("ads", "ADS server") 
+    adsLog   = RegisterScope("ads", "ADS server")
     krtLog   = RegisterScope("krt", "Kubernetes Resource Table")
 )
 
@@ -1194,7 +1194,7 @@ func processConfigUpdate(config *networking.VirtualService) {
     pilotLog.Infof("Processing VirtualService: %s/%s", config.Namespace, config.Name)
     
     if err := validateConfig(config); err != nil {
-        pilotLog.Errorw("Configuration validation failed", 
+        pilotLog.Errorw("Configuration validation failed",
             "error", err,
             "config", config.Name,
             "namespace", config.Namespace)
@@ -1421,6 +1421,7 @@ sequenceDiagram
 ### 8.2 性能优化最佳实践
 
 1. **KRT Collection优化**：
+
    ```go
    // 使用索引优化查询
    podsByNamespace := NewNamespaceIndex(Pods)
@@ -1439,9 +1440,10 @@ sequenceDiagram
        endpoints := ctx.FetchKey(Endpoints, serviceKey(svc))
        return &EnhancedService{Service: svc, Endpoints: endpoints}
    })
-   ```
+```
 
 2. **监控指标优化**：
+
    ```go
    // 使用适当的指标类型
    var (
@@ -1468,9 +1470,10 @@ sequenceDiagram
            ServiceLabel.Value("pilot"),
        ).Record(float64(duration.Milliseconds()))
    }
-   ```
+```
 
 3. **日志系统优化**：
+
    ```go
    // 使用结构化日志
    log.Infow("Configuration updated",
@@ -1488,7 +1491,7 @@ sequenceDiagram
    // 使用WithLabels创建上下文日志
    contextLog := log.WithLabels("requestId", requestID, "user", userID)
    contextLog.Info("Processing request")
-   ```
+```
 
 ## 9. 总结
 

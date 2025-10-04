@@ -181,6 +181,7 @@ class BaseTool(ABC):
     """工具基类 - 定义所有工具的统一接口
     
     设计原则:
+
         1. 统一接口：所有工具都遵循相同的调用规范
         2. 参数验证：内置参数格式验证和类型检查
         3. 错误处理：统一的异常处理机制
@@ -228,8 +229,8 @@ class BaseTool(ABC):
         # 2. 参数格式验证（针对JSON Schema格式）
         if isinstance(self.parameters, dict):
             if not is_tool_schema({
-                'name': self.name, 
-                'description': self.description, 
+                'name': self.name,
+                'description': self.description,
                 'parameters': self.parameters
             }):
                 raise ValueError(
@@ -371,6 +372,7 @@ class BaseTool(ABC):
         子类可以重写此属性以声明文件访问需求
         """
         return False
+
 ```
 
 ### 工具注册机制详解
@@ -383,6 +385,7 @@ def register_tool(name: str, allow_overwrite: bool = False):
     """工具注册装饰器 - 实现工具的自动发现和注册
     
     设计目标:
+
         1. 自动化注册：通过装饰器自动将工具注册到全局注册表
         2. 名称管理：确保工具名称的唯一性和一致性
         3. 覆盖控制：提供安全的工具覆盖机制
@@ -435,6 +438,7 @@ def get_tool_instance(tool_identifier: Union[str, dict, BaseTool]) -> BaseTool:
     """获取工具实例 - 统一的工具实例化接口
     
     支持多种输入格式:
+
         1. 字符串：工具名称，使用默认配置
         2. 字典：包含name和配置的字典
         3. 实例：直接返回工具实例
@@ -470,6 +474,7 @@ def get_tool_instance(tool_identifier: Union[str, dict, BaseTool]) -> BaseTool:
         return tool_class(cfg=tool_config)
     else:
         raise ValueError(f'Invalid tool identifier type: {type(tool_identifier)}')
+
 ```
 
 ## 🛠️ 核心内置工具详解
@@ -482,6 +487,7 @@ class CodeInterpreter(BaseToolWithFileAccess):
     """Python代码沙箱执行器
     
     核心功能:
+
         1. 安全的Python代码执行环境
         2. Jupyter内核集成，支持状态保持
         3. 图表生成和可视化支持
@@ -648,6 +654,7 @@ class CodeInterpreter(BaseToolWithFileAccess):
         """
         # 中文字体配置代码
         init_code = f"""
+
 import os
 import sys
 os.chdir('{self.work_dir}')
@@ -674,6 +681,7 @@ print("Code interpreter initialized successfully.")
         """执行单段代码
         
         执行流程:
+
             1. 提交代码到内核
             2. 监听执行消息
             3. 收集输出结果
@@ -779,6 +787,7 @@ print("Code interpreter initialized successfully.")
             f.write(base64.b64decode(image_data))
         
         return filename
+
 ```
 
 ### 2. WebSearch - 网络搜索工具
@@ -789,6 +798,7 @@ class WebSearch(BaseTool):
     """网络搜索工具 - 基于Serper API的搜索服务
     
     核心功能:
+
         1. Google搜索结果获取
         2. 搜索结果结构化处理
         3. 多语言搜索支持
@@ -936,6 +946,7 @@ class WebSearch(BaseTool):
         header = f"搜索结果 (共找到 {len(search_results)} 条相关信息):\n\n"
         
         return header + result_content
+
 ```
 
 ### 3. DocParser - 文档解析工具
@@ -946,6 +957,7 @@ class DocParser(BaseTool):
     """文档解析工具 - 多格式文档内容提取和分块处理
     
     核心功能:
+
         1. 多格式文档解析（PDF、Word、PPT、HTML等）
         2. 智能分块和token管理
         3. 文档内容缓存和索引
@@ -1225,6 +1237,7 @@ class DocParser(BaseTool):
         except Exception as e:
             logger.error(f"Failed to load from cache for {url}: {e}")
             raise DocParserError(f"Cache loading failed: {e}")
+
 ```
 
 ### 4. Retrieval - RAG检索工具
@@ -1235,6 +1248,7 @@ class Retrieval(BaseTool):
     """RAG检索工具 - 文档问答和知识检索系统
     
     核心功能:
+
         1. 多文档并行解析和索引
         2. 混合搜索策略（关键词+语义+BM25）
         3. 智能相关性排序
@@ -1392,6 +1406,7 @@ class Retrieval(BaseTool):
         except Exception as e:
             logger.error(f"检索失败: {str(e)}")
             return []
+
 ```
 
 ## 🔍 搜索工具子系统
@@ -1442,6 +1457,7 @@ class HybridSearch(BaseTool):
         提供更准确、更全面的检索结果
     
     搜索策略组合:
+
         1. KeywordSearch: 精确匹配和关键词频率
         2. VectorSearch: 语义理解和上下文相关性
         3. BM25Search: 改进的TF-IDF算法
@@ -1538,6 +1554,7 @@ class HybridSearch(BaseTool):
         
         # 按综合得分排序
         return sorted(results, key=lambda x: x['hybrid_score'], reverse=True)
+
 ```
 
 ## 📊 工具系统性能优化
@@ -1608,6 +1625,7 @@ class ParallelToolExecutor:
         """并行执行多个工具调用
         
         优势:
+
             1. 提高执行效率
             2. 减少等待时间
             3. 资源利用最大化
@@ -1652,6 +1670,7 @@ class ParallelToolExecutor:
                 processed_results.append(result)
         
         return processed_results
+
 ```
 
 ### 3. 资源管理和清理

@@ -65,7 +65,7 @@ graph TB
 type StorageAPI interface {
     // 磁盘信息和管理
     DiskInfo(ctx context.Context, opts DiskInfoOptions) (info DiskInfo, err error)
-    NSScanner(ctx context.Context, cache dataUsageCache, updates chan<- dataUsageEntry, 
+    NSScanner(ctx context.Context, cache dataUsageCache, updates chan<- dataUsageEntry,
         scanMode madmin.HealScanMode) (dataUsageCache, error)
     
     // 卷操作
@@ -78,7 +78,7 @@ type StorageAPI interface {
     ListDir(ctx context.Context, volume, dirPath string, count int) ([]string, error)
     
     // 文件读取操作
-    ReadFile(ctx context.Context, volume string, path string, offset int64, buf []byte, 
+    ReadFile(ctx context.Context, volume string, path string, offset int64, buf []byte,
         verifier *BitrotVerifier) (n int64, err error)
     ReadFileStream(ctx context.Context, volume, path string, offset, length int64) (io.ReadCloser, error)
     
@@ -88,7 +88,7 @@ type StorageAPI interface {
     
     // 文件操作
     RenameFile(ctx context.Context, srcVolume, srcPath, dstVolume, dstPath string) error
-    RenameData(ctx context.Context, srcVolume, srcPath string, fi FileInfo, 
+    RenameData(ctx context.Context, srcVolume, srcPath string, fi FileInfo,
         dstVolume, dstPath string, opts RenameOptions) (sign uint64, err error)
     
     // 元数据操作
@@ -372,7 +372,7 @@ func getDiskInfo(diskPath string) (DiskInfo, error) {
 
 ```go
 // ReadFile 读取文件数据
-func (s *xlStorage) ReadFile(ctx context.Context, volume string, path string, 
+func (s *xlStorage) ReadFile(ctx context.Context, volume string, path string,
     offset int64, buf []byte, verifier *BitrotVerifier) (n int64, err error) {
     
     s.apiCalls.Inc("ReadFile")
@@ -430,7 +430,7 @@ func (s *xlStorage) ReadFile(ctx context.Context, volume string, path string,
 }
 
 // ReadFileStream 创建文件读取流
-func (s *xlStorage) ReadFileStream(ctx context.Context, volume, path string, 
+func (s *xlStorage) ReadFileStream(ctx context.Context, volume, path string,
     offset, length int64) (io.ReadCloser, error) {
     
     s.apiCalls.Inc("ReadFileStream")
@@ -501,7 +501,7 @@ func (l *limitedFileReader) Close() error {
 
 ```go
 // CreateFile 创建文件
-func (s *xlStorage) CreateFile(ctx context.Context, volume, path string, 
+func (s *xlStorage) CreateFile(ctx context.Context, volume, path string,
     size int64, reader io.Reader) error {
     
     s.apiCalls.Inc("CreateFile")
@@ -659,7 +659,7 @@ func (s *xlStorage) WriteMetadata(ctx context.Context, volume, path string, fi F
 }
 
 // ReadVersion 读取版本元数据
-func (s *xlStorage) ReadVersion(ctx context.Context, volume, path, versionID string, 
+func (s *xlStorage) ReadVersion(ctx context.Context, volume, path, versionID string,
     readData bool) (fi FileInfo, err error) {
     
     s.apiCalls.Inc("ReadVersion")
@@ -805,7 +805,7 @@ func (client *storageRESTClient) DiskInfo(ctx context.Context, opts DiskInfoOpti
 
 ```go
 // ReadFile 远程读取文件
-func (client *storageRESTClient) ReadFile(ctx context.Context, volume string, path string, 
+func (client *storageRESTClient) ReadFile(ctx context.Context, volume string, path string,
     offset int64, buf []byte, verifier *BitrotVerifier) (int64, error) {
     
     // 准备请求参数
@@ -834,7 +834,7 @@ func (client *storageRESTClient) ReadFile(ctx context.Context, volume string, pa
 }
 
 // CreateFile 远程创建文件
-func (client *storageRESTClient) CreateFile(ctx context.Context, volume, path string, 
+func (client *storageRESTClient) CreateFile(ctx context.Context, volume, path string,
     size int64, reader io.Reader) error {
     
     // 准备请求参数
@@ -844,7 +844,7 @@ func (client *storageRESTClient) CreateFile(ctx context.Context, volume, path st
     values.Set(storageRESTLength, strconv.FormatInt(size, 10))
     
     // 发送请求（带数据流）
-    respBody, err := client.restClient.CallWithContext(ctx, storageRESTMethodCreateFile, 
+    respBody, err := client.restClient.CallWithContext(ctx, storageRESTMethodCreateFile,
         values, reader, size)
     if err != nil {
         return err
@@ -892,7 +892,7 @@ func isNetworkError(err error) bool {
 }
 
 // 连接重试机制
-func (client *storageRESTClient) callWithRetry(ctx context.Context, method string, 
+func (client *storageRESTClient) callWithRetry(ctx context.Context, method string,
     values url.Values, body io.Reader, length int64) (io.ReadCloser, error) {
     
     const maxRetries = 3
@@ -951,7 +951,7 @@ type BitrotAlgorithm interface {
 type blake2b256 struct{}
 
 func (b blake2b256) Available() bool { return true }
-func (b blake2b256) New() hash.Hash  { 
+func (b blake2b256) New() hash.Hash  {
     h, _ := blake2b.New256(nil)
     return h
 }
@@ -1137,7 +1137,7 @@ func (a *apiLatenciesMap) String() map[string]string {
     result := make(map[string]string, len(a.latencies))
     for api, tracker := range a.latencies {
         avg := tracker.total / time.Duration(tracker.count)
-        result[api] = fmt.Sprintf("avg:%v min:%v max:%v count:%d", 
+        result[api] = fmt.Sprintf("avg:%v min:%v max:%v count:%d",
             avg, tracker.min, tracker.max, tracker.count)
     }
     return result

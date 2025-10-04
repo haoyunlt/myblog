@@ -45,7 +45,7 @@ graph TB
 graph TB
     subgraph "客户端接口层"
         RBD[RBD<br/>块设备客户端]
-        CephFS[CephFS<br/>文件系统客户端] 
+        CephFS[CephFS<br/>文件系统客户端]
         RGW[RGW<br/>对象存储网关]
         LibRADOS[LibRADOS<br/>原生API]
     end
@@ -53,7 +53,7 @@ graph TB
     subgraph "RADOS分布式对象存储集群"
         subgraph "监控集群"
             MON1[MON]
-            MON2[MON] 
+            MON2[MON]
             MON3[MON]
         end
         
@@ -109,14 +109,18 @@ graph TB
 
 ```cpp
 /**
+
  * Monitor类 - Ceph监控器的主要实现
  * 文件: src/mon/Monitor.h
- * 
+
+ *
+
  * Monitor是集群状态的权威管理者，负责：
  * 1. 维护OSDMap、MDSMap、MonMap等集群映射
  * 2. 通过Paxos算法保证集群状态一致性
  * 3. 处理客户端和OSD的认证请求
  * 4. 协调集群配置变更
+
  */
 class Monitor : public Dispatcher, public AuthClient, public AuthServer {
 public:
@@ -206,14 +210,18 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * OSD类 - 对象存储守护进程的主要实现
  * 文件: src/osd/OSD.h
- * 
+
+ *
+
  * OSD负责：
  * 1. 存储和检索对象数据
  * 2. 维护数据副本和纠删码
  * 3. 执行数据恢复和重平衡
  * 4. 处理客户端I/O请求
+
  */
 class OSD : public Dispatcher {
 public:
@@ -254,6 +262,7 @@ public:
     OSDSuperblock superblock;            // OSD超级块
     
     /**
+
      * OSD构造函数
      * @param cct_ Ceph上下文
      * @param store_ 对象存储后端
@@ -274,16 +283,17 @@ public:
         std::unique_ptr<ObjectStore> store_,
         int id,
         Messenger *internal,
-        Messenger *external, 
+        Messenger *external,
         Messenger *hb_front_client,
         Messenger *hb_back_client,
         Messenger *hb_front_server,
         Messenger *hb_back_server,
         Messenger *osdc_messenger,
-        MonClient *mc, 
-        const std::string &dev, 
+        MonClient *mc,
+        const std::string &dev,
         const std::string &jdev,
         ceph::async::io_context_pool& poolctx);
+
 };
 ```
 
@@ -335,14 +345,18 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * MDSRank类 - MDS服务器的主要实现
  * 文件: src/mds/MDSRank.h
- * 
+
+ *
+
  * MDS负责：
  * 1. 管理文件系统元数据（inode、目录结构等）
  * 2. 提供POSIX兼容的文件系统语义
  * 3. 处理客户端的文件系统操作请求
  * 4. 支持多活MDS的负载均衡
+
  */
 class MDSRank {
 public:
@@ -388,6 +402,7 @@ private:
     
 public:
     /**
+
      * 处理客户端请求的入口函数
      * @param m 客户端消息
      * 根据消息类型分发到相应处理函数
@@ -405,6 +420,7 @@ public:
      * 包括inode缓存、目录缓存、能力（capabilities）管理
      */
     void manage_cache();
+
 };
 ```
 
@@ -419,10 +435,14 @@ public:
 
 ```cpp
 /**
+
  * RGW操作类型枚举
  * 文件: src/rgw/rgw_op_type.h
- * 
+
+ *
+
  * 定义了RGW支持的所有操作类型，包括S3和Swift协议的各种操作
+
  */
 enum RGWOpType {
     RGW_OP_UNKNOWN = 0,           // 未知操作
@@ -464,15 +484,20 @@ enum RGWOpType {
 };
 
 /**
+
  * RGW存储抽象层（SAL）
  * 文件: src/rgw/rgw_sal.h
- * 
+
+ *
+
  * SAL分离了RGW的上层协议处理和底层存储，支持多种后端存储
  * 包括RADOS、DBStore等，并支持缓存、复制等中间层
+
  */
 class RGWStore {
 public:
     /**
+
      * 虚析构函数
      */
     virtual ~RGWStore() = default;
@@ -513,6 +538,7 @@ public:
                                               optional_yield y,
                                               std::unique_ptr<Bucket> bucket,
                                               const rgw_obj_key& key) = 0;
+
 };
 ```
 
@@ -620,18 +646,22 @@ graph TD
 
 ```cpp
 /**
+
  * 对象到PG的映射计算
  * 位置: src/osd/osd_types.h
- * 
+
+ *
+
  * @param pool_id 存储池ID
  * @param object_name 对象名称
  * @param pg_num 存储池PG数量
  * @return 计算得出的PG ID
+
  */
 pg_t calculate_pg_id(int64_t pool_id, const std::string& object_name, uint32_t pg_num) {
     // 1. 计算对象名的哈希值
-    uint32_t hash = ceph_str_hash(CEPH_STR_HASH_RJENKINS, 
-                                  object_name.c_str(), 
+    uint32_t hash = ceph_str_hash(CEPH_STR_HASH_RJENKINS,
+                                  object_name.c_str(),
                                   object_name.length());
     
     // 2. 使用稳定哈希将哈希值映射到PG
@@ -690,10 +720,14 @@ mds_max_caps_per_client = 1048576              # 每客户端最大能力数
 
 ```cpp
 /**
+
  * 集群统计信息结构
  * 文件: src/rgw/rgw_sal.h
- * 
+
+ *
+
  * 提供集群级别的使用统计和健康状态信息
+
  */
 struct RGWClusterStat {
     uint64_t kb;              // 总容量（KB）

@@ -102,9 +102,12 @@ MySQL API按功能可分为以下几类：
 
 ```cpp
 /**
+
  * MySQL连接建立API
  * 建立到MySQL服务器的连接
- * 
+
+ *
+
  * @param mysql     连接句柄指针
  * @param host      服务器主机名或IP地址
  * @param user      用户名
@@ -114,6 +117,7 @@ MySQL API按功能可分为以下几类：
  * @param unix_socket Unix套接字文件路径
  * @param clientflag 客户端标志位
  * @return 成功返回连接句柄，失败返回NULL
+
  */
 MYSQL *mysql_real_connect(MYSQL *mysql,
                          const char *host,
@@ -129,8 +133,10 @@ MYSQL *mysql_real_connect(MYSQL *mysql,
 
 ```cpp
 /**
+
  * mysql_real_connect 入口函数实现
  * 位置：libmysql/libmysql.c
+
  */
 MYSQL *mysql_real_connect(MYSQL *mysql, const char *host, const char *user,
                          const char *passwd, const char *db,
@@ -147,7 +153,7 @@ MYSQL *mysql_real_connect(MYSQL *mysql, const char *host, const char *user,
     }
     
     // 2. 设置连接参数
-    if (setup_connection_parameters(mysql, host, user, passwd, db, 
+    if (setup_connection_parameters(mysql, host, user, passwd, db,
                                    port, unix_socket, clientflag) != 0) {
         DBUG_RETURN(NULL);
     }
@@ -191,8 +197,10 @@ MYSQL *mysql_real_connect(MYSQL *mysql, const char *host, const char *user,
 
 ```cpp
 /**
+
  * 设置连接参数
  * 配置连接所需的各种参数和选项
+
  */
 static int setup_connection_parameters(MYSQL *mysql, const char *host,
                                      const char *user, const char *passwd,
@@ -248,8 +256,10 @@ static int setup_connection_parameters(MYSQL *mysql, const char *host,
 
 ```cpp
 /**
+
  * 建立网络连接
  * 根据配置建立TCP或Unix套接字连接
+
  */
 static int establish_network_connection(MYSQL *mysql) {
     DBUG_ENTER("establish_network_connection");
@@ -258,7 +268,7 @@ static int establish_network_connection(MYSQL *mysql) {
     int error = 0;
     
     // 确定连接类型
-    if (mysql->unix_socket && 
+    if (mysql->unix_socket &&
         (!mysql->host_info || !strcmp(mysql->host_info, LOCAL_HOST))) {
         // Unix套接字连接
         vio = create_unix_socket_connection(mysql);
@@ -288,7 +298,9 @@ static int establish_network_connection(MYSQL *mysql) {
 }
 
 /**
+
  * 创建TCP连接
+
  */
 static Vio *create_tcp_connection(MYSQL *mysql) {
     DBUG_ENTER("create_tcp_connection");
@@ -356,8 +368,10 @@ static Vio *create_tcp_connection(MYSQL *mysql) {
 
 ```cpp
 /**
+
  * 执行握手协议
  * 处理MySQL客户端-服务器握手过程
+
  */
 static int perform_handshake_protocol(MYSQL *mysql) {
     DBUG_ENTER("perform_handshake_protocol");
@@ -394,7 +408,9 @@ static int perform_handshake_protocol(MYSQL *mysql) {
 }
 
 /**
+
  * 解析服务器握手包
+
  */
 static int parse_handshake_packet(MYSQL *mysql, uchar *pos, uchar *end) {
     DBUG_ENTER("parse_handshake_packet");
@@ -462,10 +478,14 @@ static int parse_handshake_packet(MYSQL *mysql, uchar *pos, uchar *end) {
 
 ```cpp
 /**
+
  * MySQL连接关闭API
  * 关闭到MySQL服务器的连接并释放相关资源
- * 
+
+ *
+
  * @param mysql 连接句柄指针
+
  */
 void mysql_close(MYSQL *mysql);
 ```
@@ -474,8 +494,10 @@ void mysql_close(MYSQL *mysql);
 
 ```cpp
 /**
+
  * mysql_close 入口函数实现
  * 位置：libmysql/libmysql.c
+
  */
 void mysql_close(MYSQL *mysql) {
     DBUG_ENTER("mysql_close");
@@ -502,7 +524,9 @@ void mysql_close(MYSQL *mysql) {
 }
 
 /**
+
  * 发送退出命令
+
  */
 static void send_quit_command(MYSQL *mysql) {
     DBUG_ENTER("send_quit_command");
@@ -518,7 +542,9 @@ static void send_quit_command(MYSQL *mysql) {
 }
 
 /**
+
  * 清理网络资源
+
  */
 static void cleanup_network_resources(MYSQL *mysql) {
     DBUG_ENTER("cleanup_network_resources");
@@ -536,7 +562,9 @@ static void cleanup_network_resources(MYSQL *mysql) {
 }
 
 /**
+
  * 清理内存资源
+
  */
 static void cleanup_memory_resources(MYSQL *mysql) {
     DBUG_ENTER("cleanup_memory_resources");
@@ -573,13 +601,17 @@ static void cleanup_memory_resources(MYSQL *mysql) {
 
 ```cpp
 /**
+
  * MySQL查询执行API
  * 执行SQL查询语句
- * 
+
+ *
+
  * @param mysql     连接句柄指针
  * @param stmt_str  SQL语句字符串
  * @param length    SQL语句长度
  * @return 成功返回0，失败返回非0
+
  */
 int mysql_real_query(MYSQL *mysql, const char *stmt_str, unsigned long length);
 ```
@@ -588,8 +620,10 @@ int mysql_real_query(MYSQL *mysql, const char *stmt_str, unsigned long length);
 
 ```cpp
 /**
+
  * mysql_real_query 入口函数实现
  * 位置：libmysql/libmysql.c
+
  */
 int mysql_real_query(MYSQL *mysql, const char *stmt_str, unsigned long length) {
     DBUG_ENTER("mysql_real_query");
@@ -631,8 +665,10 @@ int mysql_real_query(MYSQL *mysql, const char *stmt_str, unsigned long length) {
 
 ```cpp
 /**
+
  * 发送查询命令
  * 将SQL语句封装成MySQL协议包发送给服务器
+
  */
 static int send_query_command(MYSQL *mysql, const char *query, unsigned long length) {
     DBUG_ENTER("send_query_command");
@@ -674,8 +710,10 @@ static int send_query_command(MYSQL *mysql, const char *query, unsigned long len
 
 ```cpp
 /**
+
  * 读取查询响应
  * 从服务器读取查询执行结果
+
  */
 static int read_query_response(MYSQL *mysql) {
     DBUG_ENTER("read_query_response");
@@ -712,7 +750,9 @@ static int read_query_response(MYSQL *mysql) {
 }
 
 /**
+
  * 解析OK包
+
  */
 static int parse_ok_packet(MYSQL *mysql, uchar *pos, ulong packet_length) {
     DBUG_ENTER("parse_ok_packet");
@@ -744,7 +784,9 @@ static int parse_ok_packet(MYSQL *mysql, uchar *pos, ulong packet_length) {
 }
 
 /**
+
  * 解析错误包
+
  */
 static int parse_error_packet(MYSQL *mysql, uchar *pos, ulong packet_length) {
     DBUG_ENTER("parse_error_packet");
@@ -774,7 +816,9 @@ static int parse_error_packet(MYSQL *mysql, uchar *pos, ulong packet_length) {
 }
 
 /**
+
  * 解析结果集头部
+
  */
 static int parse_result_set_header(MYSQL *mysql, uchar *pos, ulong packet_length) {
     DBUG_ENTER("parse_result_set_header");
@@ -811,11 +855,15 @@ static int parse_result_set_header(MYSQL *mysql, uchar *pos, ulong packet_length
 
 ```cpp
 /**
+
  * MySQL结果集获取API
  * 从服务器获取查询结果集并存储在客户端
- * 
+
+ *
+
  * @param mysql 连接句柄指针
  * @return 成功返回结果集指针，失败返回NULL
+
  */
 MYSQL_RES *mysql_store_result(MYSQL *mysql);
 ```
@@ -824,8 +872,10 @@ MYSQL_RES *mysql_store_result(MYSQL *mysql);
 
 ```cpp
 /**
+
  * mysql_store_result 入口函数实现
  * 位置：libmysql/libmysql.c
+
  */
 MYSQL_RES *mysql_store_result(MYSQL *mysql) {
     DBUG_ENTER("mysql_store_result");
@@ -878,8 +928,10 @@ MYSQL_RES *mysql_store_result(MYSQL *mysql) {
 
 ```cpp
 /**
+
  * 复制字段定义信息
  * 从MySQL连接对象复制字段定义到结果集
+
  */
 static int copy_field_definitions(MYSQL *mysql, MYSQL_RES *result) {
     DBUG_ENTER("copy_field_definitions");
@@ -935,8 +987,10 @@ static int copy_field_definitions(MYSQL *mysql, MYSQL_RES *result) {
 
 ```cpp
 /**
+
  * 读取所有数据行
  * 从服务器读取结果集的所有数据行
+
  */
 static int read_all_rows(MYSQL *mysql, MYSQL_RES *result) {
     DBUG_ENTER("read_all_rows");
@@ -985,9 +1039,11 @@ static int read_all_rows(MYSQL *mysql, MYSQL_RES *result) {
 }
 
 /**
+
  * 读取一行数据
+
  */
-static MYSQL_ROW read_one_row(MYSQL *mysql, uint field_count, 
+static MYSQL_ROW read_one_row(MYSQL *mysql, uint field_count,
                              ulong *lengths, my_bool *is_null) {
     DBUG_ENTER("read_one_row");
     
@@ -1081,13 +1137,17 @@ static MYSQL_ROW read_one_row(MYSQL *mysql, uint field_count,
 
 ```cpp
 /**
+
  * MySQL预处理语句准备API
  * 准备一个SQL语句用于后续执行
- * 
+
+ *
+
  * @param stmt      预处理语句句柄
  * @param stmt_str  SQL语句字符串
  * @param length    SQL语句长度
  * @return 成功返回0，失败返回非0
+
  */
 int mysql_stmt_prepare(MYSQL_STMT *stmt, const char *stmt_str, unsigned long length);
 ```
@@ -1096,8 +1156,10 @@ int mysql_stmt_prepare(MYSQL_STMT *stmt, const char *stmt_str, unsigned long len
 
 ```cpp
 /**
+
  * mysql_stmt_prepare 入口函数实现
  * 位置：libmysql/libmysql.c
+
  */
 int mysql_stmt_prepare(MYSQL_STMT *stmt, const char *stmt_str, unsigned long length) {
     DBUG_ENTER("mysql_stmt_prepare");
@@ -1155,8 +1217,10 @@ int mysql_stmt_prepare(MYSQL_STMT *stmt, const char *stmt_str, unsigned long len
 
 ```cpp
 /**
+
  * 发送预处理准备命令
  * 向服务器发送COM_STMT_PREPARE命令
+
  */
 static int send_prepare_command(MYSQL_STMT *stmt, const char *stmt_str, unsigned long length) {
     DBUG_ENTER("send_prepare_command");
@@ -1192,8 +1256,10 @@ static int send_prepare_command(MYSQL_STMT *stmt, const char *stmt_str, unsigned
 
 ```cpp
 /**
+
  * 读取预处理准备响应
  * 从服务器读取准备命令的响应
+
  */
 static int read_prepare_response(MYSQL_STMT *stmt) {
     DBUG_ENTER("read_prepare_response");
@@ -1257,11 +1323,15 @@ static int read_prepare_response(MYSQL_STMT *stmt) {
 
 ```cpp
 /**
+
  * MySQL预处理语句执行API
  * 执行已准备的预处理语句
- * 
+
+ *
+
  * @param stmt 预处理语句句柄
  * @return 成功返回0，失败返回非0
+
  */
 int mysql_stmt_execute(MYSQL_STMT *stmt);
 ```
@@ -1270,8 +1340,10 @@ int mysql_stmt_execute(MYSQL_STMT *stmt);
 
 ```cpp
 /**
+
  * mysql_stmt_execute 入口函数实现
  * 位置：libmysql/libmysql.c
+
  */
 int mysql_stmt_execute(MYSQL_STMT *stmt) {
     DBUG_ENTER("mysql_stmt_execute");
@@ -1319,8 +1391,10 @@ int mysql_stmt_execute(MYSQL_STMT *stmt) {
 
 ```cpp
 /**
+
  * 发送预处理执行命令
  * 向服务器发送COM_STMT_EXECUTE命令及参数数据
+
  */
 static int send_execute_command(MYSQL_STMT *stmt) {
     DBUG_ENTER("send_execute_command");
@@ -1370,7 +1444,9 @@ static int send_execute_command(MYSQL_STMT *stmt) {
 }
 
 /**
+
  * 添加参数数据到执行包
+
  */
 static uchar *add_parameter_data(MYSQL_STMT *stmt, uchar *pos) {
     DBUG_ENTER("add_parameter_data");
@@ -1420,7 +1496,9 @@ static uchar *add_parameter_data(MYSQL_STMT *stmt, uchar *pos) {
 }
 
 /**
+
  * 添加单个参数值
+
  */
 static uchar *add_single_parameter_value(MYSQL_BIND *param, uchar *pos) {
     DBUG_ENTER("add_single_parameter_value");
@@ -1496,12 +1574,16 @@ static uchar *add_single_parameter_value(MYSQL_BIND *param, uchar *pos) {
 
 ```cpp
 /**
+
  * MySQL自动提交设置API
  * 设置连接的自动提交模式
- * 
+
+ *
+
  * @param mysql 连接句柄指针
  * @param mode  自动提交模式（1启用，0禁用）
  * @return 成功返回0，失败返回非0
+
  */
 int mysql_autocommit(MYSQL *mysql, my_bool mode);
 ```
@@ -1510,8 +1592,10 @@ int mysql_autocommit(MYSQL *mysql, my_bool mode);
 
 ```cpp
 /**
+
  * mysql_autocommit 入口函数实现
  * 位置：libmysql/libmysql.c
+
  */
 int mysql_autocommit(MYSQL *mysql, my_bool mode) {
     DBUG_ENTER("mysql_autocommit");
@@ -1547,11 +1631,15 @@ int mysql_autocommit(MYSQL *mysql, my_bool mode) {
 
 ```cpp
 /**
+
  * MySQL事务提交API
  * 提交当前事务
- * 
+
+ *
+
  * @param mysql 连接句柄指针
  * @return 成功返回0，失败返回非0
+
  */
 int mysql_commit(MYSQL *mysql);
 ```
@@ -1560,8 +1648,10 @@ int mysql_commit(MYSQL *mysql);
 
 ```cpp
 /**
+
  * mysql_commit 入口函数实现
  * 位置：libmysql/libmysql.c
+
  */
 int mysql_commit(MYSQL *mysql) {
     DBUG_ENTER("mysql_commit");
@@ -1586,11 +1676,15 @@ int mysql_commit(MYSQL *mysql) {
 
 ```cpp
 /**
+
  * MySQL事务回滚API
  * 回滚当前事务
- * 
+
+ *
+
  * @param mysql 连接句柄指针
  * @return 成功返回0，失败返回非0
+
  */
 int mysql_rollback(MYSQL *mysql);
 ```
@@ -1599,8 +1693,10 @@ int mysql_rollback(MYSQL *mysql);
 
 ```cpp
 /**
+
  * mysql_rollback 入口函数实现
  * 位置：libmysql/libmysql.c
+
  */
 int mysql_rollback(MYSQL *mysql) {
     DBUG_ENTER("mysql_rollback");

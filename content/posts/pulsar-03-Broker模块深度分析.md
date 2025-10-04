@@ -148,8 +148,10 @@ graph TB
 
 ```java
 /**
+
  * PulsarService 是 Pulsar Broker 的核心服务类
  * 负责协调和管理所有子服务的生命周期
+
  */
 public class PulsarService implements Closeable {
     // 服务配置
@@ -177,6 +179,7 @@ public class PulsarService implements Closeable {
     private TransactionMetadataStoreService transactionMetadataStoreService; // 事务元数据服务
     
     /**
+
      * 启动 Pulsar 服务
      * 按照依赖关系顺序启动各个子服务
      */
@@ -245,7 +248,7 @@ public class PulsarService implements Closeable {
         }
         
         // 验证存储配额配置
-        if (config.getDefaultRetentionSizeInMB() > 0 
+        if (config.getDefaultRetentionSizeInMB() > 0
             && config.getBacklogQuotaDefaultLimitBytes() > 0
             && config.getBacklogQuotaDefaultLimitBytes() >= (config.getDefaultRetentionSizeInMB() * 1024L * 1024L)) {
             throw new IllegalArgumentException("Retention size must be greater than backlog quota limit");
@@ -274,6 +277,7 @@ public class PulsarService implements Closeable {
         // 初始化协调服务
         coordinationService = new CoordinationServiceImpl(localMetadataStore);
     }
+
 }
 ```
 
@@ -281,8 +285,10 @@ public class PulsarService implements Closeable {
 
 ```java
 /**
+
  * BrokerService 是处理客户端请求的核心服务
  * 负责主题管理、生产者/消费者连接管理、消息路由等
+
  */
 @Getter(AccessLevel.PUBLIC)
 @Setter(AccessLevel.PROTECTED)
@@ -328,8 +334,8 @@ public class BrokerService implements Closeable {
         
         // 初始化网络组件
         this.acceptorGroup = EventLoopUtil.newEventLoopGroup(
-                pulsar.getConfiguration().getNumAcceptorThreads(), 
-                false, 
+                pulsar.getConfiguration().getNumAcceptorThreads(),
+                false,
                 new ExtendedThreadFactory("pulsar-acceptor"));
         this.workerGroup = eventLoopGroup;
         
@@ -348,6 +354,7 @@ public class BrokerService implements Closeable {
     }
     
     /**
+
      * 启动 Broker 服务
      */
     public void start() throws PulsarServerException {
@@ -421,7 +428,7 @@ public class BrokerService implements Closeable {
             CompletableFuture<Optional<Topic>> topicFuture = topics.get(topic);
             if (topicFuture != null) {
                 // 主题已存在或正在创建中
-                if (topicFuture.isCompletedExceptionally() || 
+                if (topicFuture.isCompletedExceptionally() ||
                     (topicFuture.isDone() && !topicFuture.get().isPresent())) {
                     // 之前的创建失败，移除并重试
                     topics.remove(topic, topicFuture);
@@ -441,7 +448,7 @@ public class BrokerService implements Closeable {
             
             // 创建新的主题 Future
             final CompletableFuture<Optional<Topic>> topicCreateFuture = new CompletableFuture<>();
-            final CompletableFuture<Optional<Topic>> existingFuture = 
+            final CompletableFuture<Optional<Topic>> existingFuture =
                     topics.putIfAbsent(topic, topicCreateFuture);
             
             if (existingFuture != null) {
@@ -476,7 +483,7 @@ public class BrokerService implements Closeable {
     /**
      * 创建主题（如果不存在）
      */
-    private CompletableFuture<Optional<Topic>> createTopicIfDoesNotExist(TopicName topicName, 
+    private CompletableFuture<Optional<Topic>> createTopicIfDoesNotExist(TopicName topicName,
                                                                         Map<String, String> properties) {
         return checkTopicNsOwnership(topicName.getNamespaceObject())
                 .thenCompose(__ -> pulsar.getNamespaceService().checkTopicOwnership(topicName))
@@ -498,7 +505,7 @@ public class BrokerService implements Closeable {
     /**
      * 创建非分区主题
      */
-    private CompletableFuture<Optional<Topic>> createNonPartitionedTopicAsync(TopicName topicName, 
+    private CompletableFuture<Optional<Topic>> createNonPartitionedTopicAsync(TopicName topicName,
                                                                              Map<String, String> properties) {
         final String topicNameStr = topicName.toString();
         
@@ -524,8 +531,8 @@ public class BrokerService implements Closeable {
      * 创建持久化主题
      */
     private Topic createPersistentTopic(String topicName, ManagedLedgerConfig config) throws Exception {
-        return new PersistentTopic(topicName, 
-                managedLedgerStorage.getManagedLedgerFactory().open(topicName, config), 
+        return new PersistentTopic(topicName,
+                managedLedgerStorage.getManagedLedgerFactory().open(topicName, config),
                 this);
     }
     
@@ -535,6 +542,7 @@ public class BrokerService implements Closeable {
     private Topic createNonPersistentTopic(String topicName) {
         return new NonPersistentTopic(topicName, this);
     }
+
 }
 ```
 
@@ -625,12 +633,15 @@ sequenceDiagram
 
 ```java
 /**
+
  * Topic 是 Pulsar 中主题的抽象接口
  * 定义了主题的核心操作方法
+
  */
 public interface Topic {
     
     /**
+
      * 添加生产者到主题
      * @param producer 生产者实例
      * @param producerQueuedFuture 生产者创建的 Future
@@ -672,8 +683,8 @@ public interface Topic {
      * @param includeConsumers 是否包含消费者信息
      * @return 主题统计信息
      */
-    CompletableFuture<TopicStatsImpl> getStats(boolean getPreciseBacklog, 
-                                              boolean includePublishers, 
+    CompletableFuture<TopicStatsImpl> getStats(boolean getPreciseBacklog,
+                                              boolean includePublishers,
                                               boolean includeConsumers);
     
     /**
@@ -687,6 +698,7 @@ public interface Topic {
      * @return 关闭操作的 Future
      */
     CompletableFuture<Void> close();
+
 }
 ```
 
@@ -694,8 +706,10 @@ public interface Topic {
 
 ```java
 /**
+
  * PersistentTopic 是持久化主题的实现类
  * 基于 ManagedLedger 提供持久化存储
+
  */
 public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCallback {
     
@@ -739,6 +753,7 @@ public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCal
     }
     
     /**
+
      * 发布消息到主题
      */
     @Override
@@ -818,7 +833,7 @@ public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCal
                 
                 if (subscription == null) {
                     // 创建新订阅
-                    subscription = createSubscription(subscriptionName, consumer.getSubscriptionType(), 
+                    subscription = createSubscription(subscriptionName, consumer.getSubscriptionType(),
                                                     consumer.getStartMessageId(), replicated);
                     subscriptions.put(subscriptionName, subscription);
                 }
@@ -836,14 +851,14 @@ public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCal
     /**
      * 创建持久化订阅
      */
-    private PersistentSubscription createSubscription(String subscriptionName, 
+    private PersistentSubscription createSubscription(String subscriptionName,
                                                      SubscriptionType subscriptionType,
-                                                     MessageId startMessageId, 
+                                                     MessageId startMessageId,
                                                      boolean replicated) throws Exception {
         
         // 打开管理游标
-        ManagedCursor cursor = ledger.openCursor(subscriptionName, 
-                CommandSubscribe.InitialPosition.Latest, 
+        ManagedCursor cursor = ledger.openCursor(subscriptionName,
+                CommandSubscribe.InitialPosition.Latest,
                 createManagedCursorConfig(subscriptionType));
         
         // 创建订阅实例
@@ -874,7 +889,7 @@ public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCal
         // 分发到所有活跃订阅
         subscriptions.values().forEach(subscription -> {
             try {
-                subscription.acknowledgeMessage(Collections.singletonList(position), 
+                subscription.acknowledgeMessage(Collections.singletonList(position),
                                               AckType.Individual, Collections.emptyMap());
             } catch (Exception e) {
                 LOG.warn("[{}] Failed to dispatch message to subscription {}", topic, subscription.getName(), e);
@@ -891,8 +906,8 @@ public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCal
      * 获取主题统计信息
      */
     @Override
-    public CompletableFuture<TopicStatsImpl> getStats(boolean getPreciseBacklog, 
-                                                     boolean includePublishers, 
+    public CompletableFuture<TopicStatsImpl> getStats(boolean getPreciseBacklog,
+                                                     boolean includePublishers,
                                                      boolean includeConsumers) {
         return CompletableFuture.supplyAsync(() -> {
             TopicStatsImpl stats = new TopicStatsImpl();
@@ -932,6 +947,7 @@ public class PersistentTopic extends AbstractTopic implements Topic, AddEntryCal
             return stats;
         }, brokerService.getTopicOrderedExecutor().chooseThread(topic));
     }
+
 }
 ```
 
@@ -994,11 +1010,14 @@ graph TB
 
 ```java
 /**
+
  * 负载均衡策略接口
+
  */
 public interface LoadBalancingStrategy {
     
     /**
+
      * 选择最佳的 Broker 来处理新的主题
      * @param candidates 候选 Broker 列表
      * @param bundleToAssign 要分配的 Bundle
@@ -1006,10 +1025,13 @@ public interface LoadBalancingStrategy {
      * @return 选中的 Broker
      */
     Optional<String> selectBroker(Set<String> candidates, BundleData bundleToAssign, LoadData loadData);
+
 }
 
 /**
+
  * 最少负载策略实现
+
  */
 public class LeastLoadedStrategy implements LoadBalancingStrategy {
     
@@ -1037,6 +1059,7 @@ public class LeastLoadedStrategy implements LoadBalancingStrategy {
     }
     
     /**
+
      * 计算 Broker 负载评分
      */
     private double calculateLoadScore(BrokerData brokerData) {
@@ -1051,6 +1074,7 @@ public class LeastLoadedStrategy implements LoadBalancingStrategy {
                brokerData.getNetworkUsage() * networkWeight +
                brokerData.getDiskUsage() * diskWeight;
     }
+
 }
 ```
 
@@ -1100,7 +1124,9 @@ graph TB
 
 ```java
 /**
+
  * 认证服务实现
+
  */
 public class AuthenticationService implements Closeable {
     
@@ -1114,6 +1140,7 @@ public class AuthenticationService implements Closeable {
     }
     
     /**
+
      * 初始化认证服务
      */
     public void initialize(PulsarService pulsar) throws Exception {
@@ -1125,7 +1152,7 @@ public class AuthenticationService implements Closeable {
         Set<String> providerClassNames = config.getAuthenticationProviders();
         for (String className : providerClassNames) {
             @SuppressWarnings("unchecked")
-            Class<AuthenticationProvider> providerClass = 
+            Class<AuthenticationProvider> providerClass =
                     (Class<AuthenticationProvider>) Class.forName(className);
             
             AuthenticationProvider provider = providerClass.getDeclaredConstructor().newInstance();
@@ -1139,7 +1166,7 @@ public class AuthenticationService implements Closeable {
     /**
      * 认证客户端连接
      */
-    public AuthenticationDataSource authenticate(AuthenticationDataSource authData, String authMethodName) 
+    public AuthenticationDataSource authenticate(AuthenticationDataSource authData, String authMethodName)
             throws AuthenticationException {
         
         AuthenticationProvider provider = providers.get(authMethodName);
@@ -1165,10 +1192,13 @@ public class AuthenticationService implements Closeable {
         
         return authDataSource;
     }
+
 }
 
 /**
+
  * JWT 认证提供者
+
  */
 public class AuthenticationProviderJwt implements AuthenticationProvider {
     
@@ -1225,7 +1255,9 @@ public class AuthenticationProviderJwt implements AuthenticationProvider {
 
 ```java
 /**
+
  * Pulsar 统计收集器
+
  */
 public class PulsarStats {
     
@@ -1250,6 +1282,7 @@ public class PulsarStats {
     }
     
     /**
+
      * 更新统计信息
      */
     private void updateStats() {
@@ -1330,6 +1363,7 @@ public class PulsarStats {
         
         return report;
     }
+
 }
 ```
 
@@ -1382,6 +1416,7 @@ public class PulsarStats {
 ```yaml
 # Prometheus 告警规则示例
 groups:
+
 - name: pulsar-broker
   rules:
   # 高 CPU 使用率告警
@@ -1413,6 +1448,7 @@ groups:
     annotations:
       summary: "High backlog in Pulsar subscription"
       description: "Subscription {{ $labels.subscription }} has {{ $value }} messages in backlog"
+
 ```
 
 Broker 模块是 Pulsar 的核心，承载着消息路由、存储管理、负载均衡等关键功能。通过深入理解其架构设计和实现细节，可以更好地优化性能、排查问题和扩展功能。

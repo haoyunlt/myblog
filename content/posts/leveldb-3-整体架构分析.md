@@ -84,6 +84,7 @@ flowchart TD
 ### 3.1 内存存储模块
 
 #### MemTable架构
+
 ```mermaid
 classDiagram
     class MemTable {
@@ -119,6 +120,7 @@ classDiagram
 ```
 
 **MemTable特性分析**:
+
 - **数据结构**: 使用跳表（SkipList）实现，支持高效的有序插入和查找
 - **内存管理**: Arena内存池避免频繁的malloc/free操作
 - **并发控制**: 支持单写多读，通过引用计数管理生命周期
@@ -127,6 +129,7 @@ classDiagram
 ### 3.2 持久化存储模块
 
 #### SSTable文件结构
+
 ```mermaid
 graph TD
     subgraph "SSTable文件格式"
@@ -154,10 +157,11 @@ graph TD
 ```
 
 #### 多级存储结构
+
 ```mermaid
 graph LR
     subgraph "Level 0"
-        A[File 1] 
+        A[File 1]
         B[File 2]
         C[File 3]
         D[File 4]
@@ -165,7 +169,7 @@ graph LR
     
     subgraph "Level 1"
         E[File A]
-        F[File B] 
+        F[File B]
         G[File C]
     end
     
@@ -201,6 +205,7 @@ graph LR
 ```
 
 **存储特性分析**:
+
 - **Level 0**: 文件可能重叠，直接从MemTable压缩得到
 - **Level 1+**: 文件不重叠，有序排列，便于查找
 - **容量递增**: 每层容量是上一层的10倍（默认配置）
@@ -209,6 +214,7 @@ graph LR
 ### 3.3 版本管理模块
 
 #### Version和VersionSet关系
+
 ```mermaid
 classDiagram
     class VersionSet {
@@ -265,6 +271,7 @@ classDiagram
 ### 3.4 压缩管理模块
 
 #### 压缩触发机制
+
 ```mermaid
 graph TD
     A[写入操作] --> B{MemTable满？}
@@ -288,6 +295,7 @@ graph TD
 ```
 
 #### 压缩算法流程
+
 ```mermaid
 sequenceDiagram
     participant BG as 后台线程
@@ -409,11 +417,12 @@ Compaction* VersionSet::PickCompaction() {
 ## 5. 性能优化设计
 
 ### 5.1 写入路径优化
+
 ```mermaid
 graph LR
     A[用户写入] --> B[WriteBatch批量化]
     B --> C[WAL顺序写入]
-    C --> D[MemTable内存写入] 
+    C --> D[MemTable内存写入]
     D --> E[后台异步压缩]
     
     style C fill:#90EE90
@@ -422,6 +431,7 @@ graph LR
 ```
 
 ### 5.2 读取路径优化  
+
 ```mermaid
 graph TD
     A[用户读取] --> B[MemTable查找]
@@ -450,6 +460,7 @@ graph TD
 - **快照隔离**: 使用序列号实现快照隔离级别
 
 ### 6.2 后台压缩并发
+
 ```mermaid
 sequenceDiagram
     participant W as 写入线程
@@ -479,6 +490,7 @@ sequenceDiagram
 ## 7. 容错和恢复机制
 
 ### 7.1 WAL日志恢复
+
 ```mermaid
 flowchart TD
     A[数据库启动] --> B[扫描WAL文件]

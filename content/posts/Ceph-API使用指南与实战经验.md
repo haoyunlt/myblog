@@ -89,29 +89,36 @@ graph TB
 
 ```cpp
 /**
+
  * LibRADOS核心API - 提供对RADOS集群的原生访问
  * 文件: src/librados/librados_cxx.cc
- * 
+
+ *
+
  * LibRADOS是Ceph的核心客户端库，提供：
  * 1. 集群连接和认证
  * 2. 存储池操作
  * 3. 对象CRUD操作
  * 4. 异步操作支持
  * 5. 集群管理功能
+
  */
 
 /**
+
  * Rados类 - 集群连接和管理的主入口
+
  */
 class Rados {
 public:
     // ===================== 初始化和连接 =====================
     
     /**
+
      * 初始化Rados客户端
      * @param id 客户端ID，通常是"admin"
      * @return 0成功，负数为错误码
-     * 
+     *
      * 示例：
      * librados::Rados cluster;
      * int ret = cluster.init("admin");
@@ -125,7 +132,7 @@ public:
     /**
      * 连接到Ceph集群
      * @return 0成功，负数为错误码
-     * 
+     *
      * 连接过程包括：
      * 1. 读取配置文件(/etc/ceph/ceph.conf)
      * 2. 连接到Monitor节点
@@ -176,20 +183,23 @@ private:
 };
 
 /**
+
  * IoCtx类 - 存储池IO操作上下文
+
  */
 class IoCtx {
 public:
     // ===================== 基本对象操作 =====================
     
     /**
+
      * 写入对象（覆盖）
      * @param oid 对象ID
      * @param bl 要写入的数据
      * @param len 数据长度
      * @param off 写入偏移量
      * @return 0成功，负数为错误码
-     * 
+     *
      * 示例：
      * bufferlist bl;
      * bl.append("Hello, Ceph!");
@@ -235,7 +245,7 @@ public:
      * @param off 写入偏移量
      * @return 0成功提交，负数为错误码
      */
-    int aio_write(const std::string& oid, AioCompletion *c, 
+    int aio_write(const std::string& oid, AioCompletion *c,
                  const bufferlist& bl, size_t len, uint64_t off);
     
     /**
@@ -301,19 +311,22 @@ private:
 };
 
 /**
+
  * AioCompletion类 - 异步操作完成回调
+
  */
 class AioCompletion {
 public:
     /**
+
      * 创建异步完成对象
      * @param cb_arg 回调参数
      * @param cb_complete 完成回调函数
      * @param cb_safe 安全回调函数（可选）
      * @return 异步完成对象
      */
-    static AioCompletion *create(void *cb_arg, 
-                                callback_t cb_complete, 
+    static AioCompletion *create(void *cb_arg,
+                                callback_t cb_complete,
                                 callback_t cb_safe = nullptr);
     
     /**
@@ -346,8 +359,10 @@ private:
 
 ```cpp
 /**
+
  * LibRADOS完整使用示例
  * 演示连接集群、创建存储池、对象操作等功能
+
  */
 
 #include <rados/librados.hpp>
@@ -361,6 +376,7 @@ private:
     
 public:
     /**
+
      * 初始化连接到Ceph集群
      * @param pool_name 存储池名称
      * @return 0成功，负数为错误码
@@ -423,7 +439,7 @@ public:
         // 写入对象（覆盖写入）
         int ret = io_ctx.write_full(object_name, bl);
         if (ret < 0) {
-            std::cerr << "Failed to write object " << object_name 
+            std::cerr << "Failed to write object " << object_name
                       << ": " << strerror(-ret) << std::endl;
             return ret;
         }
@@ -445,7 +461,7 @@ public:
         // 读取整个对象
         int ret = io_ctx.read(object_name, bl, 0, 0);  // len=0表示读取全部
         if (ret < 0) {
-            std::cerr << "Failed to read object " << object_name 
+            std::cerr << "Failed to read object " << object_name
                       << ": " << strerror(-ret) << std::endl;
             return ret;
         }
@@ -561,8 +577,8 @@ public:
             }
             
             for (const auto& obj : results) {
-                std::cout << "  Object: " << obj.oid 
-                         << ", Size: " << obj.size 
+                std::cout << "  Object: " << obj.oid
+                         << ", Size: " << obj.size
                          << ", Modified: " << ctime(&obj.mtime) << std::endl;
             }
         }
@@ -578,10 +594,13 @@ public:
         cluster.shutdown();
         std::cout << "Connection closed" << std::endl;
     }
+
 };
 
 /**
+
  * 主函数 - 演示完整的使用流程
+
  */
 int main() {
     RadosExample example;
@@ -681,20 +700,27 @@ graph TB
 
 ```cpp
 /**
+
  * RGW S3 API核心实现
  * 文件: src/rgw/rgw_rest_s3.h:698-764
- * 
+
+ *
+
  * RGW提供完整的S3兼容API，包括桶操作、对象操作等
+
  */
 
 /**
+
  * RGWHandler_REST_Bucket_S3 - S3桶操作处理器
+
  */
 class RGWHandler_REST_Bucket_S3 : public RGWHandler_REST_S3 {
 public:
     // ===================== 桶操作检测方法 =====================
     
     /**
+
      * 检查是否为ACL操作
      * @return true 如果请求包含acl参数
      */
@@ -795,14 +821,18 @@ public:
             return new RGWDeleteBucket_ObjStore_S3;  // 默认删除桶
         }
     }
+
 };
 
 /**
+
  * RGWCreateBucket_ObjStore_S3 - S3创建桶操作
+
  */
 class RGWCreateBucket_ObjStore_S3 : public RGWCreateBucket_ObjStore {
 public:
     /**
+
      * 执行创建桶操作
      * @return 操作结果
      */
@@ -854,6 +884,7 @@ public:
 
 private:
     /**
+
      * 解析位置约束
      */
     void parse_location_constraint() {
@@ -886,14 +917,18 @@ private:
         std::string location = "/" + s->bucket_name;
         dump_header(s, "Location", location);
     }
+
 };
 
 /**
+
  * RGWListBucket_ObjStore_S3 - S3列出桶内容操作
+
  */
 class RGWListBucket_ObjStore_S3 : public RGWListBucket_ObjStore {
 public:
     /**
+
      * 执行列出操作
      * @return 操作结果
      */
@@ -928,7 +963,7 @@ public:
         }
         
         // 输出XML响应
-        s->formatter->open_object_section_in_ns("ListBucketResult", 
+        s->formatter->open_object_section_in_ns("ListBucketResult",
                                                XMLNS_AWS_S3);
         
         s->formatter->dump_string("Name", s->bucket_name);
@@ -941,7 +976,7 @@ public:
         for (const auto& entry : objs) {
             s->formatter->open_object_section("Contents");
             s->formatter->dump_string("Key", entry.key.name);
-            s->formatter->dump_string("LastModified", 
+            s->formatter->dump_string("LastModified",
                                     entry.meta.mtime.to_iso_8601());
             s->formatter->dump_string("ETag", entry.meta.etag);
             s->formatter->dump_int("Size", entry.meta.accounted_size);
@@ -962,6 +997,7 @@ public:
 
 private:
     /**
+
      * 解析列出参数
      */
     void parse_list_params() {
@@ -987,6 +1023,7 @@ private:
             start_after = s->info.args.get("start-after");
         }
     }
+
 };
 ```
 
@@ -1430,8 +1467,10 @@ graph TB
 
 ```c
 /**
+
  * LibCephFS C API使用示例
  * 演示如何使用libcephfs进行文件系统操作
+
  */
 
 #include <cephfs/libcephfs.h>
@@ -1443,17 +1482,21 @@ graph TB
 #include <errno.h>
 
 /**
+
  * CephFS操作示例类
+
  */
 typedef struct {
     struct ceph_mount_info *cmount;     // CephFS挂载句柄
 } cephfs_example_t;
 
 /**
+
  * 初始化CephFS连接
  * @param example 示例结构体
  * @param user_id 用户ID（如 "admin"）
  * @return 0成功，负数为错误码
+
  */
 int cephfs_init(cephfs_example_t *example, const char *user_id) {
     int ret;
@@ -1486,14 +1529,16 @@ int cephfs_init(cephfs_example_t *example, const char *user_id) {
 }
 
 /**
+
  * 文件操作示例
  * @param example 示例结构体
  * @param filename 文件名
  * @param content 要写入的内容
  * @return 0成功，负数为错误码
+
  */
-int cephfs_file_operations(cephfs_example_t *example, 
-                          const char *filename, 
+int cephfs_file_operations(cephfs_example_t *example,
+                          const char *filename,
                           const char *content) {
     int ret;
     int fd;
@@ -1506,7 +1551,7 @@ int cephfs_file_operations(cephfs_example_t *example,
     printf("Creating file: %s\n", filename);
     fd = ceph_open(example->cmount, filename, O_CREAT | O_WRONLY | O_TRUNC, 0644);
     if (fd < 0) {
-        fprintf(stderr, "Failed to create file %s: %s\n", 
+        fprintf(stderr, "Failed to create file %s: %s\n",
                 filename, strerror(-fd));
         return fd;
     }
@@ -1543,7 +1588,7 @@ int cephfs_file_operations(cephfs_example_t *example,
     
     // 3. 获取文件状态
     printf("Getting file stats: %s\n", filename);
-    ret = ceph_statx(example->cmount, filename, &stx, 
+    ret = ceph_statx(example->cmount, filename, &stx,
                      CEPH_STATX_BASIC_STATS, AT_STATX_SYNC_AS_STAT);
     if (ret) {
         fprintf(stderr, "Failed to stat file: %s\n", strerror(-ret));
@@ -1561,10 +1606,12 @@ int cephfs_file_operations(cephfs_example_t *example,
 }
 
 /**
+
  * 目录操作示例
  * @param example 示例结构体
  * @param dirname 目录名
  * @return 0成功，负数为错误码
+
  */
 int cephfs_directory_operations(cephfs_example_t *example, const char *dirname) {
     int ret;
@@ -1577,7 +1624,7 @@ int cephfs_directory_operations(cephfs_example_t *example, const char *dirname) 
     printf("Creating directory: %s\n", dirname);
     ret = ceph_mkdir(example->cmount, dirname, 0755);
     if (ret && ret != -EEXIST) {
-        fprintf(stderr, "Failed to create directory %s: %s\n", 
+        fprintf(stderr, "Failed to create directory %s: %s\n",
                 dirname, strerror(-ret));
         return ret;
     }
@@ -1603,7 +1650,7 @@ int cephfs_directory_operations(cephfs_example_t *example, const char *dirname) 
     printf("Listing directory contents: %s\n", dirname);
     ret = ceph_opendir(example->cmount, dirname, &dirp);
     if (ret) {
-        fprintf(stderr, "Failed to open directory %s: %s\n", 
+        fprintf(stderr, "Failed to open directory %s: %s\n",
                 dirname, strerror(-ret));
         return ret;
     }
@@ -1622,10 +1669,12 @@ int cephfs_directory_operations(cephfs_example_t *example, const char *dirname) 
 }
 
 /**
+
  * 扩展属性操作示例
  * @param example 示例结构体
  * @param filepath 文件路径
  * @return 0成功，负数为错误码
+
  */
 int cephfs_xattr_operations(cephfs_example_t *example, const char *filepath) {
     int ret;
@@ -1639,7 +1688,7 @@ int cephfs_xattr_operations(cephfs_example_t *example, const char *filepath) {
     const char *attr_value = "example_value";
     
     printf("Setting extended attribute: %s = %s\n", attr_name, attr_value);
-    ret = ceph_setxattr(example->cmount, filepath, attr_name, 
+    ret = ceph_setxattr(example->cmount, filepath, attr_name,
                        attr_value, strlen(attr_value), 0);
     if (ret) {
         fprintf(stderr, "Failed to set xattr: %s\n", strerror(-ret));
@@ -1648,7 +1697,7 @@ int cephfs_xattr_operations(cephfs_example_t *example, const char *filepath) {
     
     // 2. 获取扩展属性
     printf("Getting extended attribute: %s\n", attr_name);
-    ret = ceph_getxattr(example->cmount, filepath, attr_name, 
+    ret = ceph_getxattr(example->cmount, filepath, attr_name,
                        value, sizeof(value) - 1);
     if (ret < 0) {
         fprintf(stderr, "Failed to get xattr: %s\n", strerror(-ret));
@@ -1677,8 +1726,10 @@ int cephfs_xattr_operations(cephfs_example_t *example, const char *filepath) {
 }
 
 /**
+
  * 清理资源
  * @param example 示例结构体
+
  */
 void cephfs_cleanup(cephfs_example_t *example) {
     if (example->cmount) {
@@ -1690,7 +1741,9 @@ void cephfs_cleanup(cephfs_example_t *example) {
 }
 
 /**
+
  * 主函数 - 演示CephFS API的完整使用
+
  */
 int main(int argc, char **argv) {
     cephfs_example_t example = {0};
@@ -2228,7 +2281,7 @@ class CephMonitoringSystem:
                 })
             elif usage_percent >= self.thresholds['disk_usage_warning']:
                 alerts.append({
-                    'level': 'WARNING', 
+                    'level': 'WARNING',
                     'type': 'disk_usage',
                     'message': f'Cluster disk usage high: {usage_percent:.1f}%',
                     'value': usage_percent,
@@ -2272,7 +2325,7 @@ class CephMonitoringSystem:
         elif metric.status == 'HEALTH_WARN':
             alerts.append({
                 'level': 'WARNING',
-                'type': 'cluster_health', 
+                'type': 'cluster_health',
                 'message': 'Cluster health status is WARNING',
                 'value': metric.status,
                 'threshold': 'HEALTH_OK'

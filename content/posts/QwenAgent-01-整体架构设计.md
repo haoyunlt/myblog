@@ -29,7 +29,7 @@ graph TB
     
     subgraph "应用服务层 (Application Service Layer)"
         E[Qwen Server] --> E1[Assistant Server]
-        E --> E2[Workstation Server] 
+        E --> E2[Workstation Server]
         E --> E3[Database Server]
         F[Multi-Agent Hub] --> F1[协作管理]
         F --> F2[消息路由]
@@ -126,33 +126,39 @@ graph TB
 
 #### 1. 用户交互层 (User Interface Layer)
 **职责**: 提供多种用户交互方式，包括Web界面、命令行、API等
+
 - **Web UI**: 基于Gradio的Web交互界面
 - **CLI Interface**: 命令行交互工具  
 - **API Gateway**: RESTful API服务接口
 - **Browser Extension**: 浏览器扩展插件
 
-#### 2. 应用服务层 (Application Service Layer) 
+#### 2. 应用服务层 (Application Service Layer)
 **职责**: 提供高层应用服务和多Agent协作管理
+
 - **Qwen Server**: 核心服务器组件，包含助手服务、工作站服务、数据库服务
 - **Multi-Agent Hub**: 多智能体协作中心，负责Agent间的协调和消息路由
 
 #### 3. Agent核心层 (Agent Core Layer)
 **职责**: 实现各种类型的智能代理，是框架的核心抽象层
+
 - **Agent Base**: 代理基类，定义统一接口
 - **Specialized Agents**: 各种专门化的代理实现
 
 #### 4. 能力增强层 (Capability Enhancement Layer)
 **职责**: 为Agent提供增强能力，包括记忆、工具使用等
+
 - **Memory System**: 内存管理系统
 - **Tool System**: 工具调用系统
 
 #### 5. 模型服务层 (Model Service Layer)
 **职责**: 提供大语言模型的统一抽象和多种实现
+
 - **LLM Abstraction**: 模型抽象层
 - **Model Implementations**: 具体模型服务实现
 
 #### 6. 基础设施层 (Infrastructure Layer)
 **职责**: 提供系统运行的基础支撑服务
+
 - **Configuration**: 配置管理
 - **Storage**: 存储服务
 - **Logging & Monitoring**: 日志和监控
@@ -361,7 +367,7 @@ class Agent(ABC):
 graph LR
     subgraph "核心依赖"
         A[Agent] --> B[LLM]
-        A --> C[Tools] 
+        A --> C[Tools]
         A --> D[Memory]
         C --> E[BaseTool]
         B --> F[BaseChatModel]
@@ -411,6 +417,7 @@ graph LR
 ### 性能优化设计
 
 #### 1. 流式处理
+
 ```python
 # 流式输出避免内存积累
 def chat_stream(self, messages):
@@ -419,6 +426,7 @@ def chat_stream(self, messages):
 ```
 
 #### 2. 缓存机制
+
 ```python
 class BaseChatModel:
     def __init__(self, cfg):
@@ -432,6 +440,7 @@ class BaseChatModel:
 ```
 
 #### 3. 异步处理
+
 ```python
 # 工具并行执行（在实现中考虑）
 async def parallel_tool_execution(tools, params):
@@ -447,6 +456,7 @@ async def parallel_tool_execution(tools, params):
 - **Agent插件**: 可以开发专用领域的Agent
 
 #### 2. 配置驱动
+
 ```python
 # 配置文件驱动行为，无需修改代码
 llm_cfg = {

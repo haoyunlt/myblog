@@ -168,6 +168,7 @@ class HomeAssistant:
     """Home Assistant系统核心类 - 系统的根对象和控制中心
     
     职责:
+
         1. 管理系统生命周期（启动、运行、停止）
         2. 协调各个子系统（事件、状态、服务、配置）
         3. 提供任务管理和异步执行能力
@@ -218,6 +219,7 @@ class HomeAssistant:
             4. 创建任务跟踪集合
             5. 初始化线程池执行器
         """
+
 ```
 
 **HomeAssistant类的UML详细定义:**
@@ -278,6 +280,7 @@ class Event(Generic[_DataT]):
     """事件对象 - 系统内部通信的基本单元
     
     设计特点:
+
         1. 不可变对象（frozen=True）- 保证事件数据不被意外修改
         2. 泛型设计 - 支持类型安全的事件数据
         3. 插槽优化（slots=True）- 减少内存占用
@@ -314,7 +317,7 @@ class Event(Generic[_DataT]):
         {
             "event_type": "state_changed",
             "data": {...},
-            "origin": "LOCAL", 
+            "origin": "LOCAL",
             "time_fired": "2024-01-01T00:00:00.000000+00:00",
             "context": {...}
         }
@@ -326,6 +329,7 @@ class Event(Generic[_DataT]):
             "time_fired": self.time_fired.isoformat(),
             "context": self.context.as_dict(),
         }
+
 ```
 
 **Event类的UML详细定义:**
@@ -373,6 +377,7 @@ class State:
     """实体状态对象 - 表示系统中实体的完整状态信息
     
     设计理念:
+
         1. 不可变性 - 状态对象一旦创建不可修改，保证数据一致性
         2. 完整性 - 包含实体的所有相关信息
         3. 可序列化 - 支持JSON序列化用于API和存储
@@ -416,8 +421,8 @@ class State:
         default_factory=dt_util.utcnow, compare=False  
     )                                           # 状态报告时间
     last_updated: datetime.datetime = field(
-        init=False, 
-        default_factory=dt_util.utcnow, 
+        init=False,
+        default_factory=dt_util.utcnow,
         compare=False
     )                                           # 兼容字段
     
@@ -443,13 +448,13 @@ class State:
         返回格式:
         {
             "entity_id": "light.living_room",
-            "state": "on", 
+            "state": "on",
             "attributes": {
                 "brightness": 255,
                 "color_name": "red"
             },
             "last_changed": "2024-01-01T00:00:00.000000+00:00",
-            "last_reported": "2024-01-01T00:00:00.000000+00:00", 
+            "last_reported": "2024-01-01T00:00:00.000000+00:00",
             "last_updated": "2024-01-01T00:00:00.000000+00:00",
             "context": {
                 "id": "01234567890123456789012345678901",
@@ -503,6 +508,7 @@ class State:
             - WebSocket推送
         """
         return json_fragment(json_dumps(self.as_dict()))
+
 ```
 
 **State类的UML详细定义:**
@@ -553,6 +559,7 @@ class Service:
     """服务对象 - 封装可调用服务的完整定义
     
     核心概念:
+
         - 服务是Home Assistant中执行操作的基本单元
         - 每个服务都有明确的域名和名称
         - 支持参数验证和响应数据
@@ -603,7 +610,7 @@ class Service:
         if self.func.job_type is None:
             # 自动推断并设置任务类型
             object.__setattr__(
-                self.func, 
+                self.func,
                 "job_type",
                 get_hassjob_callable_job_type(self.func.target)
             )
@@ -613,6 +620,7 @@ class ServiceCall:
     """服务调用对象 - 封装单次服务调用的所有信息
     
     设计目的:
+
         - 统一服务调用接口
         - 传递调用上下文
         - 支持调用跟踪和审计
@@ -654,6 +662,7 @@ class SupportsResponse(enum.Enum):
     """服务响应支持级别枚举
     
     级别说明:
+
         - NONE: 服务不支持返回响应数据
         - OPTIONAL: 服务可选择性返回响应数据  
         - ONLY: 服务仅支持返回响应数据（必须请求响应）
@@ -666,6 +675,7 @@ class SupportsResponse(enum.Enum):
     NONE = "none"                               # 不支持响应
     OPTIONAL = "optional"                       # 可选响应
     ONLY = "only"                              # 仅支持响应
+
 ```
 
 **Service相关类的UML定义:**
@@ -701,7 +711,7 @@ classDiagram
     class SupportsResponse {
         <<enumeration>>
         NONE = "none"
-        OPTIONAL = "optional" 
+        OPTIONAL = "optional"
         ONLY = "only"
     }
     
@@ -734,6 +744,7 @@ class Config:
     """Home Assistant配置管理类 - 系统配置的中央管理器
     
     核心职责:
+
         1. 管理系统全局配置信息
         2. 提供位置和单位换算服务
         3. 缓存配置数据以提升性能
@@ -868,7 +879,7 @@ class Config:
             "elevation": 0,
             "unit_system": {
                 "length": "km",
-                "mass": "kg", 
+                "mass": "kg",
                 "temperature": "°C",
                 "volume": "L"
             },
@@ -884,7 +895,7 @@ class Config:
         """
         return {
             "latitude": self.latitude,
-            "longitude": self.longitude, 
+            "longitude": self.longitude,
             "elevation": self.elevation,
             "unit_system": self.units.as_dict(),
             "location_name": self.location_name,
@@ -892,7 +903,7 @@ class Config:
             "components": list(self.components),
             "config_dir": self.config_dir,
             "external_url": self.external_url,
-            "internal_url": self.internal_url, 
+            "internal_url": self.internal_url,
             "version": __version__,
             "config_source": self.config_source.value,
             "recovery_mode": self.recovery_mode,
@@ -902,6 +913,7 @@ class Config:
             "currency": self.currency,
             "language": self.language,
         }
+
 ```
 
 **Config类的UML定义:**
@@ -977,7 +989,7 @@ flowchart TD
     B --> C[EventBus事件分发]
     C --> D{事件类型判断}
     
-    D -->|状态变更| E[StateMachine状态更新] 
+    D -->|状态变更| E[StateMachine状态更新]
     D -->|服务调用| F[ServiceRegistry服务执行]
     D -->|配置变更| G[Config配置更新]
     
@@ -1155,7 +1167,7 @@ state = State(
 # 3. 服务调用
 service_call = ServiceCall(
     domain="light",
-    service="turn_on", 
+    service="turn_on",
     data={"entity_id": "light.bedroom", "brightness": 200}
 )
 
@@ -1169,6 +1181,7 @@ location_name = hass.config.location_name
 ## 下一步分析
 
 基于这些核心数据结构的理解，可以进一步探索：
+
 - [组件系统实现](/posts/03-组件系统分析/)
 - [实体平台架构](/posts/04-实体平台分析/)  
 - [存储和持久化机制](/posts/06-数据存储分析/)

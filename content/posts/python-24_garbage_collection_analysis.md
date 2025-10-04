@@ -215,6 +215,7 @@ gc_collect_main(PyThreadState *tstate, int generation, Py_ssize_t *n_collected,
     GCState *gcstate = &tstate->interp->gc;
 
     /*
+
      * 第一阶段：标记阶段
      *
      * 算法思路：
@@ -299,6 +300,7 @@ gc_collect_main(PyThreadState *tstate, int generation, Py_ssize_t *n_collected,
     }
 
     return m;
+
 }
 
 /* 更新对象的gc_refs字段 */
@@ -357,6 +359,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
     PyGC_Head *gc = GC_NEXT(young);
 
     /*
+
      * 算法核心：
      * gc_refs > 0的对象不在循环中（有外部引用）
      * 从这些对象开始，标记所有可达的对象
@@ -381,6 +384,7 @@ move_unreachable(PyGC_Head *young, PyGC_Head *unreachable)
             gc = next;
         }
     }
+
 }
 
 /* 访问函数：标记可达对象 */
@@ -432,6 +436,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 
     /*
+
      * 分代回收策略：
      *
      * 第0代：包含最新创建的对象，回收频率最高
@@ -502,6 +507,7 @@ _PyGC_Collect(PyThreadState *tstate, int generation, _PyGC_Reason reason)
     }
 
     return result;
+
 }
 
 /* 对象分代晋升 */
@@ -509,6 +515,7 @@ static void
 move_to_next_generation(GCState *gcstate, int generation)
 {
     /*
+
      * 晋升策略：
      *
      * 1. 第0代回收后，存活对象晋升到第1代
@@ -523,6 +530,7 @@ move_to_next_generation(GCState *gcstate, int generation)
         /* 将当前代的所有对象移动到下一代 */
         gc_list_merge(from_gen, to_gen);
     }
+
 }
 
 /* 垃圾回收触发条件检查 */
@@ -530,6 +538,7 @@ static int
 check_gc_trigger(GCState *gcstate)
 {
     /*
+
      * 触发条件：
      *
      * 1. 第0代：新分配对象数 > threshold0
@@ -544,6 +553,7 @@ check_gc_trigger(GCState *gcstate)
     }
 
     return -1; /* 不需要垃圾回收 */
+
 }
 
 /* 设置垃圾回收阈值 */

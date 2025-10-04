@@ -66,11 +66,13 @@ codegen_decorators(compiler *c, asdl_expr_seq* decos)
     }
 
     /* 按顺序编译所有装饰器表达式
+
      * 注意：装饰器的求值顺序是从上到下 */
     for (Py_ssize_t i = 0; i < asdl_seq_LEN(decos); i++) {
         VISIT(c, expr, (expr_ty)asdl_seq_GET(decos, i));
     }
     return SUCCESS;
+
 }
 
 static int
@@ -82,6 +84,7 @@ codegen_apply_decorators(compiler *c, asdl_expr_seq* decos)
     }
 
     /* 按逆序应用装饰器
+
      * 装饰器的应用顺序是从下到上（后进先出） */
     for (Py_ssize_t i = asdl_seq_LEN(decos) - 1; i > -1; i--) {
         location loc = LOC((expr_ty)asdl_seq_GET(decos, i));
@@ -89,10 +92,12 @@ codegen_apply_decorators(compiler *c, asdl_expr_seq* decos)
         ADDOP_I(c, loc, CALL, 0);
     }
     return SUCCESS;
+
 }
 ```
 
 **装饰器编译过程说明**:
+
 1. **求值阶段**: 从上到下求值装饰器表达式
 2. **应用阶段**: 从下到上应用装饰器到被装饰对象
 3. **调用生成**: 为每个装饰器生成CALL指令
@@ -313,6 +318,7 @@ PyObject_GenericGetAttr(PyObject *obj, PyObject *name)
 ```
 
 **描述符查找优先级**:
+
 1. 数据描述符（有`__set__`或`__delete__`）
 2. 实例字典中的属性
 3. 非数据描述符（只有`__get__`）

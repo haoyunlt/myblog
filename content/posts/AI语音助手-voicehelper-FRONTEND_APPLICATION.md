@@ -92,19 +92,23 @@ interface StreamingChatProps {
 }
 
 /**
+
  * StreamingChat - 流式聊天核心组件
- * 
+
+ *
+
  * 功能特性:
  * - SSE流式接收: 实时显示AI回复内容
  * - 消息管理: 维护对话历史和状态
  * - 错误处理: 网络异常和重连机制
  * - 性能优化: 虚拟滚动和懒加载
  * - 可访问性: 键盘导航和屏幕阅读器支持
+
  */
 export default function StreamingChat({
   conversationId,
   onVoiceTranscript,
-  onVoiceResponse, 
+  onVoiceResponse,
   onVoiceReferences,
   className
 }: StreamingChatProps) {
@@ -125,14 +129,15 @@ export default function StreamingChat({
   const inputRef = useRef<HTMLTextAreaElement>(null);             // 输入框引用
   
   /**
+
    * 建立SSE连接 - 用于接收流式响应
-   * 
+   *
    * 功能说明:
    * - 创建EventSource连接到服务端
    * - 监听多种事件类型 (data, error, stream_end等)
    * - 处理连接异常和自动重连
    * - 解析NDJSON格式的响应数据
-   * 
+   *
    * @returns cleanup函数，用于清理连接
    */
   const connectSSE = useCallback(() => {
@@ -213,7 +218,7 @@ export default function StreamingChat({
   
   /**
    * 处理SSE消息的核心逻辑
-   * 
+   *
    * @param data SSE消息数据对象
    */
   const handleSSEMessage = useCallback((data: any) => {
@@ -242,10 +247,10 @@ export default function StreamingChat({
           setCurrentStreamingMessage(prev => prev ? {
             ...prev,
             references: results.slice(0, 5), // 保留前5个引用
-            metadata: { 
-              ...prev.metadata, 
+            metadata: {
+              ...prev.metadata,
               retrieval_status: 'completed',
-              total_results: total_found 
+              total_results: total_found
             }
           } : null);
         }
@@ -319,7 +324,7 @@ export default function StreamingChat({
   
   /**
    * 发送消息的核心逻辑
-   * 
+   *
    * 功能说明:
    * - 构建消息对象并添加到消息列表
    * - 发送HTTP POST请求到聊天API
@@ -354,7 +359,7 @@ export default function StreamingChat({
     
     // 创建AI回复占位符
     const assistantMessage: Message = {
-      id: (Date.now() + 1).toString(), 
+      id: (Date.now() + 1).toString(),
       role: 'assistant',
       content: '',
       timestamp: new Date(),
@@ -421,9 +426,9 @@ export default function StreamingChat({
   // 自动滚动到最新消息
   useEffect(() => {
     if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ 
-        behavior: 'smooth', 
-        block: 'end' 
+      messagesEndRef.current.scrollIntoView({
+        behavior: 'smooth',
+        block: 'end'
       });
     }
   }, [messages, currentStreamingMessage]);
@@ -554,29 +559,36 @@ export default function StreamingChat({
       </div>
     </div>
   );
+
 }
 
 // === 工具函数 ===
 
 /**
+
  * 生成请求ID用于幂等性控制
  * @returns 唯一请求标识符
+
  */
 function generateRequestId(): string {
   return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 }
 
 /**
+
  * 获取认证令牌
  * @returns JWT认证令牌
+
  */
 function getAuthToken(): string {
   return localStorage.getItem('authToken') || '';
 }
 
 /**
+
  * 获取用户偏好设置
  * @returns 用户配置对象
+
  */
 function getUserPreferences(): any {
   const prefs = localStorage.getItem('userPreferences');
@@ -594,8 +606,11 @@ function getUserPreferences(): any {
 
 ```typescript
 /**
+
  * VoiceChat - 语音交互核心组件
- * 
+
+ *
+
  * 功能特性:
  * - WebSocket实时通信: 双向音频流传输
  * - 实时语音识别: 边说边显示转录文本
@@ -603,6 +618,7 @@ function getUserPreferences(): any {
  * - 音频处理: 降噪、回声消除、自动增益
  * - 多语言支持: 中英文及其他语言识别
  * - 离线备用: 网络异常时的降级处理
+
  */
 export default function VoiceChat({
   conversationId,
@@ -631,8 +647,9 @@ export default function VoiceChat({
   const playbackQueueRef = useRef<ArrayBuffer[]>([]);            // 播放队列
   
   /**
+
    * 初始化WebSocket连接
-   * 
+   *
    * 功能说明:
    * - 建立WebSocket连接到语音服务
    * - 配置消息监听和错误处理
@@ -699,7 +716,7 @@ export default function VoiceChat({
   
   /**
    * 处理语音WebSocket消息
-   * 
+   *
    * @param data WebSocket消息数据
    */
   const handleVoiceMessage = useCallback(async (data: any) => {
@@ -803,7 +820,7 @@ export default function VoiceChat({
   
   /**
    * 播放音频块
-   * 
+   *
    * @param audioData Base64编码的音频数据
    * @param format 音频格式
    */
@@ -990,14 +1007,14 @@ export default function VoiceChat({
       {/* 连接状态 */}
       <div className="mb-4">
         <div className={`inline-flex items-center px-3 py-1 rounded-full text-sm ${
-          connectionStatus === 'connected' 
-            ? 'bg-green-100 text-green-800' 
+          connectionStatus === 'connected'
+            ? 'bg-green-100 text-green-800'
             : connectionStatus === 'connecting'
             ? 'bg-yellow-100 text-yellow-800'
             : 'bg-red-100 text-red-800'
         }`}>
           <div className={`w-2 h-2 rounded-full mr-2 ${
-            connectionStatus === 'connected' ? 'bg-green-500' : 
+            connectionStatus === 'connected' ? 'bg-green-500' :
             connectionStatus === 'connecting' ? 'bg-yellow-500' : 'bg-red-500'
           }`} />
           {connectionStatus === 'connected' ? '语音已连接' :
@@ -1028,12 +1045,12 @@ export default function VoiceChat({
           onClick={toggleRecording}
           disabled={connectionStatus !== 'connected'}
           className={`relative w-20 h-20 rounded-full flex items-center justify-center transition-all duration-200 ${
-            isRecording 
-              ? 'bg-red-500 hover:bg-red-600 scale-110 shadow-lg' 
+            isRecording
+              ? 'bg-red-500 hover:bg-red-600 scale-110 shadow-lg'
               : 'bg-blue-500 hover:bg-blue-600 shadow-md'
           } ${
-            connectionStatus !== 'connected' 
-              ? 'opacity-50 cursor-not-allowed' 
+            connectionStatus !== 'connected'
+              ? 'opacity-50 cursor-not-allowed'
               : 'cursor-pointer'
           }`}
         >
@@ -1082,6 +1099,7 @@ export default function VoiceChat({
       )}
     </div>
   );
+
 }
 ```
 
@@ -1143,13 +1161,17 @@ interface AppActions {
 }
 
 /**
+
  * Zustand应用状态管理
- * 
+
+ *
+
  * 特性:
  * - 类型安全: 完整的TypeScript类型定义
  * - 持久化: 关键状态自动保存到本地存储
  * - 中间件: 日志记录和状态同步
  * - 性能优化: 选择性订阅和浅比较
+
  */
 export const useAppStore = create<AppState & AppActions>()(
   subscribeWithSelector(

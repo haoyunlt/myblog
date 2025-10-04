@@ -91,7 +91,9 @@ classDiagram
 
 ```typescript
 /**
+
  * 用户数据结构 - 系统用户的完整信息模型
+
  */
 export interface User {
   /** 用户唯一标识符，UUID格式 */
@@ -132,7 +134,9 @@ export interface User {
 }
 
 /**
+
  * 用户偏好设置 - 个性化配置选项
+
  */
 export interface UserPreferences {
   /** 界面语言代码，遵循BCP 47标准 */
@@ -158,7 +162,9 @@ export interface UserPreferences {
 }
 
 /**
+
  * 语音设置 - 语音交互相关配置
+
  */
 export interface VoiceSettings {
   /** 偏好的语音ID，如 'zh-CN-XiaoxiaoNeural' */
@@ -190,7 +196,9 @@ export interface VoiceSettings {
 }
 
 /**
+
  * JWT认证令牌结构
+
  */
 export interface AuthToken {
   /** 访问令牌，用于API认证 */
@@ -316,7 +324,9 @@ classDiagram
 
 ```typescript
 /**
+
  * 对话数据结构 - 用户与AI的完整会话记录
+
  */
 export interface Conversation {
   /** 对话唯一标识符 */
@@ -351,7 +361,9 @@ export interface Conversation {
 }
 
 /**
+
  * 对话元数据 - 对话的附加信息和统计
+
  */
 export interface ConversationMetadata {
   /** 标签列表，用于分类和搜索 */
@@ -386,7 +398,9 @@ export interface ConversationMetadata {
 }
 
 /**
+
  * 消息数据结构 - 对话中的单条消息
+
  */
 export interface Message {
   /** 消息唯一标识符 */
@@ -430,7 +444,9 @@ export interface Message {
 }
 
 /**
+
  * 消息元数据 - 消息的性能指标和分析结果
+
  */
 export interface MessageMetadata {
   /** 响应时间（毫秒） */
@@ -471,7 +487,9 @@ export interface MessageMetadata {
 }
 
 /**
+
  * 引用资料结构 - RAG检索到的参考文档
+
  */
 export interface Reference {
   /** 引用唯一标识符 */
@@ -606,7 +624,9 @@ classDiagram
 
 ```typescript
 /**
+
  * 语音会话数据结构 - 实时语音交互的完整记录
+
  */
 export interface VoiceSession {
   /** 会话唯一标识符 */
@@ -645,7 +665,9 @@ export interface VoiceSession {
 }
 
 /**
+
  * 语音会话设置 - 音频处理和识别的配置参数
+
  */
 export interface VoiceSessionSettings {
   /** 语言代码，如 'zh-CN' */
@@ -692,7 +714,9 @@ export interface VoiceSessionSettings {
 }
 
 /**
+
  * 音频数据块 - 实时音频流的基本单元
+
  */
 export interface AudioChunk {
   /** 音频块唯一标识符 */
@@ -725,7 +749,9 @@ export interface AudioChunk {
 }
 
 /**
+
  * 语音识别结果 - ASR系统的输出结果
+
  */
 export interface TranscriptionResult {
   /** 识别出的文本内容 */
@@ -763,7 +789,9 @@ export interface TranscriptionResult {
 }
 
 /**
+
  * 语音性能指标 - 语音交互质量的量化评估
+
  */
 export interface VoiceMetrics {
   /** 会话总时长（毫秒） */
@@ -853,7 +881,9 @@ graph TB
 
 ```typescript
 /**
+
  * 用户认证API接口定义
+
  */
 export interface AuthAPI {
   /** 用户登录 */
@@ -930,7 +960,9 @@ export interface AuthAPI {
 
 ```typescript
 /**
+
  * 对话管理API接口定义
+
  */
 export interface ConversationAPI {
   /** 获取对话列表 */
@@ -1023,7 +1055,9 @@ export interface ConversationAPI {
 
 ```typescript
 /**
+
  * 流式聊天API接口定义
+
  */
 export interface ChatAPI {
   /** 流式聊天接口 */
@@ -1068,6 +1102,7 @@ export interface ChatAPI {
         /** SSE事件流 */
         'Content-Type': 'text/event-stream';
         /** 事件类型包括：
+
          * - retrieval_start: 检索开始
          * - retrieval_progress: 检索进度
          * - retrieval_result: 检索结果
@@ -1106,6 +1141,7 @@ export interface ChatAPI {
       }>;
     };
   };
+
 }
 ```
 
@@ -1113,7 +1149,9 @@ export interface ChatAPI {
 
 ```typescript
 /**
+
  * 语音交互API接口定义
+
  */
 export interface VoiceAPI {
   /** WebSocket语音流接口 */
@@ -1138,7 +1176,7 @@ export interface VoiceAPI {
       };
       messages: {
         /** 发送消息格式 */
-        send: 
+        send:
           | {
               type: 'audio_chunk';
               session_id: string;
@@ -1264,7 +1302,9 @@ export interface VoiceAPI {
 
 ```typescript
 /**
+
  * 标准API响应格式 - 所有API的统一响应结构
+
  */
 export interface BaseResponse<T = any> {
   /** 操作是否成功 */
@@ -1300,7 +1340,9 @@ export interface BaseResponse<T = any> {
 }
 
 /**
+
  * 分页响应格式
+
  */
 export interface PaginatedResponse<T> extends BaseResponse<T[]> {
   /** 分页元数据 */
@@ -1332,7 +1374,9 @@ export interface PaginatedResponse<T> extends BaseResponse<T[]> {
 }
 
 /**
+
  * 错误信息结构
+
  */
 export interface ErrorInfo {
   /** 错误代码，用于程序化处理 */
@@ -1358,7 +1402,9 @@ export interface ErrorInfo {
 }
 
 /**
+
  * API错误代码枚举
+
  */
 export enum APIErrorCode {
   // 通用错误 (1000-1999)
@@ -1454,7 +1500,9 @@ sequenceDiagram
 
 ```typescript
 /**
+
  * 数据验证装饰器和工具函数
+
  */
 
 // Zod schema定义示例
@@ -1479,7 +1527,9 @@ const UserCreateSchema = z.object({
 });
 
 /**
+
  * API验证中间件
+
  */
 export function validateRequest<T>(schema: z.ZodSchema<T>) {
   return (req: Request, res: Response, next: NextFunction) => {
@@ -1513,7 +1563,9 @@ export function validateRequest<T>(schema: z.ZodSchema<T>) {
 }
 
 /**
+
  * 客户端数据验证Hook
+
  */
 export function useFormValidation<T>(schema: z.ZodSchema<T>) {
   const [errors, setErrors] = useState<Record<string, string>>({});
@@ -1561,7 +1613,9 @@ export function useFormValidation<T>(schema: z.ZodSchema<T>) {
 
 ```typescript
 /**
+
  * API安全中间件集合
+
  */
 
 // 1. 请求速率限制
@@ -1593,7 +1647,7 @@ export const corsOptions: CorsOptions = {
   methods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
   allowedHeaders: [
     'Origin',
-    'X-Requested-With', 
+    'X-Requested-With',
     'Content-Type',
     'Accept',
     'Authorization',
@@ -1659,7 +1713,9 @@ export class SecureDatabase {
 
 ```typescript
 /**
+
  * API性能优化工具集
+
  */
 
 // 1. 响应缓存机制
@@ -1750,9 +1806,9 @@ export class QueryOptimizer {
         [userId]
       ),
       this.db.query(
-        `SELECT * FROM conversations 
-         WHERE user_id = $1 
-         ORDER BY updated_at DESC 
+        `SELECT * FROM conversations
+         WHERE user_id = $1
+         ORDER BY updated_at DESC
          LIMIT $2 OFFSET $3`,
         [userId, pageSize, offset]
       )

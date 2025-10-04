@@ -122,6 +122,7 @@ graph TD
 ### 主要API入口点
 
 #### 1. Tensor类 - 核心数据结构
+
 ```python
 # tensorflow/python/framework/tensor.py
 @tf_export("Tensor", "experimental.numpy.ndarray", v1=["Tensor"])
@@ -129,6 +130,7 @@ class Tensor(internal.NativeObject, core_tf_types.Symbol):
     """TensorFlow中的多维数组表示
     
     功能说明:
+
     - 表示多维数组数据
     - 支持多种数据类型(float32, int32, string等)
     - 具有固定的形状(shape)
@@ -155,19 +157,22 @@ class Tensor(internal.NativeObject, core_tf_types.Symbol):
         """返回tensor的数据类型"""
         return self._dtype
     
-    @property 
+    @property
     def shape(self):
         """返回tensor的形状"""
         return self._shape
+
 ```
 
 #### 2. Keras Model类 - 高级模型API
+
 ```python
 # tensorflow/python/keras/engine/training.py
 class Model(base_layer.Layer, version_utils.ModelVersionSelector):
     """Keras模型类，提供训练和推理功能
     
     功能说明:
+
     - 将多个层组合成可训练的模型
     - 提供compile(), fit(), predict()等高级接口
     - 支持函数式API和子类化两种构建方式
@@ -202,6 +207,7 @@ class Model(base_layer.Layer, version_utils.ModelVersionSelector):
             History对象，包含训练历史
         """
         pass
+
 ```
 
 ## 关键数据结构
@@ -242,6 +248,7 @@ classDiagram
 class Session {
 public:
     /**
+
      * 创建计算图
      * @param graph 图定义
      * @return 状态码
@@ -261,6 +268,7 @@ public:
         const std::vector<std::string>& output_tensor_names,
         const std::vector<std::string>& target_tensor_names,
         std::vector<Tensor>* outputs) = 0;
+
 };
 ```
 
@@ -293,6 +301,7 @@ sequenceDiagram
 ### 2. Eager Execution vs Graph Execution
 
 #### Eager Execution（动态图）
+
 ```python
 # 立即执行，类似NumPy
 import tensorflow as tf
@@ -304,6 +313,7 @@ print(c)  # 输出: tf.Tensor([5 7 9], shape=(3,), dtype=int32)
 ```
 
 #### Graph Execution（静态图）
+
 ```python
 # 构建图后执行
 @tf.function

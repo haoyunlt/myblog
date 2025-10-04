@@ -103,7 +103,7 @@ class Request:
     
     # Token相关
     prompt_token_ids: List[int] = field(default_factory=list)
-    output_token_ids: List[int] = field(default_factory=list) 
+    output_token_ids: List[int] = field(default_factory=list)
     spec_token_ids: List[int] = field(default_factory=list)
     
     # 缓存和性能
@@ -239,6 +239,7 @@ class SamplingParams:
     文本生成的采样参数配置
     
     主要参数分类:
+
     1. 基础生成参数: n, max_tokens, min_tokens
     2. 采样控制参数: temperature, top_p, top_k
     3. 惩罚参数: presence_penalty, frequency_penalty
@@ -288,6 +289,7 @@ class SamplingParams:
             
         if self.max_tokens is not None and self.max_tokens <= 0:
             raise ValueError("max_tokens must be positive")
+
 ```
 
 ## 3. 输出数据结构
@@ -367,7 +369,7 @@ class RequestOutput:
     request_id: str
     prompt: Optional[str]
     prompt_token_ids: Optional[List[int]]
-    prompt_logprobs: Optional[PromptLogprobs] 
+    prompt_logprobs: Optional[PromptLogprobs]
     outputs: List[CompletionOutput]
     finished: bool
     metrics: Optional[RequestMetrics] = None
@@ -563,6 +565,7 @@ class KVCacheManager:
             分配的块ID列表
             
         处理流程:
+
         1. 计算需要的块数量
         2. 检查是否可以重用父序列的块
         3. 查找前缀缓存可重用的块
@@ -631,8 +634,9 @@ class KVCacheManager:
     
     def get_available_blocks(self) -> int:
         """获取可用的KV缓存块数量"""
-        return (self.gpu_block_pool.get_free_blocks() + 
+        return (self.gpu_block_pool.get_free_blocks() +
                 self.cpu_block_pool.get_free_blocks())
+
 ```
 
 ## 5. 调度数据结构
@@ -837,7 +841,7 @@ class AttentionBackendFactory:
 class ExecutorFactory:
     """执行器工厂"""
     
-    @staticmethod 
+    @staticmethod
     def create_executor(parallel_config: ParallelConfig) -> Executor:
         """根据并行配置创建执行器"""
         

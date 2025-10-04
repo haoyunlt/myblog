@@ -286,7 +286,7 @@ func lookup(index int32, globalList, messageList []string) (string, error) {
         return messageList[messageIndex], nil
     }
     
-    return "", fmt.Errorf("index %d out of range (global: %d, message: %d)", 
+    return "", fmt.Errorf("index %d out of range (global: %d, message: %d)",
                         index, len(globalList), len(messageList))
 }
 ```
@@ -1016,7 +1016,7 @@ func (t *Template) BuildInstance(bag attribute.Bag, mapper expr.AttributeDescrip
         // 4. 求值表达式
         result, err := t.evaluateExpression(expr, bag, mapper)
         if err != nil {
-            return nil, fmt.Errorf("failed to evaluate expression %s for field %s: %v", 
+            return nil, fmt.Errorf("failed to evaluate expression %s for field %s: %v",
                                   expr, field.Name, err)
         }
         
@@ -1222,4 +1222,5 @@ classDiagram
   Preprocessor ..> Dispatcher
   Dispatcher ..> Adapter
 ```
+
 。

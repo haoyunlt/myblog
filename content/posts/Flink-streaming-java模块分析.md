@@ -113,8 +113,10 @@ flink-streaming-java/
 
 ```java
 /**
+
  * StreamOperator 是流算子的基础接口
  * 定义了算子的生命周期和基本操作
+
  */
 @PublicEvolving
 public interface StreamOperator<OUT> extends CheckpointListener, KeyContext, Disposable, Serializable {
@@ -124,6 +126,7 @@ public interface StreamOperator<OUT> extends CheckpointListener, KeyContext, Dis
     // ------------------------------------------------------------------------
     
     /**
+
      * 算子初始化方法
      * 在处理任何元素之前调用，包含算子的初始化逻辑
      */
@@ -178,6 +181,7 @@ public interface StreamOperator<OUT> extends CheckpointListener, KeyContext, Dis
      * 获取算子 ID
      */
     OperatorID getOperatorID();
+
 }
 ```
 
@@ -185,8 +189,10 @@ public interface StreamOperator<OUT> extends CheckpointListener, KeyContext, Dis
 
 ```java
 /**
+
  * 所有流算子的抽象基类
  * 提供了生命周期管理、状态处理、指标收集等通用功能
+
  */
 @PublicEvolving
 public abstract class AbstractStreamOperator<OUT>
@@ -244,6 +250,7 @@ public abstract class AbstractStreamOperator<OUT>
     protected transient ProcessingTimeService processingTimeService;
     
     /**
+
      * 设置算子
      */
     @Override
@@ -376,6 +383,7 @@ public abstract class AbstractStreamOperator<OUT>
     public StreamingRuntimeContext getRuntimeContext() {
         return runtimeContext;
     }
+
 }
 ```
 
@@ -383,13 +391,16 @@ public abstract class AbstractStreamOperator<OUT>
 
 ```java
 /**
+
  * 单输入流算子接口
  * 处理单个输入流的算子需要实现此接口
+
  */
 @PublicEvolving
 public interface OneInputStreamOperator<IN, OUT> extends StreamOperator<OUT> {
     
     /**
+
      * 处理到达此算子的一个元素
      * 此方法保证不会与算子的其他方法并发调用
      */
@@ -405,6 +416,7 @@ public interface OneInputStreamOperator<IN, OUT> extends StreamOperator<OUT> {
      * 处理延迟标记
      */
     void processLatencyMarker(LatencyMarker latencyMarker) throws Exception;
+
 }
 ```
 
@@ -412,8 +424,10 @@ public interface OneInputStreamOperator<IN, OUT> extends StreamOperator<OUT> {
 
 ```java
 /**
+
  * 包含用户定义函数的算子基类
  * 处理用户函数的打开和关闭，作为算子生命周期的一部分
+
  */
 @PublicEvolving
 public abstract class AbstractUdfStreamOperator<OUT, F extends Function>
@@ -429,6 +443,7 @@ public abstract class AbstractUdfStreamOperator<OUT, F extends Function>
     private transient boolean functionsClosed = false;
 
     /**
+
      * 构造函数
      */
     public AbstractUdfStreamOperator(F userFunction) {
@@ -533,6 +548,7 @@ public abstract class AbstractUdfStreamOperator<OUT, F extends Function>
             typeConfigurable.setOutputType(outTypeInfo, executionConfig);
         }
     }
+
 }
 ```
 
@@ -542,9 +558,11 @@ public abstract class AbstractUdfStreamOperator<OUT, F extends Function>
 
 ```java
 /**
+
  * ProcessFunction 是处理流元素的函数
  * 为每个输入流中的元素调用 processElement 方法
  * 可以产生零个或多个输出元素，还可以通过 Context 查询时间和设置定时器
+
  */
 @PublicEvolving
 public abstract class ProcessFunction<I, O> extends AbstractRichFunction {
@@ -552,8 +570,9 @@ public abstract class ProcessFunction<I, O> extends AbstractRichFunction {
     private static final long serialVersionUID = 1L;
 
     /**
+
      * 处理输入流中的一个元素
-     * 
+     *
      * @param value 输入值
      * @param ctx 允许查询元素时间戳和获取 TimerService 的上下文
      * @param out 用于返回结果值的收集器
@@ -563,7 +582,7 @@ public abstract class ProcessFunction<I, O> extends AbstractRichFunction {
 
     /**
      * 当使用 TimerService 设置的定时器触发时调用
-     * 
+     *
      * @param timestamp 触发定时器的时间戳
      * @param ctx 允许查询触发定时器的时间戳、TimeDomain 和获取 TimerService 的上下文
      * @param out 用于返回结果值的收集器
@@ -607,6 +626,7 @@ public abstract class ProcessFunction<I, O> extends AbstractRichFunction {
          */
         public abstract Object getCurrentKey();
     }
+
 }
 ```
 
@@ -614,7 +634,9 @@ public abstract class ProcessFunction<I, O> extends AbstractRichFunction {
 
 ```java
 /**
+
  * ProcessOperator 是 ProcessFunction 的算子实现
+
  */
 @Internal
 public class ProcessOperator<IN, OUT>
@@ -630,6 +652,7 @@ public class ProcessOperator<IN, OUT>
     private transient OnTimerContextImpl onTimerContext;
 
     /**
+
      * 构造函数
      */
     public ProcessOperator(ProcessFunction<IN, OUT> function) {
@@ -778,6 +801,7 @@ public class ProcessOperator<IN, OUT>
             output.collect(outputTag, new StreamRecord<>(value, timer.getTimestamp()));
         }
     }
+
 }
 ```
 
@@ -787,8 +811,10 @@ public class ProcessOperator<IN, OUT>
 
 ```java
 /**
+
  * WindowOperator 是窗口操作的核心算子
  * 负责将元素分配到窗口、触发窗口计算和管理窗口状态
+
  */
 @Internal
 public class WindowOperator<K, IN, ACC, OUT, W extends Window>
@@ -842,6 +868,7 @@ public class WindowOperator<K, IN, ACC, OUT, W extends Window>
     private transient Counter numLateRecordsDropped;
 
     /**
+
      * 构造函数
      */
     public WindowOperator(
@@ -887,11 +914,11 @@ public class WindowOperator<K, IN, ACC, OUT, W extends Window>
         // 创建窗口状态
         if (windowAssigner instanceof MergingWindowAssigner) {
             // 合并窗口状态
-            windowMergingState = (InternalMergingState<K, W, IN, ACC, ACC>) 
+            windowMergingState = (InternalMergingState<K, W, IN, ACC, ACC>)
                 getOrCreateKeyedState(windowAssigner.getWindowSerializer(getExecutionConfig()), windowStateDescriptor);
         } else {
             // 普通窗口状态
-            windowState = (InternalAppendingState<K, W, IN, ACC, ACC>) 
+            windowState = (InternalAppendingState<K, W, IN, ACC, ACC>)
                 getOrCreateKeyedState(windowAssigner.getWindowSerializer(getExecutionConfig()), windowStateDescriptor);
         }
 
@@ -913,7 +940,7 @@ public class WindowOperator<K, IN, ACC, OUT, W extends Window>
 
             for (W window : elementWindows) {
                 // 添加窗口到合并集合
-                W actualWindow = mergingWindows.addWindow(window, 
+                W actualWindow = mergingWindows.addWindow(window,
                     new MergingWindowSet.MergeFunction<W>() {
                         @Override
                         public void merge(W mergeResult, Collection<W> mergedWindows, W stateWindowResult, Collection<W> mergedStateWindows) throws Exception {
@@ -1252,6 +1279,7 @@ public class WindowOperator<K, IN, ACC, OUT, W extends Window>
                 '}';
         }
     }
+
 }
 ```
 
@@ -1259,13 +1287,16 @@ public class WindowOperator<K, IN, ACC, OUT, W extends Window>
 
 ```java
 /**
+
  * 时间特性枚举
  * 定义系统如何确定时间依赖操作的时间
+
  */
 @PublicEvolving
 public enum TimeCharacteristic {
 
     /**
+
      * 处理时间
      * 算子使用机器的系统时钟来确定数据流的当前时间
      * 处理时间窗口基于墙钟时间触发
@@ -1285,12 +1316,15 @@ public enum TimeCharacteristic {
      * 允许元素乱序到达，需要使用水印来处理
      */
     EventTime
+
 }
 ```
 
 ```java
 /**
+
  * WindowAssigner 将零个或多个窗口分配给元素
+
  */
 @PublicEvolving
 public abstract class WindowAssigner<T, W extends Window> implements Serializable {
@@ -1298,6 +1332,7 @@ public abstract class WindowAssigner<T, W extends Window> implements Serializabl
     private static final long serialVersionUID = 1L;
 
     /**
+
      * 返回应该分配给元素的窗口集合
      */
     public abstract Collection<W> assignWindows(T element, long timestamp, WindowAssignerContext context);
@@ -1328,6 +1363,7 @@ public abstract class WindowAssigner<T, W extends Window> implements Serializabl
          */
         public abstract long getCurrentProcessingTime();
     }
+
 }
 ```
 
@@ -1335,7 +1371,9 @@ public abstract class WindowAssigner<T, W extends Window> implements Serializabl
 
 ```java
 /**
+
  * 滚动事件时间窗口分配器
+
  */
 @PublicEvolving
 public class TumblingEventTimeWindows extends WindowAssigner<Object, TimeWindow> {
@@ -1358,6 +1396,7 @@ public class TumblingEventTimeWindows extends WindowAssigner<Object, TimeWindow>
     }
 
     /**
+
      * 创建滚动事件时间窗口
      */
     public static TumblingEventTimeWindows of(Time size) {
@@ -1421,12 +1460,15 @@ public class TumblingEventTimeWindows extends WindowAssigner<Object, TimeWindow>
     public String toString() {
         return "TumblingEventTimeWindows(" + size + ")";
     }
+
 }
 ```
 
 ```java
 /**
+
  * 滑动事件时间窗口分配器
+
  */
 @PublicEvolving
 public class SlidingEventTimeWindows extends WindowAssigner<Object, TimeWindow> {
@@ -1452,6 +1494,7 @@ public class SlidingEventTimeWindows extends WindowAssigner<Object, TimeWindow> 
     }
 
     /**
+
      * 创建滑动事件时间窗口
      */
     public static SlidingEventTimeWindows of(Time size, Time slide) {
@@ -1518,6 +1561,7 @@ public class SlidingEventTimeWindows extends WindowAssigner<Object, TimeWindow> 
     public String toString() {
         return "SlidingEventTimeWindows(" + size + ", " + slide + ")";
     }
+
 }
 ```
 

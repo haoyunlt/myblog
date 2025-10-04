@@ -114,6 +114,7 @@ stateDiagram-v2
     
     note left of Initializing
         初始化阶段:
+
         - 加载超级块
         - 初始化存储引擎
         - 加载PG信息
@@ -139,6 +140,7 @@ stateDiagram-v2
         - 数据正在迁移
         - 不再接收新数据
     end note
+
 ```
 
 ## 2. 核心数据结构详解
@@ -147,15 +149,19 @@ stateDiagram-v2
 
 ```cpp
 /**
+
  * OSD类 - 对象存储守护进程的核心实现
  * 文件: src/osd/OSD.h:2155-2217
- * 
+
+ *
+
  * OSD是Ceph存储集群中的工作节点，负责：
  * 1. 存储和检索对象数据
  * 2. 维护数据副本和执行纠删码操作
  * 3. 执行数据恢复、回填和重平衡
  * 4. 处理客户端和其他OSD的I/O请求
  * 5. 参与集群健康监控和故障处理
+
  */
 class OSD : public Dispatcher,          // 消息分发器接口
             public md_config_obs_t {    // 配置观察者接口
@@ -164,6 +170,7 @@ public:
     // ===================== 基本属性 =====================
     
     /**
+
      * OSD身份和上下文信息
      */
     CephContext *cct;                   // Ceph上下文，包含配置和日志
@@ -272,7 +279,7 @@ public:
         Messenger *internal,
         Messenger *external,
         Messenger *hb_front_client,
-        Messenger *hb_back_client, 
+        Messenger *hb_back_client,
         Messenger *hb_front_server,
         Messenger *hb_back_server,
         Messenger *osdc_messenger,
@@ -326,6 +333,7 @@ private:
     // ===================== 内部状态管理 =====================
     
     /**
+
      * OSD启动状态
      */
     enum osd_boot_state_t {
@@ -349,6 +357,7 @@ private:
     void queue_for_pg(spg_t pgid, OpRequestRef& op); // 将操作排队到PG
     void dequeue_op(PGRef pg, OpRequestRef op);       // 从PG队列中移除操作
     void _finish_splits(std::set<PGRef>& pgs);        // 完成PG分裂
+
 };
 ```
 
@@ -358,14 +367,18 @@ PG是Ceph数据分布的基本单位，每个PG包含多个对象，并在多个
 
 ```cpp
 /**
+
  * PG类 - Placement Group的核心实现
  * 文件: src/osd/PG.h:166-220
- * 
+
+ *
+
  * PG是数据分布和复制的基本单位，负责：
  * 1. 管理一组对象的存储和访问
  * 2. 维护数据副本或纠删码冗余
  * 3. 处理数据恢复和一致性维护
  * 4. 协调Primary和Replica之间的操作
+
  */
 class PG : public DoutPrefixProvider,           // 调试输出提供者
            public PeeringState::PeeringListener, // 对等状态监听者
@@ -375,6 +388,7 @@ public:
     // ===================== 基本标识 =====================
     
     /**
+
      * PG身份信息
      */
     const pg_shard_t pg_whoami;         // PG在本OSD的身份标识
@@ -465,6 +479,7 @@ protected:
     // ===================== 内部组件 =====================
     
     /**
+
      * OSD服务引用和基本组件
      */
     OSDService *osd;                    // OSD服务对象
@@ -485,8 +500,10 @@ protected:
      */
     mutable ceph::mutex _lock;          // PG主锁
     
+
 public:
     /**
+
      * 锁定PG进行操作
      * @param no_lockdep 是否禁用锁依赖检查
      */
@@ -581,10 +598,14 @@ public:
 
 ```cpp
 /**
+
  * PG状态枚举 - 定义PG的各种状态
  * 文件: src/osd/osd_types.h
- * 
+
+ *
+
  * PG状态用位掩码表示，可以同时具有多个状态
+
  */
 
 // 基本状态
@@ -650,6 +671,7 @@ stateDiagram-v2
     
     note left of Creating
         创建状态:
+
         - 分配PG ID
         - 确定初始OSD集合
         - 创建存储集合
@@ -669,6 +691,7 @@ stateDiagram-v2
         - 维护副本一致性
         - 执行后台恢复
     end note
+
 ```
 
 ## 3. 数据存储和访问
@@ -726,15 +749,21 @@ graph TB
 
 ```cpp
 /**
+
  * 对象标识符层次结构
  * 从用户对象名到物理存储的映射过程
+
  */
 
 /**
+
  * object_t - 用户层对象标识
  * 文件: src/include/object.h
- * 
+
+ *
+
  * 用户创建的对象名称，例如："myfile.txt"
+
  */
 struct object_t {
     std::string name;                   // 对象名称字符串
@@ -745,10 +774,14 @@ struct object_t {
 };
 
 /**
+
  * sobject_t - 快照对象标识  
  * 文件: src/include/object.h
- * 
+
+ *
+
  * 包含快照信息的对象标识
+
  */
 struct sobject_t {
     object_t oid;                       // 基础对象标识
@@ -759,10 +792,14 @@ struct sobject_t {
 };
 
 /**
+
  * hobject_t - 哈希对象标识
  * 文件: src/osd/osd_types.h
- * 
+
+ *
+
  * 包含哈希和命名空间的对象标识，用于在PG内定位对象
+
  */
 struct hobject_t {
     object_t oid;                       // 对象标识
@@ -775,6 +812,7 @@ struct hobject_t {
     std::string key;                    // 对象键（用于特殊用途）
     
     /**
+
      * 计算对象的PG ID
      * @param pg_num 存储池PG数量
      * @return 计算出的PG ID
@@ -788,13 +826,18 @@ struct hobject_t {
      * @return 对象路径字符串
      */
     std::string get_path() const;
+
 };
 
 /**
+
  * ghobject_t - 全局哈希对象标识
  * 文件: src/osd/osd_types.h
- * 
+
+ *
+
  * 在整个OSD中唯一标识对象，包含分片信息
+
  */
 struct ghobject_t {
     hobject_t hobj;                     // 基础哈希对象标识
@@ -802,14 +845,15 @@ struct ghobject_t {
     shard_id_t shard_id;                // 分片ID（用于纠删码）
     
     /**
+
      * 构造函数
      * @param o 哈希对象标识
      * @param gen 生成版本
      * @param shard 分片ID
      */
-    ghobject_t(const hobject_t &o, 
-              generation_t gen, 
-              shard_id_t shard) 
+    ghobject_t(const hobject_t &o,
+              generation_t gen,
+              shard_id_t shard)
         : hobj(o), generation(gen), shard_id(shard) {}
     
     /**
@@ -827,6 +871,7 @@ struct ghobject_t {
     bool is_meta() const {
         return hobj.pool == -1;
     }
+
 };
 ```
 
@@ -934,17 +979,22 @@ graph TB
 
 ```cpp
 /**
+
  * PGLog类 - PG操作日志管理
  * 文件: src/osd/PGLog.h
- * 
+
+ *
+
  * PG日志记录了PG上所有操作的历史，用于：
  * 1. 确定哪些对象需要恢复
  * 2. 解决副本间的不一致
  * 3. 支持快速恢复和增量同步
+
  */
 struct PGLog {
     
     /**
+
      * 日志条目结构
      */
     struct Entry {
@@ -1091,6 +1141,7 @@ struct PGLog {
     static void rebuild_missing(const std::list<Entry>& log,
                                Missing& missing,
                                eversion_t from);
+
 };
 ```
 
@@ -1098,18 +1149,24 @@ struct PGLog {
 
 ```cpp
 /**
+
  * 数据恢复流程实现
  * 文件: src/osd/PrimaryLogPG.cc:13327-13400
- * 
+
+ *
+
  * 数据恢复是PG维护数据一致性的核心机制
+
  */
 
 /**
+
  * 执行恢复操作
  * @param max 最大恢复操作数
  * @param handle 线程池句柄
  * @param ops_started 输出已启动的操作数
  * @return 是否还有未找到的对象
+
  */
 bool PrimaryLogPG::start_recovery_ops(
     uint64_t max,
@@ -1164,7 +1221,7 @@ bool PrimaryLogPG::start_recovery_ops(
     bool deferred_backfill = false;
     if (recovering.empty() &&
         state_test(PG_STATE_BACKFILLING) &&
-        !get_backfill_targets().empty() && 
+        !get_backfill_targets().empty() &&
         started < max &&
         missing.num_missing() == 0 &&
         waiting_on_backfill.empty()) {
@@ -1186,7 +1243,7 @@ bool PrimaryLogPG::start_recovery_ops(
     dout(10) << __func__ << " started " << started << dendl;
     
     if (!work_in_progress &&
-        (recovery_state.all_missing_unfound() || 
+        (recovery_state.all_missing_unfound() ||
          (!deferred_backfill && recovery_state.is_clean()))) {
         // 恢复完成，更新状态
         recovery_state.set_last_complete();
@@ -1203,14 +1260,16 @@ bool PrimaryLogPG::start_recovery_ops(
 }
 
 /**
+
  * 恢复副本数据
  * @param max 最大恢复操作数
  * @param handle 线程池句柄
  * @param work_started 输出是否有工作启动
  * @return 已启动的恢复操作数
+
  */
 uint64_t PrimaryLogPG::recover_replicas(
-    uint64_t max, 
+    uint64_t max,
     ThreadPool::TPHandle &handle,
     bool *work_started)
 {
@@ -1235,7 +1294,7 @@ uint64_t PrimaryLogPG::recover_replicas(
     }
     
     // 按missing数量升序排序
-    std::sort(replicas_by_num_missing.begin(), 
+    std::sort(replicas_by_num_missing.begin(),
               replicas_by_num_missing.end(),
               [](const std::pair<unsigned int, pg_shard_t> &lhs,
                  const std::pair<unsigned int, pg_shard_t> &rhs) {
@@ -1268,7 +1327,7 @@ uint64_t PrimaryLogPG::recover_replicas(
             start_recovery_op(soid);
             recovering.insert(std::make_pair(soid, ObjectContextRef()));
             
-            int r = pgbackend->recover_object(soid, m->second.need, ObjectContextRef(), 
+            int r = pgbackend->recover_object(soid, m->second.need, ObjectContextRef(),
                                              ObjectContextRef(), h);
             if (r >= 0) {
                 started++;
@@ -1344,16 +1403,22 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * 数据清洗机制 - 确保数据完整性
  * 文件: src/osd/scrubber_common.h
- * 
+
+ *
+
  * Scrubbing是Ceph的后台数据一致性检查机制，包括：
  * 1. Light Scrub：检查元数据一致性
  * 2. Deep Scrub：检查数据内容一致性
+
  */
 
 /**
+
  * 清洗类型枚举
+
  */
 enum class scrub_type_t {
     not_scrubbing = 0,                  // 未进行清洗
@@ -1362,7 +1427,9 @@ enum class scrub_type_t {
 };
 
 /**
+
  * 清洗状态枚举
+
  */
 enum class scrub_state_t {
     not_active = 0,                     // 未激活
@@ -1376,7 +1443,9 @@ enum class scrub_state_t {
 };
 
 /**
+
  * 清洗结果统计
+
  */
 struct scrub_stat_t {
     uint64_t deepest_depth;             // 最深扫描深度
@@ -1391,6 +1460,7 @@ struct scrub_stat_t {
     uint64_t fixed_errors;              // 已修复错误数
     
     /**
+
      * 重置统计信息
      */
     void clear() {
@@ -1403,10 +1473,13 @@ struct scrub_stat_t {
         start_time = utime_t();
         end_time = utime_t();
     }
+
 };
 
 /**
+
  * 对象清洗信息
+
  */
 struct ScrubMapObject {
     uint64_t size;                      // 对象大小
@@ -1416,6 +1489,7 @@ struct ScrubMapObject {
     std::map<std::string, bufferlist> attrs; // 对象属性
     
     /**
+
      * 检查对象是否一致
      * @param other 另一个副本的对象信息
      * @param deep 是否进行深度比较
@@ -1428,10 +1502,13 @@ struct ScrubMapObject {
                 data_digest == other.data_digest &&
                 attrs == other.attrs);
     }
+
 };
 
 /**
+
  * 清洗映射表 - 包含PG中所有对象的摘要信息
+
  */
 struct ScrubMap {
     std::map<hobject_t, ScrubMapObject> objects; // 对象摘要映射
@@ -1439,6 +1516,7 @@ struct ScrubMap {
     hobject_t end;                      // 扫描结束位置
     
     /**
+
      * 比较两个清洗映射，找出不一致
      * @param other 另一个清洗映射
      * @param inconsistent 输出不一致对象列表
@@ -1449,6 +1527,7 @@ struct ScrubMap {
                      std::set<hobject_t>& inconsistent,
                      std::set<hobject_t>& missing,
                      std::set<hobject_t>& extra) const;
+
 };
 ```
 
@@ -1509,14 +1588,19 @@ graph TB
 
 ```cpp
 /**
+
  * 纠删码后端实现
  * 文件: src/osd/ECBackend.h
- * 
+
+ *
+
  * ECBackend实现了纠删码的数据存储、读取和恢复逻辑
+
  */
 class ECBackend : public PGBackend {
 public:
     /**
+
      * 纠删码配置信息
      */
     struct ECCodeProfile {
@@ -1561,8 +1645,8 @@ public:
          * @return 该分片应有的大小
          */
         static uint32_t object_size_to_shard_size(
-            uint64_t object_size, 
-            uint32_t shard_id, 
+            uint64_t object_size,
+            uint32_t shard_id,
             const ECCodeProfile& profile) {
             
             uint32_t stripe_width = profile.k * profile.stripe_unit;
@@ -1577,8 +1661,8 @@ public:
             if (remainder > 0) {
                 uint32_t shard_offset = shard_id * profile.stripe_unit;
                 if (remainder > shard_offset) {
-                    uint32_t this_shard_remainder = 
-                        std::min(remainder - shard_offset, 
+                    uint32_t this_shard_remainder =
+                        std::min(remainder - shard_offset,
                                 (uint64_t)profile.stripe_unit);
                     shard_size += this_shard_remainder;
                 }
@@ -1674,6 +1758,7 @@ private:
     ErasureCodeInterfaceRef ec_impl;    // 纠删码实现接口
     
     /**
+
      * 获取分片位置映射
      * @param hoid 对象标识
      * @return 分片ID到OSD的映射
@@ -1688,6 +1773,7 @@ private:
     bool have_enough_shards(const std::set<int>& available_shards) const {
         return available_shards.size() >= ec_profile.k;
     }
+
 };
 ```
 
@@ -1697,8 +1783,10 @@ private:
 
 ```cpp
 /**
+
  * OSD性能计数器定义
  * 文件: src/osd/osd_perf_counters.h
+
  */
 enum osd_perf_counters_t {
     l_osd_first = 10000,

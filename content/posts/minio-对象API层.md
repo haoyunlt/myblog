@@ -67,42 +67,42 @@ type ObjectLayer interface {
     DeleteBucket(ctx context.Context, bucket string, opts DeleteBucketOptions) error
     
     // 对象操作
-    GetObjectNInfo(ctx context.Context, bucket, object string, rs *HTTPRangeSpec, 
+    GetObjectNInfo(ctx context.Context, bucket, object string, rs *HTTPRangeSpec,
         h http.Header, opts ObjectOptions) (reader *GetObjectReader, err error)
     GetObjectInfo(ctx context.Context, bucket, object string, opts ObjectOptions) (objInfo ObjectInfo, err error)
-    PutObject(ctx context.Context, bucket, object string, data *PutObjReader, 
+    PutObject(ctx context.Context, bucket, object string, data *PutObjReader,
         opts ObjectOptions) (objInfo ObjectInfo, err error)
-    CopyObject(ctx context.Context, srcBucket, srcObject, destBucket, destObject string, 
+    CopyObject(ctx context.Context, srcBucket, srcObject, destBucket, destObject string,
         srcInfo ObjectInfo, srcOpts, dstOpts ObjectOptions) (objInfo ObjectInfo, err error)
     DeleteObject(ctx context.Context, bucket, object string, opts ObjectOptions) (ObjectInfo, error)
-    DeleteObjects(ctx context.Context, bucket string, objects []ObjectToDelete, 
+    DeleteObjects(ctx context.Context, bucket string, objects []ObjectToDelete,
         opts ObjectOptions) ([]DeletedObject, []error)
     
     // 多部分上传
-    ListMultipartUploads(ctx context.Context, bucket, prefix, keyMarker, uploadIDMarker, 
+    ListMultipartUploads(ctx context.Context, bucket, prefix, keyMarker, uploadIDMarker,
         delimiter string, maxUploads int) (result ListMultipartsInfo, err error)
-    NewMultipartUpload(ctx context.Context, bucket, object string, 
+    NewMultipartUpload(ctx context.Context, bucket, object string,
         opts ObjectOptions) (result NewMultipartInfo, err error)
-    CopyObjectPart(ctx context.Context, srcBucket, srcObject, destBucket, destObject string, 
-        uploadID string, partID int, startOffset int64, length int64, srcInfo ObjectInfo, 
+    CopyObjectPart(ctx context.Context, srcBucket, srcObject, destBucket, destObject string,
+        uploadID string, partID int, startOffset int64, length int64, srcInfo ObjectInfo,
         srcOpts, dstOpts ObjectOptions) (info PartInfo, err error)
-    PutObjectPart(ctx context.Context, bucket, object, uploadID string, partID int, 
+    PutObjectPart(ctx context.Context, bucket, object, uploadID string, partID int,
         data *PutObjReader, opts ObjectOptions) (info PartInfo, err error)
-    GetMultipartInfo(ctx context.Context, bucket, object, uploadID string, 
+    GetMultipartInfo(ctx context.Context, bucket, object, uploadID string,
         opts ObjectOptions) (info MultipartInfo, err error)
-    ListObjectParts(ctx context.Context, bucket, object, uploadID string, partNumberMarker int, 
+    ListObjectParts(ctx context.Context, bucket, object, uploadID string, partNumberMarker int,
         maxParts int, opts ObjectOptions) (result ListPartsInfo, err error)
-    AbortMultipartUpload(ctx context.Context, bucket, object, uploadID string, 
+    AbortMultipartUpload(ctx context.Context, bucket, object, uploadID string,
         opts ObjectOptions) error
-    CompleteMultipartUpload(ctx context.Context, bucket, object, uploadID string, 
+    CompleteMultipartUpload(ctx context.Context, bucket, object, uploadID string,
         uploadedParts []CompletePart, opts ObjectOptions) (objInfo ObjectInfo, err error)
     
     // 对象列表
-    ListObjects(ctx context.Context, bucket, prefix, marker, delimiter string, 
+    ListObjects(ctx context.Context, bucket, prefix, marker, delimiter string,
         maxKeys int) (result ListObjectsInfo, err error)
-    ListObjectsV2(ctx context.Context, bucket, prefix, continuationToken, delimiter string, 
+    ListObjectsV2(ctx context.Context, bucket, prefix, continuationToken, delimiter string,
         maxKeys int, fetchOwner bool, startAfter string) (result ListObjectsV2Info, err error)
-    ListObjectVersions(ctx context.Context, bucket, prefix, keyMarker, versionMarker, 
+    ListObjectVersions(ctx context.Context, bucket, prefix, keyMarker, versionMarker,
         delimiter string, maxKeys int) (ListObjectVersionsInfo, error)
     
     // 健康检查
@@ -283,7 +283,7 @@ func (api objectAPIHandlers) PutObjectHandler(w http.ResponseWriter, r *http.Req
 
 ```go
 // PutObject 在纠删码存储中创建对象
-func (er erasureObjects) PutObject(ctx context.Context, bucket, object string, 
+func (er erasureObjects) PutObject(ctx context.Context, bucket, object string,
     r *PutObjReader, opts ObjectOptions) (ObjectInfo, error) {
     
     // 审计日志
@@ -382,7 +382,7 @@ func (er erasureObjects) PutObject(ctx context.Context, bucket, object string,
     }
     
     // 写入对象数据
-    n, erasureErr := erasureCreateFile(ctx, onlineDisks, minioMetaTmpBucket, tempObj, 
+    n, erasureErr := erasureCreateFile(ctx, onlineDisks, minioMetaTmpBucket, tempObj,
         fi.Size, erasure, data, writeQuorum)
     if erasureErr != nil {
         return ObjectInfo{}, toObjectErr(erasureErr, bucket, object)
@@ -396,7 +396,7 @@ func (er erasureObjects) PutObject(ctx context.Context, bucket, object string,
     }
     
     // 提交对象
-    _, err = commitErasureObject(ctx, onlineDisks, minioMetaTmpBucket, tempObj, 
+    _, err = commitErasureObject(ctx, onlineDisks, minioMetaTmpBucket, tempObj,
         minioMetaBucket, object, partsMetadata, writeQuorum)
     if err != nil {
         return ObjectInfo{}, toObjectErr(err, bucket, object)
@@ -467,7 +467,7 @@ func (api objectAPIHandlers) GetObjectHandler(w http.ResponseWriter, r *http.Req
 
 ```go
 // GetObjectNInfo 获取对象信息和数据流
-func (er erasureObjects) GetObjectNInfo(ctx context.Context, bucket, object string, 
+func (er erasureObjects) GetObjectNInfo(ctx context.Context, bucket, object string,
     rs *HTTPRangeSpec, h http.Header, opts ObjectOptions) (gr *GetObjectReader, err error) {
     
     // 审计日志
@@ -517,7 +517,7 @@ func (er erasureObjects) GetObjectNInfo(ctx context.Context, bucket, object stri
 }
 
 // getObject 从纠删码存储中读取对象数据
-func (er erasureObjects) getObject(ctx context.Context, bucket, object string, 
+func (er erasureObjects) getObject(ctx context.Context, bucket, object string,
     startOffset int64, length int64, writer io.Writer, etag string, opts ObjectOptions) error {
     
     // 获取存储磁盘
@@ -549,7 +549,7 @@ func (er erasureObjects) getObject(ctx context.Context, bucket, object string,
         return erasureReadFile(ctx, onlineDisks, bucket, object, writer, fi, erasure)
     } else {
         // 读取对象范围
-        return erasureReadFileRange(ctx, onlineDisks, bucket, object, startOffset, length, 
+        return erasureReadFileRange(ctx, onlineDisks, bucket, object, startOffset, length,
             writer, fi, erasure)
     }
 }
@@ -592,7 +592,7 @@ func (api objectAPIHandlers) ListObjectsV2Handler(w http.ResponseWriter, r *http
     }
     
     // 调用对象层 ListObjectsV2
-    listObjectsV2Info, err := objectAPI.ListObjectsV2(ctx, bucket, prefix, continuationToken, 
+    listObjectsV2Info, err := objectAPI.ListObjectsV2(ctx, bucket, prefix, continuationToken,
         delimiter, maxKeys, fetchOwner, startAfter)
     if err != nil {
         writeErrorResponse(ctx, w, toAPIError(ctx, err), r.URL)
@@ -600,9 +600,9 @@ func (api objectAPIHandlers) ListObjectsV2Handler(w http.ResponseWriter, r *http
     }
     
     // 编码响应
-    response := generateListObjectsV2Response(bucket, prefix, continuationToken, delimiter, 
-        fetchOwner, listObjectsV2Info.IsTruncated, maxKeys, listObjectsV2Info.Objects, 
-        listObjectsV2Info.Prefixes, listObjectsV2Info.ContinuationToken, 
+    response := generateListObjectsV2Response(bucket, prefix, continuationToken, delimiter,
+        fetchOwner, listObjectsV2Info.IsTruncated, maxKeys, listObjectsV2Info.Objects,
+        listObjectsV2Info.Prefixes, listObjectsV2Info.ContinuationToken,
         listObjectsV2Info.NextContinuationToken)
     
     // 写入 XML 响应
@@ -614,7 +614,7 @@ func (api objectAPIHandlers) ListObjectsV2Handler(w http.ResponseWriter, r *http
 
 ```go
 // ListObjectsV2 列出桶中的对象（V2 版本）
-func (er erasureObjects) ListObjectsV2(ctx context.Context, bucket, prefix, continuationToken, 
+func (er erasureObjects) ListObjectsV2(ctx context.Context, bucket, prefix, continuationToken,
     delimiter string, maxKeys int, fetchOwner bool, startAfter string) (ListObjectsV2Info, error) {
     
     // 验证桶是否存在
@@ -647,7 +647,7 @@ func (er erasureObjects) ListObjectsV2(ctx context.Context, bucket, prefix, cont
 }
 
 // ListObjects 列出桶中的对象
-func (er erasureObjects) ListObjects(ctx context.Context, bucket, prefix, marker, 
+func (er erasureObjects) ListObjects(ctx context.Context, bucket, prefix, marker,
     delimiter string, maxKeys int) (ListObjectsInfo, error) {
     
     // 验证桶是否存在
@@ -665,7 +665,7 @@ func (er erasureObjects) ListObjects(ctx context.Context, bucket, prefix, marker
 }
 
 // listObjectsWithMetacache 使用元缓存列出对象
-func (er erasureObjects) listObjectsWithMetacache(ctx context.Context, bucket, prefix, 
+func (er erasureObjects) listObjectsWithMetacache(ctx context.Context, bucket, prefix,
     marker, delimiter string, maxKeys int) (ListObjectsInfo, error) {
     
     // 创建列表参数
@@ -755,7 +755,7 @@ sequenceDiagram
 
 ```go
 // NewMultipartUpload 初始化多部分上传
-func (er erasureObjects) NewMultipartUpload(ctx context.Context, bucket, object string, 
+func (er erasureObjects) NewMultipartUpload(ctx context.Context, bucket, object string,
     opts ObjectOptions) (NewMultipartInfo, error) {
     
     // 审计日志
@@ -809,7 +809,7 @@ func (er erasureObjects) NewMultipartUpload(ctx context.Context, bucket, object 
     uploadIDPath := er.getUploadIDDir(bucket, object, uploadID)
     
     // 写入初始元数据
-    if _, err := writeUniqueFileInfo(ctx, onlineDisks, minioMetaTmpBucket, uploadIDPath, 
+    if _, err := writeUniqueFileInfo(ctx, onlineDisks, minioMetaTmpBucket, uploadIDPath,
         partsMetadata, writeQuorum); err != nil {
         return NewMultipartInfo{}, toObjectErr(err, bucket, object)
     }
@@ -826,7 +826,7 @@ func (er erasureObjects) NewMultipartUpload(ctx context.Context, bucket, object 
 
 ```go
 // PutObjectPart 上传对象分片
-func (er erasureObjects) PutObjectPart(ctx context.Context, bucket, object, uploadID string, 
+func (er erasureObjects) PutObjectPart(ctx context.Context, bucket, object, uploadID string,
     partID int, r *PutObjReader, opts ObjectOptions) (PartInfo, error) {
     
     // 审计日志
@@ -888,7 +888,7 @@ func (er erasureObjects) PutObjectPart(ctx context.Context, bucket, object, uplo
     
     // 写入分片数据
     file := erasure.ShardFileSize(data.Size())
-    n, erasureErr := erasureCreateFile(ctx, onlineDisks, minioMetaTmpBucket, tmpPartPath, 
+    n, erasureErr := erasureCreateFile(ctx, onlineDisks, minioMetaTmpBucket, tmpPartPath,
         file, erasure, data, writeQuorum)
     if erasureErr != nil {
         return PartInfo{}, toObjectErr(erasureErr, bucket, object)
@@ -915,7 +915,7 @@ func (er erasureObjects) PutObjectPart(ctx context.Context, bucket, object, uplo
     
     // 提交分片
     partPath := pathJoin(uploadIDPath, partSuffix)
-    _, err = commitErasureObject(ctx, onlineDisks, minioMetaTmpBucket, tmpPartPath, 
+    _, err = commitErasureObject(ctx, onlineDisks, minioMetaTmpBucket, tmpPartPath,
         minioMetaTmpBucket, partPath, []FileInfo{fi}, writeQuorum)
     if err != nil {
         return PartInfo{}, toObjectErr(err, bucket, object)
@@ -939,7 +939,7 @@ func (er erasureObjects) PutObjectPart(ctx context.Context, bucket, object, uplo
 
 ```go
 // CompleteMultipartUpload 完成多部分上传
-func (er erasureObjects) CompleteMultipartUpload(ctx context.Context, bucket, object, uploadID string, 
+func (er erasureObjects) CompleteMultipartUpload(ctx context.Context, bucket, object, uploadID string,
     uploadedParts []CompletePart, opts ObjectOptions) (ObjectInfo, error) {
     
     // 审计日志
@@ -1015,14 +1015,14 @@ func (er erasureObjects) CompleteMultipartUpload(ctx context.Context, bucket, ob
     tempObj := mustGetUUID()
     
     // 合并分片到最终对象
-    err = er.mergeMultipartParts(ctx, onlineDisks, bucket, object, uploadID, 
+    err = er.mergeMultipartParts(ctx, onlineDisks, bucket, object, uploadID,
         tempObj, fi, writeQuorum)
     if err != nil {
         return ObjectInfo{}, toObjectErr(err, bucket, object)
     }
     
     // 提交最终对象
-    _, err = commitErasureObject(ctx, onlineDisks, minioMetaTmpBucket, tempObj, 
+    _, err = commitErasureObject(ctx, onlineDisks, minioMetaTmpBucket, tempObj,
         minioMetaBucket, object, []FileInfo{fi}, writeQuorum)
     if err != nil {
         return ObjectInfo{}, toObjectErr(err, bucket, object)
@@ -1053,7 +1053,7 @@ const (
 )
 
 // 处理版本化的 PutObject
-func (er erasureObjects) putObjectWithVersioning(ctx context.Context, bucket, object string, 
+func (er erasureObjects) putObjectWithVersioning(ctx context.Context, bucket, object string,
     r *PutObjReader, opts ObjectOptions) (ObjectInfo, error) {
     
     // 检查桶版本控制状态
@@ -1076,7 +1076,7 @@ func (er erasureObjects) putObjectWithVersioning(ctx context.Context, bucket, ob
 }
 
 // 处理版本化的 DeleteObject
-func (er erasureObjects) deleteObjectWithVersioning(ctx context.Context, bucket, object string, 
+func (er erasureObjects) deleteObjectWithVersioning(ctx context.Context, bucket, object string,
     opts ObjectOptions) (ObjectInfo, error) {
     
     bucketVersioning := globalBucketVersioningSys.Get(bucket)
@@ -1096,7 +1096,7 @@ func (er erasureObjects) deleteObjectWithVersioning(ctx context.Context, bucket,
 }
 
 // 创建删除标记
-func (er erasureObjects) createDeleteMarker(ctx context.Context, bucket, object string, 
+func (er erasureObjects) createDeleteMarker(ctx context.Context, bucket, object string,
     opts ObjectOptions) (ObjectInfo, error) {
     
     // 生成删除标记版本 ID
@@ -1152,7 +1152,7 @@ type metacache struct {
 }
 
 // 使用元缓存加速对象列表
-func (er erasureObjects) listObjectsWithMetacache(ctx context.Context, bucket, prefix, 
+func (er erasureObjects) listObjectsWithMetacache(ctx context.Context, bucket, prefix,
     marker, delimiter string, maxKeys int) (ListObjectsInfo, error) {
     
     // 创建缓存键
@@ -1192,7 +1192,7 @@ func (er erasureObjects) listObjectsWithMetacache(ctx context.Context, bucket, p
 
 ```go
 // 并行读取对象元数据
-func readAllFileInfo(ctx context.Context, disks []StorageAPI, bucket, object, versionID string, 
+func readAllFileInfo(ctx context.Context, disks []StorageAPI, bucket, object, versionID string,
     readData, healing bool) ([]FileInfo, []error) {
     
     metadataArray := make([]FileInfo, len(disks))
@@ -1220,7 +1220,7 @@ func readAllFileInfo(ctx context.Context, disks []StorageAPI, bucket, object, ve
 }
 
 // 并行写入对象元数据
-func writeUniqueFileInfo(ctx context.Context, disks []StorageAPI, bucket, object string, 
+func writeUniqueFileInfo(ctx context.Context, disks []StorageAPI, bucket, object string,
     files []FileInfo, quorum int) ([]FileInfo, error) {
     
     g := errgroup.WithNErrs(len(disks))

@@ -145,6 +145,7 @@ class WebUI:
     """通用聊天界面应用 - Agent的统一Web界面
     
     设计目标:
+
         1. 为所有类型的Agent提供统一的Web交互界面
         2. 支持单Agent和多Agent模式的无缝切换
         3. 提供现代化的聊天体验和多模态交互
@@ -626,6 +627,7 @@ class WebUI:
     def _set_query(self, suggestion: str) -> str:
         """设置查询文本（用于建议提示点击）"""
         return suggestion
+
 ```
 
 ## 🛠️ 消息处理和格式转换
@@ -637,6 +639,7 @@ def convert_history_to_chatbot(messages: List[Message]) -> List[List]:
     """将Message对象列表转换为Gradio Chatbot格式
     
     转换规则:
+
         1. 连续的相同角色消息会被合并
         2. SYSTEM消息被隐藏（不在界面显示）
         3. FUNCTION消息转换为工具调用展示
@@ -704,6 +707,7 @@ def _format_message_content(message: Message) -> str:
     """格式化消息内容为HTML显示格式
     
     支持的内容类型:
+
         1. 纯文本内容
         2. 多模态内容（图像、音频、视频、文件）
         3. 函数调用内容
@@ -765,6 +769,7 @@ def convert_fncall_to_text(message: Message) -> str:
     """将函数调用消息转换为可读文本
     
     转换内容:
+
         1. 函数调用的参数和名称
         2. 工具调用的展开显示
         3. 错误信息的友好显示
@@ -806,6 +811,7 @@ def convert_chatbot_to_messages(chatbot: List[List]) -> List[Message]:
     """将Gradio Chatbot格式转换为Message对象列表
     
     用途:
+
         1. 界面状态恢复
         2. 对话历史导出
         3. Agent调用参数准备
@@ -830,6 +836,7 @@ def convert_chatbot_to_messages(chatbot: List[List]) -> List[Message]:
             ))
     
     return messages
+
 ```
 
 ## 🎨 界面美化和主题定制
@@ -841,6 +848,7 @@ def create_custom_theme():
     """创建Qwen-Agent自定义主题
     
     主题特色:
+
         1. 简洁现代的设计风格
         2. 蓝色主色调，体现科技感
         3. 无圆角设计，更加专业
@@ -852,7 +860,7 @@ def create_custom_theme():
     custom_colors = gr.themes.utils.colors.Color(
         name="qwen_blue",
         c50="#eff6ff",
-        c100="#dbeafe", 
+        c100="#dbeafe",
         c200="#bfdbfe",
         c300="#93c5fd",
         c400="#60a5fa",
@@ -872,7 +880,7 @@ def create_custom_theme():
         font=[
             gr.themes.GoogleFont("Noto Sans SC"),  # 中文字体
             gr.themes.GoogleFont("Inter"),         # 英文字体
-            "ui-sans-serif", 
+            "ui-sans-serif",
             "system-ui"
         ]
     )
@@ -883,6 +891,7 @@ def create_agent_cover_html(name: str, description: str, avatar: str = None) -> 
     """创建Agent封面HTML
     
     封面包含:
+
         1. Agent头像（圆形显示）
         2. Agent名称（粗体显示）
         3. Agent描述（多行文本）
@@ -998,6 +1007,7 @@ def create_suggestion_buttons(suggestions: List[str]) -> List:
     """创建建议提示按钮
     
     按钮特性:
+
         1. 美观的卡片式设计
         2. 悬停效果和点击反馈
         3. 自适应文本长度
@@ -1020,6 +1030,7 @@ def create_suggestion_buttons(suggestions: List[str]) -> List:
         buttons.append(btn)
     
     return buttons
+
 ```
 
 ## 📱 多设备适配和响应式设计
@@ -1031,6 +1042,7 @@ def create_responsive_layout():
     """创建响应式界面布局
     
     适配策略:
+
         1. 桌面端：双列布局（Agent信息 + 对话区）
         2. 平板端：可折叠的Agent信息面板
         3. 手机端：单列布局，Agent选择下拉框
@@ -1140,6 +1152,7 @@ def create_responsive_layout():
     """
     
     return responsive_css
+
 ```
 
 ## 🔄 实时交互和状态管理
@@ -1151,6 +1164,7 @@ class StreamResponseHandler:
     """流式响应处理器 - 管理实时对话流
     
     核心功能:
+
         1. 流式响应的缓冲和显示
         2. 界面状态的实时更新
         3. 用户交互的并发控制
@@ -1212,6 +1226,7 @@ class StreamResponseHandler:
         """取消当前流式响应"""
         self.is_streaming = False
         # 这里可以添加流取消的具体逻辑
+
 ```
 
 ## 🎯 GUI模块总结

@@ -79,6 +79,7 @@ class EntityComponent[_EntityT: entity.Entity = entity.Entity]:
     """实体组件类 - 管理特定域的所有平台和实体
     
     职责:
+
         1. 管理域级别的实体平台（如所有的light平台）
         2. 处理平台的动态加载和发现
         3. 提供实体的统一访问接口
@@ -246,7 +247,7 @@ class EntityComponent[_EntityT: entity.Entity = entity.Entity]:
             # 检查是否已经设置过相同的平台
             if platform_key in self._platforms:
                 self.logger.warning(
-                    "Platform %s already set up with same configuration", 
+                    "Platform %s already set up with same configuration",
                     platform_type
                 )
                 return self._platforms[platform_key]
@@ -266,8 +267,8 @@ class EntityComponent[_EntityT: entity.Entity = entity.Entity]:
             if hasattr(platform, "async_setup_platform"):
                 # 现代异步设置方法
                 setup_success = await platform.async_setup_platform(
-                    self.hass, 
-                    platform_config, 
+                    self.hass,
+                    platform_config,
                     entity_platform.async_add_entities,
                     discovery_info
                 )
@@ -282,7 +283,7 @@ class EntityComponent[_EntityT: entity.Entity = entity.Entity]:
                 )
             else:
                 self.logger.error(
-                    "Platform %s does not implement setup method", 
+                    "Platform %s does not implement setup method",
                     platform_type
                 )
                 return None
@@ -296,7 +297,7 @@ class EntityComponent[_EntityT: entity.Entity = entity.Entity]:
             
         except Exception as err:
             self.logger.exception(
-                "Error setting up platform %s: %s", 
+                "Error setting up platform %s: %s",
                 platform_type, err
             )
             return None
@@ -338,7 +339,7 @@ class EntityComponent[_EntityT: entity.Entity = entity.Entity]:
             在系统停止时清理组件资源
         """
         self.hass.bus.async_listen_once(
-            EVENT_HOMEASSISTANT_STOP, 
+            EVENT_HOMEASSISTANT_STOP,
             self._async_shutdown
         )
     
@@ -362,6 +363,7 @@ class EntityComponent[_EntityT: entity.Entity = entity.Entity]:
         instances.pop(self.domain, None)
         
         self.logger.info("Entity component %s shutdown completed", self.domain)
+
 ```
 
 ## 3. EntityPlatform 实体平台详解
@@ -373,6 +375,7 @@ class EntityPlatform:
     """实体平台类 - 管理单个平台的所有实体
     
     实例示例:
+
         - 'hue.light' 平台管理所有Philips Hue灯泡实体
         - 'mqtt.sensor' 平台管理所有MQTT传感器实体
         - 'template.switch' 平台管理所有模板开关实体
@@ -486,7 +489,7 @@ class EntityPlatform:
         # 创建实体添加任务
         self.hass.async_create_task_internal(
             self._async_add_entities(
-                new_entities, 
+                new_entities,
                 update_before_add=update_before_add
             ),
             f"EntityPlatform add entities {self.platform_name} {self.domain}",
@@ -680,6 +683,7 @@ class EntityPlatform:
         await entity.add_to_platform_finish()
         
         self.logger.debug("Entity %s added to platform %s", entity_id, self.platform_name)
+
 ```
 
 ### 3.2 实体更新协调机制
@@ -689,6 +693,7 @@ class EntityUpdateCoordinator:
     """实体更新协调器 - 管理实体的状态更新机制
     
     功能:
+
         1. 协调多个实体的并发更新
         2. 实现背压控制防止系统过载
         3. 提供智能的更新调度策略
@@ -819,6 +824,7 @@ class EntityUpdateCoordinator:
             ),
             "last_update_time": self._last_update_time,
         }
+
 ```
 
 ## 4. Entity 实体基类深度解析
@@ -830,6 +836,7 @@ class Entity:
     """Home Assistant实体基类 - 所有设备和服务的抽象基础
     
     核心概念:
+
         - 实体是Home Assistant中所有"物品"的抽象表示
         - 每个实体都有唯一的entity_id和可选的unique_id
         - 实体通过状态(state)和属性(attributes)描述其当前情况
@@ -969,7 +976,7 @@ class Entity:
                 listener()
             except Exception as err:
                 self.logger.error(
-                    "Error in remove listener for %s: %s", 
+                    "Error in remove listener for %s: %s",
                     self.entity_id, err
                 )
         
@@ -1023,6 +1030,7 @@ class Entity:
             - 释放资源
         """
         pass
+
 ```
 
 ### 4.2 状态更新机制
@@ -1035,6 +1043,7 @@ class Entity:
             force_refresh: 是否强制刷新实体数据
             
         更新流程:
+
             1. 检查实体可用性
             2. 调用数据更新方法
             3. 生成状态对象
@@ -1187,6 +1196,7 @@ class Entity:
             - False: 设备主动推送状态变更
         """
         return self._attr_should_poll
+
 ```
 
 ## 5. 实体注册表系统
@@ -1232,6 +1242,7 @@ class RegistryEntry:
     """实体注册表条目 - 实体的持久化元数据存储
     
     用途:
+
         1. 存储实体的永久性信息
         2. 管理实体的启用/禁用状态
         3. 维护实体的用户自定义配置
@@ -1290,6 +1301,7 @@ class EntityRegistry:
     """实体注册表类 - 管理所有实体的注册信息和生命周期
     
     核心功能:
+
         1. 实体注册和注销管理
         2. 实体元数据持久化存储
         3. 实体配置的动态更新
@@ -1405,7 +1417,7 @@ class EntityRegistry:
             update_data = {}
             
             # 检查原始信息是否有变化
-            if (original_name is not None and 
+            if (original_name is not None and
                 existing_entry.original_name != original_name):
                 update_data["original_name"] = original_name
             
@@ -1517,7 +1529,7 @@ class EntityRegistry:
             update_data["icon"] = icon
             changes["icon"] = icon
             
-        if (entity_category is not UNDEFINED and 
+        if (entity_category is not UNDEFINED and
             entity_category != existing_entry.entity_category):
             update_data["entity_category"] = entity_category
             changes["entity_category"] = entity_category
@@ -1650,6 +1662,7 @@ class EntityRegistry:
         
         await self._store.async_save(data)
         self.logger.debug("Saved entity registry with %d entities", len(self.entities))
+
 ```
 
 ## 6. 专门化实体类型
@@ -1661,6 +1674,7 @@ class SensorEntity(Entity):
     """传感器实体基类 - 用于表示测量和监控数据的实体
     
     传感器特点:
+
         - 只读数据，不支持控制操作
         - 通常有数值状态和测量单位
         - 支持设备类型分类
@@ -1775,6 +1789,7 @@ class SwitchEntity(ToggleEntity):
     """开关实体基类 - 表示可控制的二元状态设备
     
     开关特点:
+
         - 支持开启/关闭操作
         - 状态为'on'或'off'
         - 可能支持功率监控
@@ -1863,6 +1878,7 @@ class LightEntity(ToggleEntity):
     """灯光实体基类 - 表示可调节的照明设备
     
     灯光特性:
+
         - 支持开关控制
         - 可调节亮度
         - 可能支持色彩控制
@@ -2270,4 +2286,5 @@ def debug_entity_update(func):
 ## 下一步分析
 
 接下来将继续分析：
+
 - [配置和数据存储系统](/posts/06-数据存储分析/) - 深入分析配置管理和数据持久化机制

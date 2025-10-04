@@ -87,13 +87,16 @@ graph TB
 
 ```cpp
 /**
+
  * ClusterManagerImpl 集群管理器的核心实现
  * 负责管理所有上游服务集群的生命周期和状态
+
  */
 class ClusterManagerImpl : public ClusterManager,
                            public MissingClusterNotifier {
 public:
   /**
+
    * 构造函数
    * @param bootstrap 启动配置
    * @param factory 集群管理器工厂
@@ -139,7 +142,7 @@ public:
    * @param remove_ignored 是否移除被忽略的集群
    * @return 是否成功移除
    */
-  bool removeCluster(const std::string& cluster, 
+  bool removeCluster(const std::string& cluster,
                      const bool remove_ignored = false) override;
 
   /**
@@ -156,17 +159,18 @@ public:
 
 private:
   /**
+
    * 集群数据结构
    * 包含集群的配置、实例和相关状态信息
    */
   struct ClusterData : public ClusterManagerCluster {
     ClusterData(const envoy::config::cluster::v3::Cluster& cluster_config,
-                const uint64_t cluster_config_hash, 
+                const uint64_t cluster_config_hash,
                 const std::string& version_info,
-                bool added_via_api, 
-                bool required_for_ads, 
+                bool added_via_api,
+                bool required_for_ads,
                 ClusterSharedPtr&& cluster,
-                TimeSource& time_source, 
+                TimeSource& time_source,
                 const bool avoid_cds_removal = false);
 
     // ClusterManagerCluster 接口实现
@@ -202,7 +206,7 @@ private:
      */
     class ClusterEntry : public ThreadLocalCluster {
     public:
-      ClusterEntry(ThreadLocalClusterManagerImpl& parent, 
+      ClusterEntry(ThreadLocalClusterManagerImpl& parent,
                    ClusterInfoConstSharedPtr cluster,
                    const LoadBalancerFactorySharedPtr& lb_factory);
 
@@ -226,8 +230,8 @@ private:
        * @param context 负载均衡上下文
        * @return HTTP连接池数据
        */
-      absl::optional<HttpPoolData> 
-      httpConnPool(HostConstSharedPtr host, 
+      absl::optional<HttpPoolData>
+      httpConnPool(HostConstSharedPtr host,
                    ResourcePriority priority,
                    absl::optional<Http::Protocol> downstream_protocol,
                    LoadBalancerContext* context) override;
@@ -239,8 +243,8 @@ private:
        * @param context 负载均衡上下文
        * @return TCP连接池数据
        */
-      absl::optional<TcpPoolData> 
-      tcpConnPool(HostConstSharedPtr host, 
+      absl::optional<TcpPoolData>
+      tcpConnPool(HostConstSharedPtr host,
                   ResourcePriority priority,
                   LoadBalancerContext* context) override;
 
@@ -267,7 +271,7 @@ private:
       Http::PersistentQuicInfoPtr quic_info_;     // QUIC持久信息
     };
 
-    ThreadLocalClusterManagerImpl(ClusterManagerImpl& parent, 
+    ThreadLocalClusterManagerImpl(ClusterManagerImpl& parent,
                                   Event::Dispatcher& dispatcher);
 
     ClusterManagerImpl& parent_;                            // 父集群管理器
@@ -292,6 +296,7 @@ private:
   
   bool initialized_{};                                 // 是否已初始化
   std::atomic<bool> shutdown_;                         // 是否关闭
+
 };
 ```
 
@@ -301,14 +306,17 @@ private:
 
 ```cpp
 /**
+
  * LoadBalancer 负载均衡器基类
  * 定义了负载均衡器的基本接口
+
  */
 class LoadBalancer {
 public:
   virtual ~LoadBalancer() = default;
 
   /**
+
    * 选择主机
    * @param context 负载均衡上下文
    * @return 主机选择结果
@@ -321,17 +329,21 @@ public:
    * @return 另一个主机的常量共享指针
    */
   virtual HostConstSharedPtr peekAnotherHost(LoadBalancerContext* context) PURE;
+
 };
 
 /**
+
  * LoadBalancerFactory 负载均衡器工厂
  * 创建和管理负载均衡器实例
+
  */
 class LoadBalancerFactory {
 public:
   virtual ~LoadBalancerFactory() = default;
   
   /**
+
    * 创建负载均衡器
    * @return 负载均衡器智能指针
    */
@@ -343,8 +355,9 @@ public:
    * @param old_lb 旧的负载均衡器
    * @return 新的负载均衡器
    */
-  virtual LoadBalancerPtr recreateLoadBalancer(uint32_t priority, 
+  virtual LoadBalancerPtr recreateLoadBalancer(uint32_t priority,
                                                LoadBalancerPtr&& old_lb) PURE;
+
 };
 ```
 
@@ -352,14 +365,16 @@ public:
 
 ```cpp
 /**
+
  * RoundRobinLoadBalancer 轮询负载均衡器实现
  * 按轮询方式分发请求到不同的主机
+
  */
 class RoundRobinLoadBalancer : public LoadBalancerBase {
 public:
   RoundRobinLoadBalancer(const PrioritySet& priority_set,
                         const PrioritySet* local_priority_set,
-                        ClusterStats& stats, 
+                        ClusterStats& stats,
                         Runtime::Loader& runtime,
                         Random::RandomGenerator& random,
                         const envoy::config::cluster::v3::Cluster::CommonLbConfig& common_config,
@@ -371,6 +386,7 @@ public:
 
 private:
   /**
+
    * 轮询选择器
    * 维护每个优先级的轮询状态
    */
@@ -384,6 +400,7 @@ private:
 
   // 每个优先级维护一个轮询索引
   std::vector<std::atomic<uint64_t>> rr_indexes_;
+
 };
 ```
 
@@ -391,8 +408,10 @@ private:
 
 ```cpp
 /**
+
  * ConsistentHashLoadBalancer 一致性哈希负载均衡器
  * 基于一致性哈希算法选择主机，确保相同键值总是路由到相同主机
+
  */
 class ConsistentHashLoadBalancer : public LoadBalancerBase {
 public:
@@ -409,6 +428,7 @@ public:
 
 private:
   /**
+
    * 哈希环实现
    * 使用一致性哈希环进行主机选择
    */
@@ -434,6 +454,7 @@ private:
 
   // 每个优先级维护一个哈希环
   std::vector<std::shared_ptr<HashRing>> hash_rings_;
+
 };
 ```
 
@@ -443,14 +464,17 @@ private:
 
 ```cpp
 /**
+
  * HealthChecker 健康检查器基类
  * 定义健康检查的通用接口
+
  */  
 class HealthChecker : Logger::Loggable<Logger::Id::hc> {
 public:
   virtual ~HealthChecker() = default;
 
   /**
+
    * 健康检查回调接口
    */
   class HostStatusCb {
@@ -480,6 +504,7 @@ protected:
                 HealthCheckEventLoggerPtr&& event_logger);
 
   /**
+
    * 活跃健康检查会话
    */
   class ActiveHealthCheckSession {
@@ -529,6 +554,7 @@ protected:
   
   std::vector<ActiveHealthCheckSessionPtr> active_sessions_; // 活跃会话
   Common::CallbackManager<HostStatusCb> callbacks_;         // 回调管理器
+
 };
 ```
 
@@ -536,8 +562,10 @@ protected:
 
 ```cpp
 /**
+
  * HttpHealthChecker HTTP健康检查器实现
  * 通过HTTP请求检查上游服务的健康状态
+
  */
 class HttpHealthChecker : public HealthChecker {
 public:
@@ -554,6 +582,7 @@ public:
 
 private:
   /**
+
    * HTTP健康检查会话
    */
   class HttpActiveHealthCheckSession : public ActiveHealthCheckSession,
@@ -568,7 +597,7 @@ private:
     void decodeTrailers(Http::ResponseTrailerMapPtr&& trailers) override;
 
     // StreamCallbacks 接口实现
-    void onResetStream(Http::StreamResetReason reason, 
+    void onResetStream(Http::StreamResetReason reason,
                       absl::string_view transport_failure_reason) override;
     void onAboveWriteBufferHighWatermark() override {}
     void onBelowWriteBufferLowWatermark() override {}
@@ -594,6 +623,7 @@ private:
   Http::ConnectionPool::InstancePtr conn_pool_;                             // 连接池
   const std::string path_;                                                  // 健康检查路径
   const Http::LowerCaseString host_header_;                                // Host头部
+
 };
 ```
 
@@ -603,8 +633,10 @@ private:
 
 ```cpp
 /**
+
  * ConnectionPool HTTP连接池接口
  * 管理到上游主机的连接复用
+
  */
 namespace Http {
 namespace ConnectionPool {
@@ -613,6 +645,7 @@ public:
   virtual ~Instance() = default;
 
   /**
+
    * 连接池回调接口
    */
   class Callbacks {
@@ -682,6 +715,7 @@ public:
    * @return 使用的HTTP协议
    */
   virtual absl::optional<Http::Protocol> protocol() const PURE;
+
 };
 } // namespace ConnectionPool
 } // namespace Http
@@ -691,8 +725,10 @@ public:
 
 ```cpp
 /**
+
  * Http1ConnectionPoolImpl HTTP/1.1连接池实现
  * 管理HTTP/1.1连接的复用和生命周期
+
  */
 class Http1ConnectionPoolImpl : public ConnectionPool::InstanceBase,
                                public Http::ConnectionCallbacks {
@@ -706,7 +742,7 @@ public:
                          Http::Context& http_context);
 
   // ConnectionPool::Instance 接口实现
-  Http::ConnectionPool::Cancellable* 
+  Http::ConnectionPool::Cancellable*
   newStream(Http::ResponseDecoder& response_decoder,
            Http::ConnectionPool::Callbacks& callbacks,
            const Http::ConnectionPool::Instance::StreamOptions& options) override;
@@ -721,6 +757,7 @@ public:
 
 private:
   /**
+
    * 活跃客户端连接
    */
   struct ActiveClient : LinkedObject<ActiveClient>,
@@ -764,6 +801,7 @@ private:
   std::list<ActiveClientPtr> ready_clients_;      // 就绪客户端列表
   std::list<ActiveClientPtr> busy_clients_;       // 忙碌客户端列表
   std::list<PendingRequestPtr> pending_requests_; // 待处理请求队列
+
 };
 ```
 
@@ -804,14 +842,16 @@ graph TB
 
 ```cpp
 /**
+
  * EdsClusterImpl EDS集群实现
  * 通过EDS（Endpoint Discovery Service）动态发现服务端点
+
  */
 class EdsClusterImpl : public ClusterImplBase {
 public:
   EdsClusterImpl(const envoy::config::cluster::v3::Cluster& cluster,
                 ClusterManagerImpl& cluster_manager,
-                Runtime::Loader& runtime, 
+                Runtime::Loader& runtime,
                 Random::RandomGenerator& random,
                 bool added_via_api,
                 Server::Configuration::ServerFactoryContext& server_context);
@@ -821,6 +861,7 @@ public:
 
 private:
   /**
+
    * EDS订阅回调
    */
   class EdsSubscriptionCallback : public Config::SubscriptionCallbacks {
@@ -860,6 +901,7 @@ private:
   std::unique_ptr<EdsSubscriptionCallback> subscription_callback_; // 订阅回调
   Config::SubscriptionPtr subscription_;                         // EDS订阅
   std::vector<LocalityEndpoints> locality_endpoints_;           // 本地性端点列表
+
 };
 ```
 
@@ -869,7 +911,9 @@ Upstream模块提供了详细的统计指标：
 
 ```cpp
 /**
+
  * 集群统计指标
+
  */
 #define ALL_CLUSTER_STATS(COUNTER, GAUGE, HISTOGRAM)                                              \
   COUNTER(upstream_cx_close_notify)         /* 上游连接关闭通知数 */                               \
@@ -900,7 +944,9 @@ Upstream模块提供了详细的统计指标：
   HISTOGRAM(upstream_rq_time, Milliseconds)       /* 上游请求时间直方图 */
 
 /**
+
  * 负载均衡器统计指标
+
  */  
 #define ALL_LOAD_BALANCER_STATS(COUNTER, GAUGE)                                                   \
   COUNTER(lb_healthy_panic)                 /* 健康恐慌次数 */                                    \
@@ -914,7 +960,9 @@ Upstream模块提供了详细的统计指标：
   COUNTER(lb_zone_routing_cross_zone)       /* 跨区域路由次数 */
 
 /**
+
  * 健康检查统计指标
+
  */
 #define ALL_HEALTH_CHECKER_STATS(COUNTER, GAUGE, HISTOGRAM)                                       \
   COUNTER(attempt)                          /* 健康检查尝试次数 */                                \
@@ -934,6 +982,7 @@ Upstream模块提供了详细的统计指标：
 ```yaml
 # 静态集群配置
 clusters:
+
 - name: service_backend
   connect_timeout: 0.25s
   type: STATIC
@@ -973,12 +1022,14 @@ clusters:
             socket_address:
               address: foo.bar.com
               port_value: 443
+
 ```
 
 ### 健康检查配置
 
 ```yaml
 health_checks:
+
 - timeout: 1s
   interval: 5s
   unhealthy_threshold: 3
@@ -992,6 +1043,7 @@ health_checks:
     expected_statuses:
     - start: 200
       end: 300
+
 ```
 
 ### 连接池配置
@@ -999,6 +1051,7 @@ health_checks:
 ```yaml
 circuit_breakers:
   thresholds:
+
   - priority: DEFAULT
     max_connections: 1024
     max_pending_requests: 1024  
@@ -1009,6 +1062,7 @@ circuit_breakers:
     max_pending_requests: 2048
     max_requests: 2048
     max_retries: 5
+
 ```
 
 ## 最佳实践
@@ -1023,10 +1077,12 @@ circuit_breakers:
 
 ```yaml
 health_checks:
+
 - timeout: 3s          # 适中的超时时间
   interval: 10s        # 不要过于频繁
   unhealthy_threshold: 3 # 避免误判
   healthy_threshold: 2   # 快速恢复
+
 ```
 
 ### 3. 连接池调优

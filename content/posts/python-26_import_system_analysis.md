@@ -72,6 +72,7 @@ PyImport_ImportModuleLevelObject(PyObject *name, PyObject *globals,
     int has_from;
 
     /*
+
      * 导入流程：
      * 1. 解析相对导入
      * 2. 计算绝对模块名
@@ -153,6 +154,7 @@ import_find_and_load(PyObject *abs_name)
     int import_time = _PyRuntime.preconfig.import_time;
 
     /*
+
      * 导入时间测量和锁管理
      */
     _PyTime_t t1 = 0, accumulated = 0;
@@ -203,6 +205,7 @@ resolve_name(PyObject *name, PyObject *globals, int level)
     Py_ssize_t last_dot;
 
     /*
+
      * 相对导入解析算法：
      * 1. 获取当前包名
      * 2. 根据level确定父包层级
@@ -282,6 +285,7 @@ static PyObject *
 find_builtin_module(PyObject *name)
 {
     /*
+
      * 内置模块查找算法：
      * 1. 在PyImport_Inittab中查找
      * 2. 检查扩展模块表
@@ -306,6 +310,7 @@ find_builtin_module(PyObject *name)
     }
 
     return spec ? spec : Py_None;
+
 }
 
 /* 文件系统模块查找 */
@@ -313,6 +318,7 @@ static PyObject *
 find_module_in_path(PyObject *name, PyObject *path)
 {
     /*
+
      * 文件系统查找算法：
      * 1. 遍历sys.path中的每个目录
      * 2. 尝试查找模块文件
@@ -350,6 +356,7 @@ find_module_in_path(PyObject *name, PyObject *path)
     }
 
     return Py_None;
+
 }
 
 /* 包模块查找 */
@@ -357,6 +364,7 @@ static PyObject *
 find_package_module(PyObject *fullname, PyObject *path)
 {
     /*
+
      * 包模块查找：
      * 1. 分析包层次结构
      * 2. 递归查找子包
@@ -413,6 +421,7 @@ find_package_module(PyObject *fullname, PyObject *path)
     Py_DECREF(submodule_search_locations);
 
     return result;
+
 }
 ```
 
@@ -426,6 +435,7 @@ static PyObject *
 load_source_module(PyObject *name, PyObject *pathname)
 {
     /*
+
      * 源代码加载流程：
      * 1. 读取源代码文件
      * 2. 编译为字节码
@@ -500,6 +510,7 @@ load_source_module(PyObject *name, PyObject *pathname)
     }
 
     return module;
+
 }
 
 /* 字节码模块加载器 */
@@ -507,6 +518,7 @@ static PyObject *
 load_bytecode_module(PyObject *name, PyObject *bytecode_path)
 {
     /*
+
      * 字节码加载流程：
      * 1. 读取.pyc文件
      * 2. 验证魔数和时间戳
@@ -567,6 +579,7 @@ load_bytecode_module(PyObject *name, PyObject *bytecode_path)
     Py_DECREF(result);
 
     return module;
+
 }
 
 /* 扩展模块加载器 */
@@ -574,6 +587,7 @@ static PyObject *
 load_extension_module(PyObject *name, PyObject *path)
 {
     /*
+
      * 扩展模块加载：
      * 1. 动态链接库加载
      * 2. 查找初始化函数

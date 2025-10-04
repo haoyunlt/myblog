@@ -21,6 +21,7 @@ weight: 1
 #### 2.1.1 硬件配置建议
 
 **Broker 节点配置**：
+
 ```yaml
 # 生产环境推荐配置
 CPU: 16-32 核心
@@ -39,6 +40,7 @@ managedLedgerCacheSizeMB=8192
 ```
 
 **BookKeeper 节点配置**：
+
 ```yaml
 # 硬件配置
 CPU: 8-16 核心
@@ -88,7 +90,7 @@ iptables -A INPUT -p tcp --dport 3181 -j ACCEPT
 // 推荐的主题命名规范
 // 格式：{租户}/{命名空间}/{应用}-{功能}-{环境}
 "company/production/user-events-v1"
-"company/production/order-processing-prod" 
+"company/production/order-processing-prod"
 "company/staging/notification-service-test"
 
 // 避免的命名方式
@@ -101,13 +103,17 @@ iptables -A INPUT -p tcp --dport 3181 -j ACCEPT
 
 ```java
 /**
+
  * 分区数量计算公式
  * 分区数 = (目标吞吐量 MB/s) / (单分区吞吐量 MB/s)
- * 
+
+ *
+
  * 生产环境建议：
  * - 高吞吐量主题：16-64 个分区
  * - 中等吞吐量主题：4-16 个分区  
  * - 低吞吐量主题：1-4 个分区
+
  */
 
 // 创建分区主题
@@ -139,7 +145,7 @@ Producer<OrderEvent> producer = client.newProducer(Schema.AVRO(OrderEvent.class)
 
 // 轮询路由 - 最大化吞吐量
 Producer<UserEvent> producer = client.newProducer(Schema.JSON(UserEvent.class))
-    .topic("persistent://company/events/user-events") 
+    .topic("persistent://company/events/user-events")
     .messageRouter(MessageRouter.RoundRobinPartition)
     .create();
 ```
@@ -258,6 +264,7 @@ public class RobustProducerExample {
     }
     
     /**
+
      * 带重试机制的消息发送
      */
     private static void sendMessageWithRetry(Producer<String> producer, String message, int maxRetries) {
@@ -314,6 +321,7 @@ public class RobustProducerExample {
         // 例如：写入数据库、发送到死信队列、记录错误日志等
         log.error("消息最终发送失败，需要人工处理: message={}", message, e);
     }
+
 }
 ```
 
@@ -325,6 +333,7 @@ public class RobustProducerExample {
 public class ConsumerPatternExamples {
     
     /**
+
      * 独占订阅模式 - 保证消息顺序
      * 适用场景：需要严格消息顺序的业务场景
      */
@@ -368,6 +377,7 @@ public class ConsumerPatternExamples {
             .receiverQueueSize(1000)
             .subscribe();
     }
+
 }
 ```
 
@@ -386,6 +396,7 @@ public class EfficientMessageProcessing {
     }
     
     /**
+
      * 批量消息处理 - 提高处理效率
      */
     public void processBatchMessages(PulsarClient client) throws PulsarClientException {
@@ -521,6 +532,7 @@ public class EfficientMessageProcessing {
             super(message);
         }
     }
+
 }
 ```
 
@@ -552,6 +564,7 @@ public class SchemaEvolutionExample {
     }
     
     /**
+
      * 演示 Schema 演化的最佳实践
      */
     public static void demonstrateSchemaEvolution(PulsarClient client) throws Exception {
@@ -623,6 +636,7 @@ public class SchemaEvolutionExample {
         // 实现 Schema 兼容性检查逻辑
         return true; // 简化示例
     }
+
 }
 ```
 
@@ -633,6 +647,7 @@ public class SchemaEvolutionExample {
 ```yaml
 # Prometheus 监控配置示例
 groups:
+
 - name: pulsar-broker
   rules:
   # 吞吐量监控
@@ -674,6 +689,7 @@ groups:
     annotations:
       summary: "High number of connections"
       description: "Active connections: {{ $value }}"
+
 ```
 
 ### 6.2 性能调优参数
@@ -819,11 +835,14 @@ done
 
 ```java
 /**
+
  * 常见异常处理指南
+
  */
 public class TroubleshootingGuide {
     
     /**
+
      * 处理 TopicDoesNotExistException
      */
     public void handleTopicNotExists(PulsarClient client, String topicName) {
@@ -906,6 +925,7 @@ public class TroubleshootingGuide {
         log.info("3. 启用 G1GC: -XX:+UseG1GC -XX:MaxGCPauseMillis=200");
         log.info("4. 监控内存使用: jstat -gc <pid> 5s");
     }
+
 }
 ```
 
@@ -952,7 +972,7 @@ public class SecurePulsarClient {
     public static PulsarClient createSecureClient() throws PulsarClientException {
         return PulsarClient.builder()
             .serviceUrl("pulsar+ssl://pulsar-cluster.example.com:6651")
-            .authentication("org.apache.pulsar.client.impl.auth.AuthenticationToken", 
+            .authentication("org.apache.pulsar.client.impl.auth.AuthenticationToken",
                 "token:eyJhbGciOiJIUzI1NiJ9...")
             
             // TLS 配置
@@ -1045,6 +1065,7 @@ echo "性能测试完成"
 # 性能调优检查清单
 performance_checklist:
   infrastructure:
+
     - "[ ] 使用 SSD 存储"
     - "[ ] 网络带宽 >= 10Gbps"
     - "[ ] 足够的 CPU 核心数"
@@ -1073,6 +1094,7 @@ performance_checklist:
     - "[ ] 避免热点分区"
     - "[ ] 批量处理消息"
     - "[ ] 合理的重试策略"
+
 ```
 
 ## 10. 总结

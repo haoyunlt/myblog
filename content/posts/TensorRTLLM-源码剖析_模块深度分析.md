@@ -67,6 +67,7 @@ class BaseLLM:
         初始化基类
 
         核心功能:
+
         1. 参数解析和验证
         2. 执行器类型选择
         3. MPI 会话管理
@@ -129,6 +130,7 @@ class BaseLLM:
             tokenizer=self._tokenizer,
             llm_args=self.args
         )
+
 ```
 
 #### generate() 方法深度分析
@@ -139,6 +141,7 @@ def generate(self, inputs, sampling_params=None, **kwargs):
     生成文本的核心方法
 
     执行流程:
+
     1. 输入预处理和验证
     2. 采样参数处理
     3. 请求创建和提交
@@ -306,6 +309,7 @@ class GenerationExecutor(ABC):
         初始化执行器基类
 
         功能组件:
+
         1. 后处理工作器配置
         2. 结果队列管理
         3. 错误处理机制
@@ -379,6 +383,7 @@ class GenerationExecutor(ABC):
         else:
             # 单进程模式
             return GenerationExecutorWorker(**kwargs)
+
 ```
 
 ### 2.3 GenerationExecutorWorker 详细实现
@@ -398,6 +403,7 @@ class GenerationExecutorWorker(BaseWorker):
     GenerationExecutorWorker (具体实现)
 
     核心功能:
+
     1. 推理引擎管理和初始化
     2. 多线程后台任务处理
     3. 请求提交和结果收集
@@ -557,6 +563,7 @@ class GenerationExecutorWorker(BaseWorker):
             self._iter_kv_events_result,
             lambda x: x  # 直接返回，不需要额外处理
         )
+
 ```
 
 ### 2.4 执行器时序图
@@ -680,6 +687,7 @@ class Builder:
             序列化的 TensorRT 引擎
 
         构建流程:
+
         1. 配置验证和设置
         2. 优化配置文件添加
         3. 权重处理
@@ -801,6 +809,7 @@ class Builder:
             max_shape[1] = config.max_seq_len
 
         return max_shape
+
 ```
 
 ### 3.3 build() 函数深度分析
@@ -820,6 +829,7 @@ def build(model: PretrainedModel, build_config: BuildConfig) -> Engine:
         构建好的引擎对象
 
     构建流程:
+
     1. 配置预处理
     2. 网络构建
     3. 图优化
@@ -938,6 +948,7 @@ def build(model: PretrainedModel, build_config: BuildConfig) -> Engine:
     logger.info(f"Total build time: {total_time:.2f}s")
 
     return engine
+
 ```
 
 ### 3.4 构建器时序图
@@ -1040,6 +1051,7 @@ class Session:
         初始化会话
 
         功能:
+
         1. 创建 TensorRT 运行时
         2. 反序列化引擎
         3. 创建执行上下文
@@ -1181,6 +1193,7 @@ class Session:
         except Exception as e:
             logger.error(f"Failed to set weight streaming: {e}")
             raise
+
 ```
 
 ### 4.3 ModelRunner 类实现
@@ -1308,6 +1321,7 @@ class ModelRunner(ModelRunnerMixin):
             生成结果字典
 
         执行流程:
+
         1. 输入预处理
         2. 准备推理输入
         3. 执行推理
@@ -1399,6 +1413,7 @@ class ModelRunner(ModelRunnerMixin):
             inputs['lora_ranks'] = kwargs['lora_uids']
 
         return inputs
+
 ```
 
 ### 4.4 运行时时序图
@@ -1598,6 +1613,7 @@ def quantize(model, quant_config: Union[QuantConfig, LayerQuantConfig]):
         量化后的模型
 
     量化流程:
+
     1. 模块遍历和分析
     2. 量化方法选择
     3. 权重量化转换

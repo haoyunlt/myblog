@@ -25,8 +25,8 @@ slug: "autogen-dotnet-core-analysis"
 ### 核心架构图
 
 <div class="mermaid-image-container" data-chart-id="autogen-dotnet-core-analysis-1">
-  <img src="/images/mermaid/autogen-dotnet-core-analysis-1.svg" 
-       alt="Mermaid Chart autogen-dotnet-core-analysis-1" 
+  <img src="/images/mermaid/autogen-dotnet-core-analysis-1.svg"
+       alt="Mermaid Chart autogen-dotnet-core-analysis-1"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -172,6 +172,7 @@ graph TB
 #### 1. AgentRuntime.SendMessageAsync() - 消息发送核心
 
 **入口函数**：
+
 ```csharp
 public async Task<TResponse> SendMessageAsync<TResponse>(
     object message,
@@ -180,14 +181,15 @@ public async Task<TResponse> SendMessageAsync<TResponse>(
     CancellationToken cancellationToken = default)
 {
     /*
+
      * .NET版本的消息发送核心API
-     * 
+     *
      * 功能说明：
      * 1. 强类型的消息发送接口，利用.NET泛型系统
      * 2. 集成.NET依赖注入容器，支持复杂的对象图构建
      * 3. 基于CancellationToken的统一取消机制
      * 4. 支持异步/等待模式的现代C#编程范式
-     * 
+     *
      * 设计特点：
      * - 编译时类型安全：泛型约束确保类型匹配
      * - 内存高效：避免装箱拆箱，使用结构体传递小对象
@@ -243,7 +245,7 @@ public async Task<TResponse> SendMessageAsync<TResponse>(
         if (response != null)
         {
             var json = JsonSerializer.Serialize(response);
-            return JsonSerializer.Deserialize<TResponse>(json) 
+            return JsonSerializer.Deserialize<TResponse>(json)
                 ?? throw new InvalidOperationException("反序列化失败");
         }
         
@@ -252,31 +254,34 @@ public async Task<TResponse> SendMessageAsync<TResponse>(
     catch (Exception ex) when (!(ex is OperationCanceledException))
     {
         // 9. 异常处理和日志记录
-        _logger.LogError(ex, "消息发送失败: {MessageType} -> {Recipient}", 
+        _logger.LogError(ex, "消息发送失败: {MessageType} -> {Recipient}",
             message.GetType().Name, recipient);
         
         // 10. 包装异常以提供更多上下文
         throw new MessageDeliveryException(
             $"向代理 {recipient} 发送消息失败", ex);
     }
+
 }
 ```
 
 **调用链路关键函数**：
 
 1. **GetAgentInstanceAsync() - 代理实例获取**：
+
 ```csharp
 private async Task<IAgent> GetAgentInstanceAsync(AgentId agentId, CancellationToken cancellationToken)
 {
     /*
+
      * .NET版本的代理实例获取实现
-     * 
+     *
      * 功能说明：
      * 1. 集成.NET依赖注入容器，支持复杂的依赖关系
      * 2. 实现基于IServiceScope的生命周期管理
      * 3. 支持代理的配置绑定和选项模式
      * 4. 提供代理的健康检查和监控集成
-     * 
+     *
      * 设计模式：
      * - 工厂模式：通过IServiceProvider创建实例
      * - 单例模式：支持单例和瞬态生命周期
@@ -350,22 +355,25 @@ private async Task<IAgent> GetAgentInstanceAsync(AgentId agentId, CancellationTo
             throw new AgentInstantiationException($"无法创建代理 {agentId}", ex);
         }
     }
+
 }
 ```
 
-2. **Agent.HandleMessageAsync() - 代理消息处理**：
+1. **Agent.HandleMessageAsync() - 代理消息处理**：
+
 ```csharp
 public virtual async Task<object> HandleMessageAsync(object message, MessageContext context)
 {
     /*
+
      * .NET版本的代理消息处理实现
-     * 
+     *
      * 功能说明：
      * 1. 基于反射的消息处理器发现和调用
      * 2. 支持异步和同步处理器的统一调用
      * 3. 集成.NET诊断和性能计数器
      * 4. 提供丰富的异常处理和错误恢复机制
-     * 
+     *
      * 性能优化：
      * - 处理器缓存：避免重复反射开销
      * - 委托编译：将反射调用编译为委托
@@ -413,14 +421,14 @@ public virtual async Task<object> HandleMessageAsync(object message, MessageCont
         
         // 7. 记录性能指标
         _performanceCounters.RecordMessageProcessed(
-            messageType.Name, 
+            messageType.Name,
             stopwatch.ElapsedMilliseconds);
         
         // 8. 执行后置拦截器
         await ExecuteInterceptorsAsync(InterceptorType.After, message, context, result);
         
         // 9. 记录成功日志
-        _logger.LogDebug("消息处理成功: {MessageType} 耗时: {ElapsedMs}ms", 
+        _logger.LogDebug("消息处理成功: {MessageType} 耗时: {ElapsedMs}ms",
             messageType.Name, stopwatch.ElapsedMilliseconds);
         
         return result;
@@ -439,22 +447,25 @@ public virtual async Task<object> HandleMessageAsync(object message, MessageCont
         
         throw;
     }
+
 }
 ```
 
-3. **HandlerInvoker.InvokeAsync() - 处理器调用核心**：
+1. **HandlerInvoker.InvokeAsync() - 处理器调用核心**：
+
 ```csharp
 public sealed class HandlerInvoker
 {
     /*
+
      * 处理器调用器的核心实现
-     * 
+     *
      * 功能说明：
      * 1. 统一不同返回类型的处理器调用接口
      * 2. 实现泛型类型擦除，支持任意返回类型
      * 3. 优化反射调用性能，使用编译委托
      * 4. 提供完整的异常处理和上下文传递
-     * 
+     *
      * 技术亮点：
      * - 类型擦除：TypeEraseAwait方法的巧妙实现
      * - 委托缓存：避免重复的反射开销
@@ -476,13 +487,13 @@ public sealed class HandlerInvoker
         if (target != null)
         {
             // 实例方法调用
-            baseInvocation = (message, context) => 
+            baseInvocation = (message, context) =>
                 methodInfo.Invoke(target, new object?[] { message, context });
         }
         else if (methodInfo.IsStatic)
         {
             // 静态方法调用
-            baseInvocation = (message, context) => 
+            baseInvocation = (message, context) =>
                 methodInfo.Invoke(null, new object?[] { message, context });
         }
         else
@@ -500,7 +511,7 @@ public sealed class HandlerInvoker
                 return null;
             };
         }
-        else if (methodInfo.ReturnType.IsGenericType && 
+        else if (methodInfo.ReturnType.IsGenericType &&
                  methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(ValueTask<>))
         {
             // 有返回值的ValueTask<T> - 关键的类型擦除实现
@@ -527,7 +538,7 @@ public sealed class HandlerInvoker
                 return null;
             };
         }
-        else if (methodInfo.ReturnType.IsGenericType && 
+        else if (methodInfo.ReturnType.IsGenericType &&
                  methodInfo.ReturnType.GetGenericTypeDefinition() == typeof(Task<>))
         {
             // Task<T>返回类型
@@ -559,13 +570,13 @@ public sealed class HandlerInvoker
     {
         /*
          * 类型擦除的关键实现
-         * 
+         *
          * 功能说明：
          * 1. 将强类型的ValueTask<T>转换为ValueTask<object?>
          * 2. 保持异步语义不变，避免阻塞
          * 3. 支持任意类型T的统一处理
          * 4. 是实现统一消息处理接口的关键技术
-         * 
+         *
          * 技术原理：
          * - 泛型方法在运行时会为每个类型T生成专门的实现
          * - await操作保持了异步上下文的正确传递
@@ -581,7 +592,7 @@ public sealed class HandlerInvoker
     {
         /*
          * 统一的处理器调用入口
-         * 
+         *
          * 功能说明：
          * 1. 提供统一的调用接口，隐藏实现细节
          * 2. 处理异常传播和上下文保持
@@ -598,6 +609,7 @@ public sealed class HandlerInvoker
             return ValueTask.FromException<object?>(ex);
         }
     }
+
 }
 ```
 
@@ -686,8 +698,9 @@ classDiagram
 public static class ServiceCollectionExtensions
 {
     /*
+
      * AutoGen服务注册的扩展方法集合
-     * 
+     *
      * 功能说明：
      * 1. 提供流畅的API用于注册AutoGen服务
      * 2. 集成.NET配置系统和选项模式
@@ -704,7 +717,7 @@ public static class ServiceCollectionExtensions
     {
         /*
          * 核心服务注册方法
-         * 
+         *
          * 注册的服务包括：
          * 1. AgentRuntime - 代理运行时（单例）
          * 2. IMessageSerializer - 消息序列化器
@@ -741,7 +754,7 @@ public static class ServiceCollectionExtensions
         
         // 8. 注册日志和诊断
         services.AddLogging();
-        services.AddSingleton<ActivitySource>(provider => 
+        services.AddSingleton<ActivitySource>(provider =>
             new ActivitySource("Microsoft.AutoGen.Core"));
         
         return services;
@@ -758,7 +771,7 @@ public static class ServiceCollectionExtensions
     {
         /*
          * 代理注册的核心方法
-         * 
+         *
          * 功能说明：
          * 1. 注册代理类型到DI容器
          * 2. 配置代理的生命周期
@@ -768,7 +781,7 @@ public static class ServiceCollectionExtensions
         
         // 1. 注册代理类型
         services.Add(new ServiceDescriptor(typeof(TAgent), typeof(TAgent), lifetime));
-        services.Add(new ServiceDescriptor(typeof(IAgent), 
+        services.Add(new ServiceDescriptor(typeof(IAgent),
             provider => provider.GetRequiredService<TAgent>(), lifetime));
         
         // 2. 注册代理配置
@@ -806,7 +819,7 @@ public static class ServiceCollectionExtensions
     {
         /*
          * 消息处理器发现的实现
-         * 
+         *
          * 功能说明：
          * 1. 通过反射扫描代理类的方法
          * 2. 识别带有MessageHandler特性的方法
@@ -865,7 +878,7 @@ public static class ServiceCollectionExtensions
     {
         /*
          * 返回类型验证逻辑
-         * 
+         *
          * 支持的返回类型：
          * 1. Task - 异步无返回值
          * 2. Task<T> - 异步有返回值
@@ -902,7 +915,7 @@ public static class ServiceCollectionExtensions
     {
         /*
          * 自动依赖注册逻辑
-         * 
+         *
          * 功能说明：
          * 1. 分析代理的构造函数参数
          * 2. 自动注册常见的依赖服务
@@ -935,6 +948,7 @@ public static class ServiceCollectionExtensions
             }
         }
     }
+
 }
 ```
 
@@ -944,8 +958,9 @@ public static class ServiceCollectionExtensions
 public sealed class AgentInstantiationContext
 {
     /*
+
      * 代理实例化上下文的实现
-     * 
+     *
      * 功能说明：
      * 1. 提供代理创建过程中的上下文信息
      * 2. 支持嵌套的上下文管理
@@ -953,13 +968,13 @@ public sealed class AgentInstantiationContext
      * 4. 支持依赖注入的循环依赖检测
      */
     
-    private static readonly AsyncLocal<Stack<InstantiationContext>> _contextStack = 
+    private static readonly AsyncLocal<Stack<InstantiationContext>> _contextStack =
         new AsyncLocal<Stack<InstantiationContext>>();
     
     /// <summary>
     /// 当前实例化上下文
     /// </summary>
-    public static InstantiationContext? Current => 
+    public static InstantiationContext? Current =>
         _contextStack.Value?.Count > 0 ? _contextStack.Value.Peek() : null;
     
     /// <summary>
@@ -969,7 +984,7 @@ public sealed class AgentInstantiationContext
     {
         /*
          * 上下文进入的实现
-         * 
+         *
          * 功能说明：
          * 1. 创建新的上下文并压入栈
          * 2. 检测循环依赖
@@ -983,7 +998,7 @@ public sealed class AgentInstantiationContext
         {
             if (existingContext.AgentId.Equals(agentId))
             {
-                var dependencyChain = string.Join(" -> ", 
+                var dependencyChain = string.Join(" -> ",
                     stack.Reverse().Select(c => c.AgentId.ToString()));
                 
                 throw new CircularDependencyException(
@@ -1012,7 +1027,7 @@ public sealed class AgentInstantiationContext
     {
         /*
          * 上下文信息填充
-         * 
+         *
          * 功能说明：
          * 1. 将当前上下文信息注入到服务提供者
          * 2. 支持代理获取自身的创建上下文
@@ -1056,6 +1071,7 @@ public sealed class AgentInstantiationContext
             }
         }
     }
+
 }
 
 /// <summary>
@@ -1116,8 +1132,9 @@ classDiagram
 public class JsonMessageSerializer : IMessageSerializer
 {
     /*
+
      * JSON消息序列化器的实现
-     * 
+     *
      * 功能说明：
      * 1. 基于System.Text.Json的高性能序列化
      * 2. 支持类型信息的保存和恢复
@@ -1160,7 +1177,7 @@ public class JsonMessageSerializer : IMessageSerializer
     {
         /*
          * 消息序列化的核心实现
-         * 
+         *
          * 功能说明：
          * 1. 包装消息对象，添加类型信息
          * 2. 使用高性能的JSON序列化
@@ -1192,7 +1209,7 @@ public class JsonMessageSerializer : IMessageSerializer
             
             // 3. 记录序列化指标
             var serializedSize = stream.Length;
-            _logger.LogDebug("消息序列化完成: {MessageType}, 大小: {Size} bytes", 
+            _logger.LogDebug("消息序列化完成: {MessageType}, 大小: {Size} bytes",
                 messageType.Name, serializedSize);
             
             return stream.ToArray();
@@ -1211,7 +1228,7 @@ public class JsonMessageSerializer : IMessageSerializer
     {
         /*
          * 消息反序列化的核心实现
-         * 
+         *
          * 功能说明：
          * 1. 解析消息包装器，获取类型信息
          * 2. 动态加载消息类型
@@ -1278,7 +1295,7 @@ public class JsonMessageSerializer : IMessageSerializer
     {
         /*
          * 序列化能力检查
-         * 
+         *
          * 功能说明：
          * 1. 检查类型是否可序列化
          * 2. 验证类型注册状态
@@ -1294,8 +1311,8 @@ public class JsonMessageSerializer : IMessageSerializer
         
         // 检查是否有无参构造函数或JSON构造函数
         var constructors = messageType.GetConstructors();
-        var hasValidConstructor = constructors.Any(c => 
-            c.GetParameters().Length == 0 || 
+        var hasValidConstructor = constructors.Any(c =>
+            c.GetParameters().Length == 0 ||
             c.GetCustomAttribute<JsonConstructorAttribute>() != null);
         
         if (!hasValidConstructor)
@@ -1304,6 +1321,7 @@ public class JsonMessageSerializer : IMessageSerializer
         // 检查类型注册
         return _typeRegistry.GetName(messageType) != null;
     }
+
 }
 
 /// <summary>
@@ -1329,8 +1347,9 @@ internal class MessageWrapper
 public class HighPerformanceAgent : Agent
 {
     /*
+
      * 高性能代理实现的最佳实践
-     * 
+     *
      * 优化技术：
      * 1. 对象池化：重用消息对象，减少GC压力
      * 2. 异步批处理：批量处理消息，提高吞吐量
@@ -1347,7 +1366,7 @@ public class HighPerformanceAgent : Agent
         IOptions<AgentOptions> options)
     {
         _contextPool = contextPool;
-        _processingLimiter = new SemaphoreSlim(options.Value.MaxConcurrentMessages, 
+        _processingLimiter = new SemaphoreSlim(options.Value.MaxConcurrentMessages,
             options.Value.MaxConcurrentMessages);
         
         // 创建高性能消息通道
@@ -1366,12 +1385,12 @@ public class HighPerformanceAgent : Agent
     
     [MessageHandler]
     public async ValueTask<string> HandleHighVolumeMessage(
-        HighVolumeMessage message, 
+        HighVolumeMessage message,
         MessageContext context)
     {
         /*
          * 高容量消息处理的优化实现
-         * 
+         *
          * 优化要点：
          * 1. 使用ValueTask减少堆分配
          * 2. 避免不必要的异步状态机
@@ -1401,7 +1420,7 @@ public class HighPerformanceAgent : Agent
     {
         /*
          * 简单消息的同步处理
-         * 
+         *
          * 优化技术：
          * 1. 使用Span<T>避免内存分配
          * 2. 栈上分配临时缓冲区
@@ -1415,12 +1434,12 @@ public class HighPerformanceAgent : Agent
     }
     
     private async ValueTask<string> ProcessComplexMessageAsync(
-        HighVolumeMessage message, 
+        HighVolumeMessage message,
         MessageContext context)
     {
         /*
          * 复杂消息的异步处理
-         * 
+         *
          * 优化技术：
          * 1. 流水线处理：重叠I/O和计算
          * 2. 内存池化：重用大型缓冲区
@@ -1438,8 +1457,8 @@ public class HighPerformanceAgent : Agent
         for (int i = 0; i < Environment.ProcessorCount; i++)
         {
             var start = i * chunkSize;
-            var length = (i == Environment.ProcessorCount - 1) 
-                ? buffer.Memory.Length - start 
+            var length = (i == Environment.ProcessorCount - 1)
+                ? buffer.Memory.Length - start
                 : chunkSize;
             
             var chunk = buffer.Memory.Slice(start, length);
@@ -1454,7 +1473,7 @@ public class HighPerformanceAgent : Agent
     {
         /*
          * 后台消息处理循环
-         * 
+         *
          * 优化技术：
          * 1. 批量处理：一次处理多个消息
          * 2. 自适应批大小：根据负载调整
@@ -1469,7 +1488,7 @@ public class HighPerformanceAgent : Agent
             messages.Add(message);
             
             // 达到批大小或通道为空时处理批次
-            if (messages.Count >= batchSize || 
+            if (messages.Count >= batchSize ||
                 !_messageChannel.Reader.TryRead(out var nextMessage))
             {
                 await ProcessMessageBatch(messages);
@@ -1484,6 +1503,7 @@ public class HighPerformanceAgent : Agent
             }
         }
     }
+
 }
 ```
 
@@ -1493,8 +1513,9 @@ public class HighPerformanceAgent : Agent
 public class MemoryOptimizedRuntime : AgentRuntime
 {
     /*
+
      * 内存优化的运行时实现
-     * 
+     *
      * 优化策略：
      * 1. 对象池化：重用频繁创建的对象
      * 2. 弱引用缓存：允许GC回收不活跃的代理
@@ -1516,17 +1537,17 @@ public class MemoryOptimizedRuntime : AgentRuntime
         _memoryMonitor = new MemoryPressureMonitor();
         
         // 定期清理不活跃的代理
-        _cleanupTimer = new Timer(CleanupInactiveAgents, null, 
+        _cleanupTimer = new Timer(CleanupInactiveAgents, null,
             TimeSpan.FromMinutes(5), TimeSpan.FromMinutes(5));
     }
     
     protected override async Task<IAgent> GetAgentInstanceAsync(
-        AgentId agentId, 
+        AgentId agentId,
         CancellationToken cancellationToken)
     {
         /*
          * 内存优化的代理实例获取
-         * 
+         *
          * 优化技术：
          * 1. 弱引用缓存：允许GC回收
          * 2. 延迟加载：按需创建实例
@@ -1552,7 +1573,7 @@ public class MemoryOptimizedRuntime : AgentRuntime
         var agent = await base.GetAgentInstanceAsync(agentId, cancellationToken);
         
         // 4. 添加到弱引用缓存
-        _agentCache.AddOrUpdate(agentId, 
+        _agentCache.AddOrUpdate(agentId,
             new WeakReference<IAgent>(agent),
             (key, oldRef) => new WeakReference<IAgent>(agent));
         
@@ -1563,7 +1584,7 @@ public class MemoryOptimizedRuntime : AgentRuntime
     {
         /*
          * 清理不活跃代理的实现
-         * 
+         *
          * 清理策略：
          * 1. 移除已被GC回收的弱引用
          * 2. 根据最后访问时间清理长期不活跃的代理
@@ -1579,7 +1600,7 @@ public class MemoryOptimizedRuntime : AgentRuntime
                 // 代理已被GC回收
                 keysToRemove.Add(kvp.Key);
             }
-            else if (_memoryMonitor.IsHighPressure && 
+            else if (_memoryMonitor.IsHighPressure &&
                      ShouldEvictAgent(agent))
             {
                 // 内存压力下主动清理
@@ -1601,6 +1622,7 @@ public class MemoryOptimizedRuntime : AgentRuntime
         
         _logger.LogDebug("清理了 {Count} 个不活跃代理", keysToRemove.Count);
     }
+
 }
 ```
 
@@ -1610,8 +1632,9 @@ public class MemoryOptimizedRuntime : AgentRuntime
 public class ResilientAgent : Agent
 {
     /*
+
      * 弹性代理的实现
-     * 
+     *
      * 弹性策略：
      * 1. 重试机制：指数退避重试
      * 2. 熔断器：防止级联失败
@@ -1625,12 +1648,12 @@ public class ResilientAgent : Agent
     
     [MessageHandler]
     public async Task<string> HandleWithResilience(
-        RiskyMessage message, 
+        RiskyMessage message,
         MessageContext context)
     {
         /*
          * 弹性消息处理的实现
-         * 
+         *
          * 处理流程：
          * 1. 熔断器检查
          * 2. 重试策略执行
@@ -1669,12 +1692,12 @@ public class ResilientAgent : Agent
     }
     
     private async Task<string> HandleDegradedRequest(
-        RiskyMessage message, 
+        RiskyMessage message,
         MessageContext context)
     {
         /*
          * 降级处理的实现
-         * 
+         *
          * 降级策略：
          * 1. 返回缓存结果
          * 2. 使用默认响应
@@ -1691,6 +1714,7 @@ public class ResilientAgent : Agent
         // 返回默认响应
         return $"服务暂时不可用，请稍后重试。请求ID: {context.MessageId}";
     }
+
 }
 ```
 
@@ -1701,8 +1725,8 @@ public class ResilientAgent : Agent
 ### 5.1 核心接口继承体系
 
 <div class="mermaid-image-container" data-chart-id="autogen-dotnet-core-analysis-2">
-  <img src="/images/mermaid/autogen-dotnet-core-analysis-2.svg" 
-       alt="Mermaid Chart autogen-dotnet-core-analysis-2" 
+  <img src="/images/mermaid/autogen-dotnet-core-analysis-2.svg"
+       alt="Mermaid Chart autogen-dotnet-core-analysis-2"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -1785,7 +1809,7 @@ public class HandlerInvoker
 {
     /// <summary>
     /// 处理器调用器的核心实现
-    /// 
+    ///
     /// 关键特性：
     /// 1. 类型擦除：统一不同泛型类型的调用接口
     /// 2. 异步适配：处理同步和异步方法的统一调用
@@ -1802,8 +1826,8 @@ public class HandlerInvoker
     }
     
     private Func<object, MessageContext, ValueTask<object?>> BuildInvocation(
-        MethodInfo method, 
-        Type messageType, 
+        MethodInfo method,
+        Type messageType,
         Type? responseType)
     {
         // 2. 根据方法签名构建不同的调用策略
@@ -1820,7 +1844,7 @@ public class HandlerInvoker
     }
     
     private Func<object, MessageContext, ValueTask<object?>> BuildOneWayInvocation(
-        MethodInfo method, 
+        MethodInfo method,
         Type messageType)
     {
         return async (agent, context) =>
@@ -1848,8 +1872,8 @@ public class HandlerInvoker
     }
     
     private Func<object, MessageContext, ValueTask<object?>> BuildTwoWayInvocation(
-        MethodInfo method, 
-        Type messageType, 
+        MethodInfo method,
+        Type messageType,
         Type responseType)
     {
         return async (agent, context) =>
@@ -1879,7 +1903,7 @@ public class HandlerInvoker
     {
         /// <summary>
         /// 类型擦除的异步等待实现
-        /// 
+        ///
         /// 核心技术：
         /// 1. 反射获取泛型Task的Result属性
         /// 2. 动态等待不同类型的异步结果
@@ -1891,7 +1915,7 @@ public class HandlerInvoker
         var resultType = result.GetType();
         
         // 9. 处理ValueTask<T>
-        if (resultType.IsGenericType && 
+        if (resultType.IsGenericType &&
             resultType.GetGenericTypeDefinition() == typeof(ValueTask<>))
         {
             // 获取AsTask方法并调用
@@ -1905,7 +1929,7 @@ public class HandlerInvoker
         }
         
         // 10. 处理Task<T>
-        if (resultType.IsGenericType && 
+        if (resultType.IsGenericType &&
             resultType.GetGenericTypeDefinition() == typeof(Task<>))
         {
             var task = (Task)result;
@@ -1930,7 +1954,7 @@ public class AgentInstantiationContext
 {
     /// <summary>
     /// 代理实例化上下文的实现
-    /// 
+    ///
     /// 核心功能：
     /// 1. 上下文传播：在代理创建过程中传递运行时信息
     /// 2. 依赖注入集成：与.NET DI容器无缝集成
@@ -1947,8 +1971,8 @@ public class AgentInstantiationContext
     public IServiceProvider ServiceProvider { get; }
     
     private AgentInstantiationContext(
-        AgentId agentId, 
-        IAgentRuntime runtime, 
+        AgentId agentId,
+        IAgentRuntime runtime,
         IServiceProvider serviceProvider)
     {
         AgentId = agentId;
@@ -1957,8 +1981,8 @@ public class AgentInstantiationContext
     }
     
     public static IDisposable Create(
-        AgentId agentId, 
-        IAgentRuntime runtime, 
+        AgentId agentId,
+        IAgentRuntime runtime,
         IServiceProvider serviceProvider)
     {
         // 1. 创建新的上下文实例
@@ -1999,7 +2023,7 @@ public interface ISaveState
 {
     /// <summary>
     /// 状态保存接口定义
-    /// 
+    ///
     /// 设计原则：
     /// 1. 简单性：最小化状态保存的复杂度
     /// 2. 灵活性：支持不同的序列化策略
@@ -2015,7 +2039,7 @@ public abstract class StatefulAgent : BaseAgent, ISaveState
 {
     /// <summary>
     /// 有状态代理的基础实现
-    /// 
+    ///
     /// 状态管理策略：
     /// 1. 增量保存：只保存变更的状态
     /// 2. 版本控制：支持状态版本管理

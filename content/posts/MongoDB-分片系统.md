@@ -88,13 +88,17 @@ Grid是分片系统的核心协调者，管理所有分片相关的全局资源�
 
 ```cpp
 /**
+
  * Grid - 分片系统全局上下文管理器
- * 
+
+ *
+
  * 功能特点:
  * - 管理分片系统的所有全局资源
  * - 协调各个分片服务组件
  * - 提供统一的分片操作接口
  * - 支持mongos和mongod两种运行模式
+
  */
 class Grid {
 private:
@@ -124,6 +128,7 @@ private:
     
 public:
     /**
+
      * 获取Grid实例
      * @param serviceContext 服务上下文
      * @return Grid指针
@@ -219,6 +224,7 @@ public:
     bool isShardingInitialized() const {
         return _shardingInitialized.load();
     }
+
 };
 ```
 
@@ -228,13 +234,17 @@ ShardRegistry管理集群中所有分片的连接和状态信息。
 
 ```cpp
 /**
+
  * ShardRegistry - 分片注册表和连接管理器
- * 
+
+ *
+
  * 功能特点:
  * - 维护所有分片的连接信息
  * - 支持分片的动态添加和删除
  * - 提供分片发现和连接管理
  * - 实现分片状态监控和故障转移
+
  */
 class ShardRegistry {
 private:
@@ -255,6 +265,7 @@ private:
     
 public:
     /**
+
      * 构造函数
      * @param shardFactory 分片工厂
      * @param configServerConnectionString 配置服务器连接串
@@ -269,7 +280,7 @@ public:
      * @param shardId 分片ID
      * @return 分片指针，如果不存在则返回nullptr
      */
-    std::shared_ptr<Shard> getShardNoReload(OperationContext* opCtx, 
+    std::shared_ptr<Shard> getShardNoReload(OperationContext* opCtx,
                                            const ShardId& shardId) {
         auto shardData = _data.acquire(opCtx, shardId);
         return shardData->findByShardId(shardId);
@@ -336,7 +347,7 @@ public:
         
         // 5. 保存到配置数据库
         Status insertStatus = catalogClient(opCtx)->insertConfigDocument(
-            opCtx, ShardType::ConfigNS, shardType.toBSON(), 
+            opCtx, ShardType::ConfigNS, shardType.toBSON(),
             ShardingCatalogClient::kMajorityWriteConcern);
         
         if (!insertStatus.isOK()) {
@@ -365,13 +376,13 @@ public:
         // 2. 检查是否还有数据在该分片上
         auto collections = getAllCollectionsForShard(opCtx, shardId);
         if (!collections.empty()) {
-            return Status(ErrorCodes::IllegalOperation, 
+            return Status(ErrorCodes::IllegalOperation,
                          "分片上仍有数据，无法移除");
         }
         
         // 3. 从配置数据库删除
         Status deleteStatus = catalogClient(opCtx)->removeConfigDocuments(
-            opCtx, ShardType::ConfigNS, 
+            opCtx, ShardType::ConfigNS,
             BSON(ShardType::name() << shardId.toString()),
             ShardingCatalogClient::kMajorityWriteConcern);
         
@@ -384,6 +395,7 @@ public:
         
         return Status::OK();
     }
+
 };
 ```
 
@@ -393,13 +405,17 @@ ChunkManager管理集合的数据分布信息，包括分片键和数据块的�
 
 ```cpp
 /**
+
  * ChunkManager - 数据块管理器
- * 
+
+ *
+
  * 功能特点:
  * - 管理集合的分片键和数据块信息
  * - 提供数据路由和定位功能
  * - 支持数据块的分割和合并
  * - 实现查询范围的分片映射
+
  */
 class ChunkManager {
 private:
@@ -423,6 +439,7 @@ private:
     
 public:
     /**
+
      * 构造函数
      * @param nss 集合命名空间
      * @param epoch 集合纪元
@@ -599,6 +616,7 @@ public:
         
         return builder.obj();
     }
+
 };
 ```
 
@@ -644,13 +662,18 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * ClusterQueryRouter - 集群查询路由器
- * 
+
+ *
+
  * 负责将客户端查询路由到正确的分片并合并结果
+
  */
 class ClusterQueryRouter {
 public:
     /**
+
      * 执行分片查询
      * @param opCtx 操作上下文
      * @param request 查询请求
@@ -696,7 +719,7 @@ public:
         }
         
         // 4. 并行发送查询到各个分片
-        AsyncRequestsSender requestSender(opCtx, 
+        AsyncRequestsSender requestSender(opCtx,
                                          Grid::get(opCtx)->getExecutorPool(),
                                          request.nss.db().toString(),
                                          std::move(requests),
@@ -731,20 +754,23 @@ public:
                                        request.sort);
     }
     
+
 private:
     /**
+
      * 获取集合路由信息
      * @param opCtx 操作上下文
      * @param nss 集合命名空间
      * @return 路由信息
      */
     StatusWith<std::shared_ptr<ChunkManager>>
-    getCollectionRoutingInfo(OperationContext* opCtx, 
+    getCollectionRoutingInfo(OperationContext* opCtx,
                            const NamespaceString& nss) {
         
         auto catalogCache = Grid::get(opCtx)->catalogCache();
         return catalogCache->getCollectionRoutingInfo(opCtx, nss);
     }
+
 };
 ```
 
@@ -754,13 +780,17 @@ MongoDB的负载均衡器自动监控和调整数据分布：
 
 ```cpp
 /**
+
  * Balancer - 负载均衡器
- * 
+
+ *
+
  * 功能特点:
  * - 自动监控分片间的数据分布
  * - 执行数据块迁移以平衡负载
  * - 支持均衡策略配置
  * - 提供均衡操作的暂停和恢复
+
  */
 class Balancer {
 private:
@@ -776,6 +806,7 @@ private:
     
 public:
     /**
+
      * 执行一轮负载均衡
      * @param opCtx 操作上下文
      * @return 均衡操作结果
@@ -847,22 +878,28 @@ public:
         auto chunkManager = getChunkManager(opCtx, nss);
         return _policy->isBalanced(chunkManager);
     }
+
 };
 
 /**
+
  * BalancerPolicy - 负载均衡策略
- * 
+
+ *
+
  * 实现具体的均衡算法和迁移决策
+
  */
 class BalancerPolicy {
 public:
     /**
+
      * 计算均衡迁移方案
      * @param chunkManager 数据块管理器
      * @param shardStats 分片统计信息
      * @return 迁移操作列表
      */
-    std::vector<MigrationRequest> 
+    std::vector<MigrationRequest>
     balance(const ChunkManager& chunkManager,
            const std::vector<ShardStatistics>& shardStats) {
         
@@ -916,8 +953,10 @@ public:
         return migrations;
     }
     
+
 private:
     /**
+
      * 计算不平衡阈值
      * @param numShards 分片数量
      * @return 不平衡阈值
@@ -926,6 +965,7 @@ private:
         // 分片数量越多，阈值越高
         return std::max(1, numShards / 5);
     }
+
 };
 ```
 
@@ -991,8 +1031,8 @@ sh.addBalancerWindow(2, 6)  // 只在凌晨2点到6点进行均衡
 sh.disableBalancing("myapp.orders")
 
 // 4. 手动移动数据块
-sh.moveChunk("myapp.orders", 
-            {customerId: 1000}, 
+sh.moveChunk("myapp.orders",
+            {customerId: 1000},
             "shard0001")
 
 // 5. 分割数据块
@@ -1016,7 +1056,7 @@ db.stats()
 db.printShardingStatus()
 
 // 4. 监控迁移操作
-db.adminCommand("isdbgrid") 
+db.adminCommand("isdbgrid")
 db.currentOp({
     "command.moveChunk": {$exists: true}
 })

@@ -863,7 +863,7 @@ func analyzeLogPatterns(logContent string) *LogAnalysis {
         },
         "Error: Cannot find module": {
             Category:    "import",
-            Severity:    "error", 
+            Severity:    "error",
             Suggestion:  "检查模块导入路径",
             AutoFix:     "npm install missing-module",
         },

@@ -175,8 +175,8 @@ class Action(SerializationMixin, ContextMixin, BaseModel):
 
     # 基础属性
     name: str = ""                          # 动作名称，默认为类名
-    i_context: Union[dict, CodingContext, CodeSummarizeContext, 
-                    TestingContext, RunCodeContext, 
+    i_context: Union[dict, CodingContext, CodeSummarizeContext,
+                    TestingContext, RunCodeContext,
                     CodePlanAndChangeContext, str, None] = ""  # 输入上下文
     prefix: str = ""                        # 系统消息前缀
     desc: str = ""                          # 动作描述，用于技能管理
@@ -210,10 +210,10 @@ class Action(SerializationMixin, ContextMixin, BaseModel):
             name = values["name"]
             i = values.pop("instruction")
             values["node"] = ActionNode(
-                key=name, 
-                expected_type=str, 
-                instruction=i, 
-                example="", 
+                key=name,
+                expected_type=str,
+                instruction=i,
+                example="",
                 schema="raw"
             )
         return values
@@ -245,6 +245,7 @@ class Action(SerializationMixin, ContextMixin, BaseModel):
 ```
 
 **设计要点**：
+
 - **统一接口**：所有动作都通过`run()`方法执行
 - **LLM集成**：内置LLM交互能力和成本管理
 - **上下文管理**：支持多种类型的输入上下文
@@ -318,10 +319,10 @@ class ActionNode:
         self.nexts = []
 
     async def fill(
-        self, 
-        req: str, 
-        llm: BaseLLM, 
-        schema: str = "json", 
+        self,
+        req: str,
+        llm: BaseLLM,
+        schema: str = "json",
         mode: str = "auto",
         exclude: list[str] = None,
         **kwargs
@@ -481,6 +482,7 @@ markdown_node = ActionNode(
 - Game board with 4x4 grid
 - Tile sliding mechanics
 - Score calculation system
+
 """
 ```
 
@@ -589,6 +591,7 @@ execution_order = graph.topological_sort()
 @register_tool(include_functions=["run"])
 class WritePRD(Action):
     """WritePRD处理以下情况：
+
     1. 缺陷修复：如果需求是缺陷修复，将生成缺陷文档
     2. 新需求：如果需求是新需求，将生成PRD文档
     3. 需求更新：如果需求是更新，将更新PRD文档
@@ -639,7 +642,7 @@ class WritePRD(Action):
         # 加载需求文档
         req = await Document.load(filename=self.input_args.requirements_filename)
         docs: list[Document] = [
-            await Document.load(filename=i, project_path=self.repo.workdir) 
+            await Document.load(filename=i, project_path=self.repo.workdir)
             for i in self.input_args.prd_filenames
         ]
 
@@ -698,7 +701,7 @@ class WritePRD(Action):
             node = await self._new_prd(req.content)
             await self._rename_workspace(node)
             new_prd_doc = await self.repo.docs.prd.save(
-                filename=FileRepository.new_filename() + ".json", 
+                filename=FileRepository.new_filename() + ".json",
                 content=node.instruct_content.model_dump_json()
             )
             await self._save_competitive_analysis(new_prd_doc)
@@ -722,9 +725,11 @@ class WritePRD(Action):
         context = NEW_REQ_TEMPLATE.format(old_prd=old_prd.content, requirements=req.content)
         node = await WP_IS_RELATIVE_NODE.fill(req=context, llm=self.llm)
         return node.get("is_relative") == "YES"
+
 ```
 
 **WritePRD特点**：
+
 - **多场景支持**：新需求、需求更新、缺陷修复
 - **智能判断**：自动识别需求类型和相关性
 - **文档管理**：完整的文档生成和版本控制
@@ -842,6 +847,7 @@ class WriteCode(Action):
 ```
 
 **WriteCode特点**：
+
 - **上下文感知**：综合考虑设计、任务、现有代码和日志
 - **重试机制**：使用tenacity库实现智能重试
 - **代码解析**：专门的代码解析器处理输出

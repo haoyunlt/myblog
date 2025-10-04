@@ -37,6 +37,7 @@ async def run(self, with_message=None) -> Message | None:
         Message | None: 执行结果消息，如果无新消息则返回None
         
     执行流程:
+
         1. 预处理输入消息并放入消息缓冲区
         2. 观察环境中的新消息
         3. 如果有新消息，进行反应（思考+行动）
@@ -69,6 +70,7 @@ async def run(self, with_message=None) -> Message | None:
     # 5. 消息发布：将响应发送到环境中
     self.publish_message(rsp)
     return rsp
+
 ```
 
 #### 关键函数：Role._observe()
@@ -83,6 +85,7 @@ async def _observe(self) -> int:
         int: 新消息数量
         
     处理逻辑:
+
         1. 从消息缓冲区获取未处理消息
         2. 与历史记忆对比，过滤重复消息
         3. 根据关注列表过滤感兴趣的消息
@@ -102,8 +105,8 @@ async def _observe(self) -> int:
     
     # 过滤感兴趣的消息
     self.rc.news = [
-        n for n in news 
-        if (n.cause_by in self.rc.watch or self.name in n.send_to) 
+        n for n in news
+        if (n.cause_by in self.rc.watch or self.name in n.send_to)
         and n not in old_messages
     ]
     
@@ -116,6 +119,7 @@ async def _observe(self) -> int:
     # 记录最后观察的消息用于恢复
     self.latest_observed_msg = self.rc.news[-1] if self.rc.news else None
     return len(self.rc.news)
+
 ```
 
 #### 关键函数：Role.react()
@@ -130,6 +134,7 @@ async def react(self) -> Message:
         Message: 反应结果消息
         
     支持的反应模式:
+
         - REACT: 动态选择动作
         - BY_ORDER: 按顺序执行动作
         - PLAN_AND_ACT: 先计划后执行
@@ -148,11 +153,12 @@ async def react(self) -> Message:
     if isinstance(rsp, AIMessage):
         rsp.with_agent(self._setting)
     return rsp
+
 ```
 
 <div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-0">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-0.svg" 
-       alt="Mermaid Chart MetaGPT_核心模块时序图-0" 
+  <img src="/images/mermaid/MetaGPT_核心模块时序图-0.svg"
+       alt="Mermaid Chart MetaGPT_核心模块时序图-0"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -288,7 +294,7 @@ async def fill(
     if strgy == "simple":
         # 简单策略：一次性处理所有字段
         return await self.simple_fill(
-            schema=schema, mode=mode, images=images, 
+            schema=schema, mode=mode, images=images,
             timeout=timeout, exclude=exclude
         )
     elif strgy == "complex":
@@ -300,7 +306,7 @@ async def fill(
             
             # 递归填充子节点
             child = await child_node.simple_fill(
-                schema=schema, mode=mode, images=images, 
+                schema=schema, mode=mode, images=images,
                 timeout=timeout, exclude=exclude
             )
             tmp.update(child.instruct_content.model_dump())
@@ -330,6 +336,7 @@ def compile(self, context, schema="json", mode="children", template=SIMPLE_TEMPL
         str: 编译后的提示字符串
         
     模板组成:
+
         - context: 历史消息和当前请求
         - instruction: 字段定义和类型约束
         - example: 期望的输出格式示例
@@ -353,6 +360,7 @@ def compile(self, context, schema="json", mode="children", template=SIMPLE_TEMPL
         constraint=constraint,
     )
     return prompt
+
 ```
 
 #### 关键函数：Action._run_action_node()
@@ -370,6 +378,7 @@ async def _run_action_node(self, *args, **kwargs):
         ActionNode: 填充后的节点实例
         
     处理流程:
+
         1. 构建历史消息上下文
         2. 调用节点填充方法
         3. 返回结构化结果
@@ -381,11 +390,12 @@ async def _run_action_node(self, *args, **kwargs):
     
     # 调用节点填充
     return await self.node.fill(req=context, llm=self.llm)
+
 ```
 
 <div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-1">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-1.svg" 
-       alt="Mermaid Chart MetaGPT_核心模块时序图-1" 
+  <img src="/images/mermaid/MetaGPT_核心模块时序图-1.svg"
+       alt="Mermaid Chart MetaGPT_核心模块时序图-1"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -481,6 +491,7 @@ def publish_message(self, message: Message, peekable: bool = True) -> bool:
         bool: 发布是否成功
         
     路由算法:
+
         1. 遍历所有角色及其地址
         2. 检查消息的send_to是否匹配角色地址
         3. 将消息投递到匹配的角色消息缓冲区
@@ -503,6 +514,7 @@ def publish_message(self, message: Message, peekable: bool = True) -> bool:
     # 添加到历史记录用于调试
     self.history.add(message)
     return True
+
 ```
 
 #### 关键函数：Environment.run()
@@ -517,6 +529,7 @@ async def run(self, k=1):
         k: 运行轮数，默认为1
         
     执行机制:
+
         1. 收集所有非空闲角色的执行任务
         2. 使用asyncio.gather()并发执行所有角色
         3. 记录环境空闲状态用于调试
@@ -541,6 +554,7 @@ async def run(self, k=1):
             await asyncio.gather(*futures)
         
         logger.debug(f"is idle: {self.is_idle}")
+
 ```
 
 #### 关键函数：Environment.add_roles()
@@ -555,6 +569,7 @@ def add_roles(self, roles: Iterable[BaseRole]):
         roles: 要添加的角色列表
         
     处理流程:
+
         1. 将角色添加到环境的角色字典中
         2. 设置角色的环境引用
         3. 建立角色地址映射关系
@@ -575,11 +590,12 @@ def add_roles(self, roles: Iterable[BaseRole]):
     for role in roles:
         role.context = self.context  # 共享上下文配置
         role.set_env(self)           # 设置环境引用
+
 ```
 
 <div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-2">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-2.svg" 
-       alt="Mermaid Chart MetaGPT_核心模块时序图-2" 
+  <img src="/images/mermaid/MetaGPT_核心模块时序图-2.svg"
+       alt="Mermaid Chart MetaGPT_核心模块时序图-2"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -659,6 +675,7 @@ async def run(self, n_round=3, idea="", send_to="", auto_archive=True):
         History: 执行历史记录
         
     执行流程:
+
         1. 发布初始需求到环境
         2. 循环执行直到达到轮数限制或所有角色空闲
         3. 每轮检查预算并执行环境运行
@@ -678,6 +695,7 @@ async def run(self, n_round=3, idea="", send_to="", auto_archive=True):
     
     self.env.archive(auto_archive)  # 归档项目
     return self.env.history
+
 ```
 
 #### 关键函数：Team._check_balance()
@@ -692,15 +710,17 @@ def _check_balance(self):
         NoMoneyException: 当总成本超过预算限制时抛出
         
     成本控制策略:
+
         - 实时监控LLM调用成本
         - 设置预算上限防止无限制消费
         - 提供详细的成本报告
     """
     if self.cost_manager.total_cost >= self.cost_manager.max_budget:
         raise NoMoneyException(
-            self.cost_manager.total_cost, 
+            self.cost_manager.total_cost,
             f"资金不足: {self.cost_manager.max_budget}"
         )
+
 ```
 
 ```mermaid
@@ -747,6 +767,7 @@ sequenceDiagram
     Team->>Env: archive(auto_archive)
     Team-->>CLI: env.history
 ```
+
   </div>
 </div>
 
@@ -765,8 +786,8 @@ Team.run()
 ## 5. MGXEnv 多模态消息处理时序图
 
 <div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-4">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-4.svg" 
-       alt="Mermaid Chart MetaGPT_核心模块时序图-4" 
+  <img src="/images/mermaid/MetaGPT_核心模块时序图-4.svg"
+       alt="Mermaid Chart MetaGPT_核心模块时序图-4"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -813,8 +834,8 @@ Team.run()
 ## 6. Memory 记忆管理时序图
 
 <div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-5">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-5.svg" 
-       alt="Mermaid Chart MetaGPT_核心模块时序图-5" 
+  <img src="/images/mermaid/MetaGPT_核心模块时序图-5.svg"
+       alt="Mermaid Chart MetaGPT_核心模块时序图-5"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -885,14 +906,15 @@ sequenceDiagram
     
     LLM-->>Action: content
 ```
+
   </div>
 </div>
 
 ## 8. 配置系统初始化时序图
 
 <div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-7">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-7.svg" 
-       alt="Mermaid Chart MetaGPT_核心模块时序图-7" 
+  <img src="/images/mermaid/MetaGPT_核心模块时序图-7.svg"
+       alt="Mermaid Chart MetaGPT_核心模块时序图-7"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -1261,7 +1283,7 @@ classDiagram
         +add_role(role)
         +add_roles(roles)
         +publish_message(message, peekable) bool
-        +run(k) 
+        +run(k)
         +get_roles() dict[str, BaseRole]
         +get_role(name) BaseRole
         +role_names() list[str]
@@ -1279,7 +1301,7 @@ classDiagram
     class WerewolfEnv {
         +round_cnt: int
         +add_roles(roles)
-        +publish_message(message, add_timestamp) 
+        +publish_message(message, add_timestamp)
         +run(k)
     }
     

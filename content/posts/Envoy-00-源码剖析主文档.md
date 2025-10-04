@@ -100,7 +100,7 @@ graph TB
 ### 2. Common 模块  
 - **位置**: `source/common/`
 - **功能**: 通用功能组件和工具类
-- **子模块**: 
+- **子模块**:
   - `network/`: 网络抽象和实现
   - `http/`: HTTP 协议处理
   - `upstream/`: 上游集群管理
@@ -139,11 +139,13 @@ int main(int argc, char** argv) {
 ```
 
 **功能说明**：
+
 - `main()` 函数是Envoy的入口点
 - 在Windows平台上，支持作为系统服务运行
 - 主要调用 `MainCommon::main()` 进行实际的初始化和启动
 
 **参数含义**：
+
 - `argc`: 命令行参数个数
 - `argv`: 命令行参数数组
 - **返回值**: 程序退出状态码
@@ -178,7 +180,9 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * 网络连接的基础抽象接口
+
  */
 class Connection : public Event::DeferredDeletable,
                    public FilterManager {
@@ -186,6 +190,7 @@ public:
   virtual ~Connection() = default;
   
   /**
+
    * 添加连接回调处理器
    * @param cb 连接回调处理器
    */
@@ -215,6 +220,7 @@ public:
    * @param end_stream 是否结束流
    */
   virtual void write(Buffer::Instance& data, bool end_stream) PURE;
+
 };
 ```
 
@@ -223,13 +229,16 @@ HTTP流解码器接口
 
 ```cpp  
 /**
+
  * HTTP流解码器，用于处理接收到的HTTP消息
+
  */
 class StreamDecoder {
 public:
   virtual ~StreamDecoder() = default;
 
   /**
+
    * 处理接收到的HTTP头部
    * @param headers HTTP请求或响应头部映射
    * @param end_stream 是否为流的结束
@@ -249,6 +258,7 @@ public:
    * @param trailers HTTP尾部头映射
    */
   virtual void decodeTrailers(RequestOrResponseTrailerMapPtr&& trailers) PURE;
+
 };
 ```
 
@@ -257,13 +267,16 @@ public:
 
 ```cpp
 /**
+
  * 集群管理器接口，负责管理所有上游服务集群
+
  */
 class ClusterManager {
 public:
   virtual ~ClusterManager() = default;
 
   /**
+
    * 添加或更新集群配置
    * @param cluster 集群配置  
    * @param version_info 版本信息
@@ -293,6 +306,7 @@ public:
    * @return 是否成功移除
    */
   virtual bool removeCluster(const std::string& cluster) PURE;
+
 };
 ```
 

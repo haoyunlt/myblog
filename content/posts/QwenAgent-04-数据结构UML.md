@@ -135,6 +135,7 @@ class Message(BaseModelCompatibleDict):
     """统一的消息数据结构
     
     设计目标:
+
         1. 支持多种角色的消息（用户、助手、系统、函数）
         2. 支持多模态内容（文本、图像、音频、视频、文件）
         3. 支持函数调用和推理过程
@@ -181,7 +182,7 @@ class Message(BaseModelCompatibleDict):
     def is_multimodal(self) -> bool:
         """检查是否为多模态消息"""
         if isinstance(self.content, list):
-            return any(item.image or item.audio or item.video or item.file 
+            return any(item.image or item.audio or item.video or item.file
                       for item in self.content)
         return False
     
@@ -193,6 +194,7 @@ class Message(BaseModelCompatibleDict):
             texts = [item.text for item in self.content if item.text]
             return '\n'.join(texts)
         return ''
+
 ```
 
 **Message类状态转换图**:
@@ -231,6 +233,7 @@ class ContentItem(BaseModelCompatibleDict):
     """多模态内容项数据结构
     
     设计原则:
+
         1. 互斥性：每个ContentItem只能包含一种类型的内容
         2. 可扩展性：支持新的多媒体类型
         3. 统一性：提供统一的访问接口
@@ -311,6 +314,7 @@ class ContentItem(BaseModelCompatibleDict):
             if '.' in content_value:
                 return content_value.split('.')[-1].lower()
         return None
+
 ```
 
 **ContentItem类型关系图**:
@@ -355,6 +359,7 @@ class FunctionCall(BaseModelCompatibleDict):
     """函数调用数据结构
     
     设计目的:
+
         1. 标准化工具调用接口
         2. 支持复杂参数传递
         3. 兼容OpenAI函数调用格式
@@ -439,6 +444,7 @@ class FunctionCall(BaseModelCompatibleDict):
         current_args[key] = value
         new_arguments = json.dumps(current_args, ensure_ascii=False)
         return FunctionCall(name=self.name, arguments=new_arguments)
+
 ```
 
 ## 🛠️ 工具系统数据结构
@@ -458,7 +464,7 @@ classDiagram
         +args_format: str
         +file_access: bool
         +__init__(cfg)
-        +call(params, **kwargs)* 
+        +call(params, **kwargs)*
         +_verify_json_format_args(params, strict_json)
     }
     
@@ -515,7 +521,7 @@ parameters = [
     },
     {
         'name': 'max_results',
-        'type': 'integer', 
+        'type': 'integer',
         'description': '最大结果数量',
         'required': False,
         'default': 10
@@ -550,6 +556,7 @@ def register_tool(name: str, allow_overwrite: bool = False):
     """工具注册装饰器
     
     功能:
+
         1. 验证工具名称唯一性
         2. 设置工具名称属性
         3. 注册到全局注册表
@@ -923,7 +930,7 @@ class FileProcessor(BaseTool):
                 'description': '要处理的文件路径'
             },
             'operation': {
-                'type': 'string', 
+                'type': 'string',
                 'enum': ['read', 'analyze', 'convert'],
                 'description': '操作类型'
             },
@@ -970,7 +977,7 @@ class FileProcessor(BaseTool):
 config = {
     'llm': {
         'model': 'qwen3-235b-a22b',
-        'model_type': 'qwen_dashscope', 
+        'model_type': 'qwen_dashscope',
         'generate_cfg': {
             'top_p': 0.8,
             'max_input_tokens': 6000,

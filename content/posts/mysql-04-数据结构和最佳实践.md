@@ -53,7 +53,7 @@ classDiagram
         
         +push_back(value)
         +operator[](index)
-        +size() 
+        +size()
         +empty()
     }
 
@@ -106,12 +106,16 @@ classDiagram
 
 ```cpp
 /**
+
  * @brief MySQL结果集响应数据结构
- * 
+
+ *
+
  * 用途：
  * - 封装SELECT查询的完整响应数据
  * - 包含列定义、行数据和结束信息
  * - 支持空结果集和大结果集
+
  */
 struct ResultsetResponse {
   // 列元数据数组，定义结果集的结构
@@ -124,6 +128,7 @@ struct ResultsetResponse {
   classic_protocol::message::server::Eof end_of_rows;
   
   /**
+
    * @brief 获取列数
    */
   size_t column_count() const { return columns.size(); }
@@ -164,6 +169,7 @@ struct ResultsetResponse {
     }
     rows.push_back(row);
   }
+
 };
 ```
 
@@ -171,9 +177,13 @@ struct ResultsetResponse {
 
 ```cpp
 /**
+
  * @brief MySQL列元数据结构
- * 
+
+ *
+
  * 对应MySQL协议的Column Definition包
+
  */
 using ColumnMeta = classic_protocol::message::server::ColumnMeta;
 
@@ -189,6 +199,7 @@ public:
                    character_set, length, type, flags, decimals) {}
 
   /**
+
    * @brief 检查列是否可以为NULL
    */
   bool is_nullable() const {
@@ -231,6 +242,7 @@ public:
     }
     return ss.str();
   }
+
 };
 ```
 
@@ -298,19 +310,24 @@ classDiagram
 
 ```cpp
 /**
+
  * @brief 线程安全的监控器模板类
  * @tparam T 被监控的数据类型
- * 
+
+ *
+
  * 功能特点：
  * - 提供线程安全的数据访问
  * - 支持条件等待机制
  * - RAII风格的锁管理
  * - 高性能的函数对象接口
+
  */
 template<typename T>
 class WaitableMonitor {
 public:
   /**
+
    * @brief 构造函数
    * @param initial_value 初始值
    */
@@ -322,7 +339,7 @@ public:
    * @tparam Func 函数对象类型
    * @param func 操作函数，接收T&参数
    * @return auto 函数的返回值
-   * 
+   *
    * 使用示例：
    * WaitableMonitor<int> counter{0};
    * int value = counter([](int& val) { return ++val; });
@@ -337,9 +354,9 @@ public:
    * @brief 条件等待函数
    * @tparam Predicate 谓词类型
    * @param predicate 等待条件，接收const T&参数，返回bool
-   * 
+   *
    * 阻塞直到谓词返回true
-   * 
+   *
    * 使用示例：
    * sessions.wait([](const auto& list) { return list.empty(); });
    */
@@ -353,9 +370,9 @@ public:
    * @brief 序列化访问并可能通知等待线程
    * @tparam Func 函数对象类型
    * @param func 操作函数，接收T&和condition_variable&参数
-   * 
+   *
    * 用于需要在修改数据后通知等待者的场景
-   * 
+   *
    * 使用示例：
    * sessions.serialize_with_cv([](auto& list, auto& cv) {
    *   list.clear();
@@ -375,7 +392,9 @@ private:
 };
 
 /**
+
  * @brief 简化版监控器，只提供互斥访问
+
  */
 template<typename T>
 class Monitor {
@@ -460,16 +479,21 @@ classDiagram
 
 ```cpp
 /**
+
  * @brief Duktape JavaScript执行堆管理类
- * 
+
+ *
+
  * 功能：
  * - 管理Duktape JavaScript引擎实例
  * - 提供模块加载和脚本执行环境
  * - 处理全局对象和会话数据注入
+
  */
 class DukHeap {
 public:
   /**
+
    * @brief 构造函数
    * @param module_prefixes JavaScript模块搜索路径
    * @param shared_globals 全局作用域共享对象
@@ -530,6 +554,7 @@ public:
 
 private:
   /**
+
    * @brief 自定义删除器
    */
   class HeapDeleter {
@@ -539,7 +564,7 @@ private:
 
   /**
    * @brief 准备process全局对象
-   * 
+   *
    * 提供以下JavaScript API：
    * - process.get_shared(key) - 获取全局共享数据
    * - process.set_shared(key, value) - 设置全局共享数据
@@ -579,7 +604,7 @@ private:
   /**
    * @brief 准备mysqld全局对象
    * @param session_data 会话数据提供器映射
-   * 
+   *
    * 创建JavaScript全局对象mysqld：
    * {
    *   session: {     // 会话特定数据
@@ -653,6 +678,7 @@ private:
   // 脚本缓存（静态成员，所有实例共享）
   static std::mutex scripts_mtx_;
   static std::map<std::string, std::string> scripts_;
+
 };
 ```
 
@@ -660,19 +686,24 @@ private:
 
 ```cpp
 /**
+
  * @brief Mock Server全局作用域管理类
- * 
+
+ *
+
  * 功能：
  * - 跨会话共享数据存储
  * - 线程安全的读写操作
  * - 支持JavaScript全局变量访问
+
  */
 class MockServerGlobalScope {
 public:
   /**
+
    * @brief 获取所有共享数据
    * @return std::map<std::string, std::string> 键值对映射
-   * 
+   *
    * 使用读锁保证线程安全
    */
   std::map<std::string, std::string> get_all() const {
@@ -684,7 +715,7 @@ public:
    * @brief 设置共享数据
    * @param key 键名
    * @param value JSON编码的值
-   * 
+   *
    * 使用写锁保证线程安全
    */
   void set(const std::string& key, const std::string& value) {
@@ -758,15 +789,17 @@ private:
 
 ```cpp
 /**
+
  * @brief SSL对象的RAII管理示例
+
  */
 class Connection {
 private:
   // 自定义删除器确保SSL对象正确释放
   class SSL_Deleter {
    public:
-    void operator()(SSL *ssl) { 
-      if (ssl) SSL_free(ssl); 
+    void operator()(SSL *ssl) {
+      if (ssl) SSL_free(ssl);
     }
   };
 
@@ -774,6 +807,7 @@ private:
 
 public:
   /**
+
    * @brief 初始化TLS连接
    * 异常安全：如果SSL_new失败，不会泄露资源
    */
@@ -784,6 +818,7 @@ public:
     }
     // ... 其他初始化代码
   }
+
 };
 ```
 
@@ -791,7 +826,9 @@ public:
 
 ```cpp
 /**
+
  * @brief 作用域守护类，确保退出时执行清理
+
  */
 class Scope_guard {
 public:
@@ -814,7 +851,7 @@ private:
 void Acceptor::async_run() {
   work_([](auto &work) { ++work; });
 
-  sock_.async_accept(client_ep_, 
+  sock_.async_accept(client_ep_,
     [this](std::error_code ec, mysql_harness::DestinationSocket client_sock) {
       // RAII方式管理工作计数器
       Scope_guard guard([&]() {
@@ -833,8 +870,10 @@ void Acceptor::async_run() {
 
 ```cpp
 /**
+
  * @brief 语句读取器工厂类
  * 根据配置文件类型创建相应的读取器实例
+
  */
 class DuktapeStatementReaderFactory {
 public:
@@ -849,9 +888,10 @@ public:
         global_scope_{std::move(global_scope)} {}
 
   /**
+
    * @brief 创建语句读取器实例
    * @return std::unique_ptr<StatementReaderBase> 读取器智能指针
-   * 
+   *
    * 工厂方法：根据文件类型和运行时条件创建不同的实现
    */
   std::unique_ptr<StatementReaderBase> operator()() {
@@ -898,17 +938,20 @@ private:
 
 ```cpp
 /**
+
  * @brief Duktape堆对象池
  * 避免频繁创建和销毁JavaScript引擎实例
+
  */
 class DukHeapPool {
 public:
-  static DukHeapPool *instance() { 
+  static DukHeapPool *instance() {
     static DukHeapPool instance_;
-    return &instance_; 
+    return &instance_;
   }
 
   /**
+
    * @brief 从池中获取堆对象
    * @param filename 脚本文件名
    * @param module_prefixes 模块路径
@@ -917,7 +960,7 @@ public:
    * @return std::unique_ptr<DukHeap> 堆对象智能指针
    */
   std::unique_ptr<DukHeap> get(
-      const std::string &filename, 
+      const std::string &filename,
       std::vector<std::string> module_prefixes,
       std::map<std::string, std::function<std::string()>> session_data,
       std::shared_ptr<MockServerGlobalScope> shared_globals) {
@@ -961,7 +1004,9 @@ private:
 
 ```cpp
 /**
+
  * @brief 协议处理策略基类
+
  */
 class ProtocolBase {
 public:
@@ -984,7 +1029,9 @@ protected:
 };
 
 /**
+
  * @brief MySQL Classic协议具体策略
+
  */
 class MySQLClassicProtocol : public ProtocolBase {
 public:
@@ -1020,7 +1067,9 @@ public:
 
 ```cpp
 /**
+
  * @brief 移动语义优化示例
+
  */
 class OptimizedConnection {
 public:
@@ -1058,11 +1107,14 @@ private:
 
 ```cpp
 /**
+
  * @brief 缓冲区管理优化
+
  */
 class BufferManager {
 public:
   /**
+
    * @brief 预分配缓冲区避免频繁内存分配
    */
   void prepare_buffers() {
@@ -1103,11 +1155,14 @@ private:
 
 ```cpp
 /**
+
  * @brief 使用协程式异步操作（C++20风格）
+
  */
 class ModernAsyncHandler {
 public:
   /**
+
    * @brief 结构化异步操作处理
    */
   net::awaitable<void> handle_client_async() {
@@ -1148,15 +1203,18 @@ private:
 
 ```cpp
 /**
+
  * @brief 批量发送优化
+
  */
 class BatchSender {
 public:
   /**
+
    * @brief 收集多个响应后批量发送
    */
   void add_response(const std::vector<uint8_t>& response) {
-    batch_buffer_.insert(batch_buffer_.end(), 
+    batch_buffer_.insert(batch_buffer_.end(),
                         response.begin(), response.end());
     
     if (batch_buffer_.size() >= BATCH_THRESHOLD) {
@@ -1187,11 +1245,14 @@ private:
 
 ```cpp
 /**
+
  * @brief JavaScript脚本缓存管理
+
  */
 class ScriptCache {
 public:
   /**
+
    * @brief 获取编译后的脚本
    */
   std::string get_compiled_script(const std::string& filename) {
@@ -1250,11 +1311,14 @@ private:
 
 ```cpp
 /**
+
  * @brief 强异常安全的会话管理
+
  */
 class SafeSessionManager {
 public:
   /**
+
    * @brief 添加会话，提供强异常安全保证
    * 要么成功添加，要么保持原状不变
    */
@@ -1296,11 +1360,14 @@ private:
 
 ```cpp
 /**
+
  * @brief 混合错误处理策略
+
  */
 class HybridErrorHandler {
 public:
   /**
+
    * @brief 网络操作使用错误码（性能关键路径）
    */
   stdx::expected<size_t, std::error_code> send_data(
@@ -1339,7 +1406,7 @@ public:
   class ResourceGuard {
   public:
     ResourceGuard(Resource* res) : resource_(res) {}
-    ~ResourceGuard() { 
+    ~ResourceGuard() {
       if (resource_) {
         resource_->cleanup();
       }
@@ -1362,6 +1429,7 @@ public:
   private:
     Resource* resource_;
   };
+
 };
 ```
 
@@ -1373,7 +1441,9 @@ public:
 
 ```cpp
 /**
+
  * @brief 生产环境连接池配置
+
  */
 struct ProductionConfig {
   // 基于系统资源和预期负载调整
@@ -1384,16 +1454,17 @@ struct ProductionConfig {
   static constexpr std::chrono::milliseconds CLEANUP_INTERVAL{30000}; // 30秒
 
   /**
+
    * @brief 动态调整池大小
    */
   void adjust_pool_size(double cpu_usage, size_t active_connections) {
     if (cpu_usage > 0.8 && active_connections > MAX_CONNECTIONS * 0.7) {
       // CPU使用率高且连接数多，减少池大小
-      current_pool_size_ = std::max(current_pool_size_ - 1, 
+      current_pool_size_ = std::max(current_pool_size_ - 1,
                                    std::thread::hardware_concurrency());
     } else if (cpu_usage < 0.5 && active_connections > MAX_CONNECTIONS * 0.5) {
       // CPU使用率低但连接数多，增加池大小
-      current_pool_size_ = std::min(current_pool_size_ + 1, 
+      current_pool_size_ = std::min(current_pool_size_ + 1,
                                    DUKTAPE_POOL_SIZE * 2);
     }
   }
@@ -1407,7 +1478,9 @@ private:
 
 ```cpp
 /**
+
  * @brief 内存使用监控和优化
+
  */
 class MemoryMonitor {
 public:
@@ -1419,13 +1492,14 @@ public:
   };
 
   /**
+
    * @brief 定期检查内存使用情况
    */
   void periodic_check() {
     auto stats = collect_stats();
     
     if (stats.total_allocated > MEMORY_WARNING_THRESHOLD) {
-      logger_.warning("High memory usage detected: " + 
+      logger_.warning("High memory usage detected: " +
                      std::to_string(stats.total_allocated / (1024*1024)) + " MB");
       
       // 触发垃圾收集
@@ -1458,14 +1532,17 @@ private:
 
 ```cpp
 /**
+
  * @brief 网络异常恢复机制
+
  */
 class NetworkErrorHandler {
 public:
   /**
+
    * @brief 处理各种网络错误情况
    */
-  void handle_network_error(std::error_code ec, 
+  void handle_network_error(std::error_code ec,
                            MySQLServerMockSession* session) {
     if (ec == std::errc::connection_reset ||
         ec == net::stream_errc::eof) {

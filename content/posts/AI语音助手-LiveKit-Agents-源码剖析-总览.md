@@ -270,25 +270,31 @@ sequenceDiagram
 ## 开发工作流
 
 ### 1. 开发模式
+
 ```bash
 python agent.py dev
 ```
+
 - 支持热重载
 - 实时调试
 - 开发友好
 
 ### 2. 测试模式
+
 ```bash
 python agent.py console
 ```
+
 - 终端音频测试
 - 快速验证
 - 无需外部服务
 
 ### 3. 生产模式
+
 ```bash
 python agent.py start
 ```
+
 - 生产优化
 - 稳定运行
 - 监控集成
@@ -307,6 +313,7 @@ python agent.py start
 8. **[最佳实践](/posts/最佳实践/)** - 性能优化和部署建议
 
 每个模块文档将包含：
+
 - 详细的架构图和时序图
 - 核心API和调用链路分析
 - 关键代码实现解析

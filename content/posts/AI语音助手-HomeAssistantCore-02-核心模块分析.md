@@ -13,6 +13,7 @@ weight: 1
 ## 概述
 
 本文档深入分析Home Assistant Core的核心模块，重点分析`homeassistant/core.py`中的四个关键类：
+
 - `HomeAssistant` - 系统核心类
 - `EventBus` - 事件总线
 - `StateMachine` - 状态机
@@ -154,6 +155,7 @@ def create_task(self, target: Coroutine[Any, Any, _T], *, eager: bool = True) ->
         创建的任务对象
     
     功能说明:
+
         - 自动将任务添加到任务跟踪集合
         - 任务完成时自动从集合中移除
         - 支持任务异常处理和日志记录
@@ -185,11 +187,13 @@ async def async_add_executor_job(
         函数执行结果
         
     功能说明:
+
         - 将CPU密集型或I/O阻塞操作放到线程池执行
         - 避免阻塞主事件循环
         - 自动处理异常和结果返回
     """
     return await self.loop.run_in_executor(None, target, *args)
+
 ```
 
 ## 2. EventBus 事件总线
@@ -269,6 +273,7 @@ def async_listen(
         取消监听器注册的函数
         
     功能说明:
+
         - 支持按事件类型精确监听
         - 支持全局事件监听（MATCH_ALL）
         - 支持事件数据过滤
@@ -314,6 +319,7 @@ def async_listen(
             pass
     
     return async_remove_listener
+
 ```
 
 ### 2.4 事件分发算法
@@ -338,6 +344,7 @@ def async_fire_internal(
         time_fired: 事件触发时间戳
         
     功能说明:
+
         - 高效的事件分发算法
         - 支持事件过滤和条件判断
         - 异常处理和错误恢复
@@ -387,6 +394,7 @@ def async_fire_internal(
             self._hass.async_run_hass_job(job, event)
         except Exception:
             _LOGGER.exception("Error running job: %s", job)
+
 ```
 
 ### 2.5 事件类型定义
@@ -483,6 +491,7 @@ def get(self, entity_id: str) -> State | None:
         实体状态对象，不存在时返回None
         
     功能说明:
+
         - 线程安全，可在任意线程调用
         - 支持大小写不敏感查询
         - 高性能直接字典访问
@@ -517,6 +526,7 @@ def async_all(
         符合条件的所有状态对象列表
         
     功能说明:
+
         - 支持按域名过滤
         - 高效的批量状态查询
         - 必须在事件循环中调用
@@ -534,6 +544,7 @@ def async_all(
     for domain in domain_filter:
         states.extend(self._states.domain_states(domain))
     return states
+
 ```
 
 ### 3.4 状态设置机制
@@ -558,6 +569,7 @@ def async_set(
         context: 操作上下文，包含用户、来源等信息
         
     功能说明:
+
         - 验证实体ID格式和状态值长度
         - 处理状态变更逻辑和事件分发
         - 支持属性深度比较和增量更新
@@ -628,6 +640,7 @@ def async_set(
         state_changed_data,
         context=context,
     )
+
 ```
 
 ### 3.5 State状态对象
@@ -757,7 +770,7 @@ class Service:
         # 验证服务函数类型
         if self.func.job_type is None:
             object.__setattr__(
-                self.func, "job_type", 
+                self.func, "job_type",
                 get_hassjob_callable_job_type(self.func.target)
             )
 ```
@@ -786,6 +799,7 @@ def async_register(
         job_type: 任务类型，用于性能优化
         
     功能说明:
+
         - 参数验证和规范化
         - 服务函数包装和优化
         - 事件通知和日志记录
@@ -874,6 +888,7 @@ async def async_call(
         服务响应数据（如果支持的话）
         
     功能说明:
+
         - 服务查找和验证
         - 参数验证和处理
         - 权限检查
@@ -977,8 +992,8 @@ async def _execute_service(
     except Exception as ex:
         # 记录服务执行异常
         _LOGGER.exception(
-            "Error executing service %s.%s", 
-            service_call.domain, 
+            "Error executing service %s.%s",
+            service_call.domain,
             service_call.service
         )
         raise
@@ -1090,6 +1105,7 @@ sequenceDiagram
 ## 下一步分析
 
 接下来将继续深入分析：
+
 - [组件系统架构](/posts/03-组件系统分析/)
 - [API接口系统](/posts/05-API接口分析/)
 - [配置和存储系统](/posts/06-数据存储分析/)

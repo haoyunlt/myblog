@@ -170,6 +170,7 @@ class RemoteFunction:
     远程函数的核心实现类
     
     职责：
+
     1. 函数元数据管理和序列化
     2. 任务提交和资源需求配置
     3. 运行时环境设置
@@ -269,6 +270,7 @@ class RemoteFunction:
             kwargs=kwargs,
             **task_options
         )
+
 ```
 
 ### 2.3 任务提交submit_task实现
@@ -296,6 +298,7 @@ def submit_task(self,
     任务提交的底层实现（Cython代码）
     
     核心功能：
+
     1. 参数序列化和资源准备
     2. 创建任务规格(TaskSpec)
     3. 调用C++层的SubmitTask
@@ -358,10 +361,10 @@ def submit_task(self,
         current_c_task_id = current_task.native()
         with nogil:  # 释放GIL进行C++调用
             return_refs = CCoreWorkerProcess.GetCoreWorker().SubmitTask(
-                ray_function, 
-                args_vector, 
+                ray_function,
+                args_vector,
                 task_options,
-                max_retries, 
+                max_retries,
                 retry_exceptions,
                 c_scheduling_strategy,
                 debugger_breakpoint,
@@ -376,6 +379,7 @@ def submit_task(self,
     
     # 10. 转换返回的ObjectRef到Python对象
     return self._make_object_refs(return_refs)
+
 ```
 
 ### 2.4 任务状态管理
@@ -422,6 +426,7 @@ from ray.util.scheduling_strategies import (
 def default_task():
     """
     使用默认调度策略：
+
     - 优先本地执行（减少数据传输）
     - 考虑资源可用性
     - 负载均衡
@@ -433,6 +438,7 @@ def default_task():
 def spread_task():
     """
     展开调度策略：
+
     - 尽量在不同节点执行
     - 提高并行度
     - 增加容错性
@@ -452,6 +458,7 @@ pg = ray.util.placement_group([{"CPU": 1}] * 4, strategy="STRICT_PACK")
 def placement_group_task():
     """
     放置组调度策略：
+
     - 在特定资源组内执行
     - 保证资源隔离
     - 支持Gang Scheduling
@@ -468,6 +475,7 @@ def placement_group_task():
 def node_affinity_task():
     """
     节点亲和性调度：
+
     - 在指定节点执行
     - 适用于数据本地性优化
     - soft=True时为软约束
@@ -484,11 +492,13 @@ def node_affinity_task():
 def label_selector_task():
     """
     标签选择调度：
+
     - 基于节点标签选择
     - 支持硬性和软性约束
     - 适用于异构集群
     """
     return "label_selector"
+
 ```
 
 ---
@@ -537,6 +547,7 @@ class ActorClass(Generic[T]):
     Actor类的远程版本封装
     
     核心功能：
+
     1. Actor类的元数据管理
     2. Actor实例创建接口
     3. 资源需求配置
@@ -639,6 +650,7 @@ class ActorClass(Generic[T]):
             max_retries=0,  # Actor创建不重试
             options=self._default_options
         )
+
 ```
 
 ### 3.3 ActorHandle实现分析
@@ -651,6 +663,7 @@ class ActorHandle(Generic[T]):
     Actor实例的分布式句柄
     
     核心功能：
+
     1. Actor方法调用代理
     2. Actor状态查询
     3. Actor生命周期管理
@@ -665,7 +678,7 @@ class ActorHandle(Generic[T]):
         _ray_allow_out_of_order_execution: 是否允许乱序执行
     """
     
-    def __init__(self, 
+    def __init__(self,
                  language,
                  actor_id,
                  method_signatures,
@@ -759,7 +772,7 @@ class ActorHandle(Generic[T]):
         1. 如果是原始句柄且非弱引用，则终止Actor
         2. 清理资源引用
         """
-        if (self._ray_original_handle and 
+        if (self._ray_original_handle and
             not self._ray_weak_ref and
             hasattr(self, '_ray_actor_id')):
             try:
@@ -770,6 +783,7 @@ class ActorHandle(Generic[T]):
             except:
                 # 在析构函数中忽略异常
                 pass
+
 ```
 
 ### 3.4 ActorMethod实现
@@ -781,12 +795,13 @@ class ActorMethod:
     Actor方法调用的封装类
     
     功能：
+
     1. 提供.remote()调用接口
     2. 处理方法参数和返回值
     3. 支持方法级别的配置覆盖
     """
     
-    def __init__(self, method_name, actor_handle, method_signature, 
+    def __init__(self, method_name, actor_handle, method_signature,
                  num_returns, is_generator):
         """
         初始化Actor方法对象
@@ -860,6 +875,7 @@ class ActorMethod:
             f"Instead of running '{self._method_name}()', "
             f"try '{self._method_name}.remote()'."
         )
+
 ```
 
 ### 3.5 Actor容错机制
@@ -869,9 +885,11 @@ class ActorMethod:
 Actor容错机制详解
 
 Ray提供多层次的Actor容错支持：
+
 1. Actor重启 (max_restarts)
 2. 方法重试 (max_task_retries)  
 3. 健康检查和监控
+
 """
 
 import ray
@@ -885,6 +903,7 @@ class FaultTolerantActor:
         Actor初始化
         
         重启行为：
+
         - Actor崩溃时自动重启
         - 重新执行__init__方法
         - 状态会丢失，需要手动恢复
@@ -913,6 +932,7 @@ class RetryActor:
         不可靠的方法，可能失败
         
         重试行为：
+
         - 系统错误（如网络问题）触发重试
         - Python异常不触发重试
         - 重试在同一Actor实例上进行
@@ -930,6 +950,7 @@ class CheckpointActor:
         支持检查点的Actor
         
         功能：
+
         - 定期保存状态到外部存储
         - 重启时从检查点恢复
         - 实现更强的容错性
@@ -1047,6 +1068,7 @@ cdef class ObjectRef(BaseID):
     分布式对象的异步引用
     
     核心功能：
+
     1. 异步对象访问接口
     2. 对象生命周期管理
     3. 分布式垃圾收集
@@ -1167,6 +1189,7 @@ cdef class ObjectRef(BaseID):
         格式：ObjectRef(hex_id)
         """
         return f"ObjectRef({self.hex()})"
+
 ```
 
 ### 4.3 ray.get()实现分析
@@ -1180,6 +1203,7 @@ def get(object_refs, *, timeout=None, _tensor_transport=None):
     从对象存储获取对象的同步接口
     
     核心功能：
+
     1. 阻塞等待对象可用
     2. 从共享内存读取对象数据
     3. 反序列化对象
@@ -1211,8 +1235,8 @@ def get(object_refs, *, timeout=None, _tensor_transport=None):
     # 调用底层获取对象的方法
     with profiling.profile("ray.get"):
         values, debugger_breakpoint = worker.get_objects(
-            object_refs, 
-            timeout=timeout, 
+            object_refs,
+            timeout=timeout,
             _tensor_transport=_tensor_transport
         )
     
@@ -1257,6 +1281,7 @@ def get_objects(self, object_refs, timeout=None, return_exceptions=False,
     Worker类的get_objects方法实现
     
     核心处理流程：
+
     1. 参数验证和类型转换
     2. 调用CoreWorker获取序列化数据
     3. 反序列化对象
@@ -1292,7 +1317,7 @@ def get_objects(self, object_refs, timeout=None, return_exceptions=False,
     
     # 反序列化对象
     results = self.deserialize_objects(
-        serialized_objects, 
+        serialized_objects,
         object_refs,
         tensor_transport_hint=tensor_transport
     )
@@ -1304,6 +1329,7 @@ def get_objects(self, object_refs, timeout=None, return_exceptions=False,
                 raise result
     
     return results, b""  # 第二个返回值为调试器断点信息
+
 ```
 
 ### 4.4 ray.put()实现分析
@@ -1317,6 +1343,7 @@ def put(value, *, _owner=None, _tensor_transport="object_store"):
     将Python对象存储到对象存储系统
     
     核心功能：
+
     1. 序列化Python对象
     2. 存储到共享内存
     3. 返回ObjectRef引用
@@ -1362,6 +1389,7 @@ def _serialize_to_plasma(self, value):
     序列化对象以存储到Plasma
     
     处理步骤：
+
     1. 选择序列化器（Pickle/Arrow）
     2. 处理特殊类型（NumPy数组、Tensor等）
     3. 优化大对象存储
@@ -1383,6 +1411,7 @@ def _serialize_numpy_array(self, array):
     NumPy数组的优化序列化
     
     优势：
+
     1. 零拷贝存储（直接使用内存缓冲区）
     2. 类型信息保留
     3. 多维数组支持
@@ -1411,6 +1440,7 @@ def _serialize_with_pickle(self, value):
     使用Pickle进行通用序列化
     
     特点：
+
     1. 支持任意Python对象
     2. 保持对象引用关系
     3. 自定义类序列化支持
@@ -1427,6 +1457,7 @@ def _serialize_with_pickle(self, value):
         }
     except Exception as e:
         raise RuntimeError(f"Failed to pickle object: {e}")
+
 ```
 
 ### 4.5 对象存储优化策略
@@ -1448,6 +1479,7 @@ def optimize_large_objects():
     大对象存储优化策略
     
     建议：
+
     - 使用ray.put()预先存储大对象
     - 避免重复传输相同的大对象
     - 利用零拷贝特性
@@ -1490,6 +1522,7 @@ class DataCache:
     数据缓存Actor - 优化数据共享
     
     功能：
+
     - 缓存经常访问的数据
     - 减少重复序列化
     - 支持数据预加载
@@ -1526,6 +1559,7 @@ def monitor_object_store():
     监控对象存储使用情况
     
     功能：
+
     - 跟踪内存使用量
     - 识别内存泄漏
     - 优化对象生命周期
@@ -1561,6 +1595,7 @@ def configure_object_spilling():
     配置对象溢出策略
     
     当内存不足时，Ray会将对象溢出到磁盘：
+
     - 自动选择最少使用的对象
     - 透明的溢出和恢复
     - 可配置溢出目录和策略
@@ -2094,10 +2129,12 @@ graph TD
 Ray任务故障处理机制详解
 
 Ray提供多层次的故障处理机制：
+
 1. 任务级重试
 2. 异常处理和传播
 3. 故障隔离
 4. 资源清理
+
 """
 
 import ray
@@ -2111,6 +2148,7 @@ def unreliable_task(task_id, failure_rate=0.5):
     模拟不可靠的任务
     
     故障处理行为：
+
     - 系统故障（如Worker崩溃）会触发重试
     - Python异常默认不触发重试
     - 重试在不同Worker上执行
@@ -2134,6 +2172,7 @@ def network_task(endpoint):
     网络任务，支持特定异常重试
     
     配置说明：
+
     - retry_exceptions=True: 重试所有异常
     - retry_exceptions=[Exception1, Exception2]: 只重试指定异常
     - retry_exceptions=False: 不重试任何异常（默认）
@@ -2161,6 +2200,7 @@ class FaultTolerantProcessor:
     容错数据处理器
     
     特性：
+
     - 检查点机制
     - 状态恢复
     - 进度跟踪

@@ -49,6 +49,7 @@ func (r *Reconciler) Reconcile(ctx context.Context, req ctrl.Request) (ctrl.Resu
 ```
 
 要点：
+
 - 以声明式渲染（Helm/Overlay）统一生成K8s清单；
 - 幂等Apply，结合Server-Side Apply与所有权字段减少冲突；
 - 健康检查基于`Deployment/Pod`就绪、`istiod`探针与指标；

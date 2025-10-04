@@ -18,7 +18,9 @@ weight: 1
 
 ```java
 /**
+
  * 并行度设置的最佳实践
+
  */
 public class ParallelismBestPractices {
     
@@ -49,11 +51,14 @@ public class ParallelismBestPractices {
 }
 
 /**
+
  * 动态并行度调整策略
+
  */
 public class DynamicParallelismStrategy {
     
     /**
+
      * 根据数据量动态调整并行度
      */
     public static int calculateOptimalParallelism(long dataRate, int cpuCores) {
@@ -71,20 +76,21 @@ public class DynamicParallelismStrategy {
      * 基于背压情况调整并行度
      */
     public static void adjustParallelismBasedOnBackpressure(
-            double backpressureRatio, 
-            JobManagerGateway jobManager, 
+            double backpressureRatio,
+            JobManagerGateway jobManager,
             JobID jobId) {
         
         if (backpressureRatio > 0.8) {
             // 高背压，建议增加并行度
-            LOG.warn("High backpressure detected: {}. Consider increasing parallelism.", 
+            LOG.warn("High backpressure detected: {}. Consider increasing parallelism.",
                      backpressureRatio);
         } else if (backpressureRatio < 0.2) {
             // 低背压，可能资源浪费
-            LOG.info("Low backpressure: {}. Consider decreasing parallelism.", 
+            LOG.info("Low backpressure: {}. Consider decreasing parallelism.",
                      backpressureRatio);
         }
     }
+
 }
 ```
 
@@ -92,7 +98,9 @@ public class DynamicParallelismStrategy {
 
 ```java
 /**
+
  * Slot 共享组优化
+
  */
 public class SlotSharingOptimization {
     
@@ -157,11 +165,14 @@ taskmanager.memory.jvm-overhead.max: 1gb
 
 ```java
 /**
+
  * 对象重用优化
+
  */
 public class ObjectReuseOptimization {
     
     /**
+
      * 启用对象重用
      */
     public static void enableObjectReuse(StreamExecutionEnvironment env) {
@@ -232,6 +243,7 @@ public class ObjectReuseOptimization {
             }
         }
     }
+
 }
 ```
 
@@ -241,11 +253,14 @@ public class ObjectReuseOptimization {
 
 ```java
 /**
+
  * 网络缓冲区优化配置
+
  */
 public class NetworkOptimization {
     
     /**
+
      * 配置网络缓冲区
      */
     public static void configureNetworkBuffers() {
@@ -290,7 +305,7 @@ public class NetworkOptimization {
             batch.add(value);
             
             // 检查是否需要发送批次
-            if (batch.size() >= BATCH_SIZE || 
+            if (batch.size() >= BATCH_SIZE ||
                 System.currentTimeMillis() - lastBatchTime > BATCH_TIMEOUT) {
                 sendBatch();
             }
@@ -312,6 +327,7 @@ public class NetworkOptimization {
             super.close();
         }
     }
+
 }
 ```
 
@@ -321,14 +337,17 @@ public class NetworkOptimization {
 
 ```java
 /**
+
  * 状态后端选择策略
+
  */
 public class StateBackendSelection {
     
     /**
+
      * 根据使用场景选择状态后端
      */
-    public static void configureStateBackend(StreamExecutionEnvironment env, 
+    public static void configureStateBackend(StreamExecutionEnvironment env,
                                            StateBackendType type) {
         switch (type) {
             case MEMORY:
@@ -359,6 +378,7 @@ public class StateBackendSelection {
     enum StateBackendType {
         MEMORY, FILESYSTEM, ROCKSDB
     }
+
 }
 ```
 
@@ -366,11 +386,14 @@ public class StateBackendSelection {
 
 ```java
 /**
+
  * 状态 TTL 最佳实践
+
  */
 public class StateTtlBestPractices {
     
     /**
+
      * 配置状态 TTL
      */
     public static class TtlProcessFunction extends KeyedProcessFunction<String, Event, Result> {
@@ -396,7 +419,7 @@ public class StateTtlBestPractices {
                 .cleanupFullSnapshot()
                 .build();
             
-            ValueStateDescriptor<UserSession> sessionDescriptor = 
+            ValueStateDescriptor<UserSession> sessionDescriptor =
                 new ValueStateDescriptor<>("user-session", UserSession.class);
             sessionDescriptor.enableTimeToLive(sessionTtlConfig);
             sessionState = getRuntimeContext().getState(sessionDescriptor);
@@ -409,7 +432,7 @@ public class StateTtlBestPractices {
                 .cleanupIncrementally(10, true) // 增量清理
                 .build();
             
-            ValueStateDescriptor<Long> behaviorDescriptor = 
+            ValueStateDescriptor<Long> behaviorDescriptor =
                 new ValueStateDescriptor<>("behavior-count", Long.class);
             behaviorDescriptor.enableTimeToLive(behaviorTtlConfig);
             behaviorCountState = getRuntimeContext().getState(behaviorDescriptor);
@@ -422,14 +445,14 @@ public class StateTtlBestPractices {
                 .cleanupInRocksdbCompactFilter(1000) // RocksDB 压缩时清理
                 .build();
             
-            MapStateDescriptor<String, CacheEntry> cacheDescriptor = 
+            MapStateDescriptor<String, CacheEntry> cacheDescriptor =
                 new MapStateDescriptor<>("cache", String.class, CacheEntry.class);
             cacheDescriptor.enableTimeToLive(cacheTtlConfig);
             cacheState = getRuntimeContext().getMapState(cacheDescriptor);
         }
         
         @Override
-        public void processElement(Event event, Context ctx, Collector<Result> out) 
+        public void processElement(Event event, Context ctx, Collector<Result> out)
                 throws Exception {
             
             // 更新会话状态
@@ -459,6 +482,7 @@ public class StateTtlBestPractices {
             return new CacheEntry(event.getKey(), System.currentTimeMillis());
         }
     }
+
 }
 ```
 
@@ -466,11 +490,14 @@ public class StateTtlBestPractices {
 
 ```java
 /**
+
  * 状态大小监控和告警
+
  */
 public class StateMonitoring {
     
     /**
+
      * 状态大小监控函数
      */
     public static class StateMonitoringFunction extends KeyedProcessFunction<String, Event, Event> {
@@ -486,19 +513,19 @@ public class StateMonitoring {
         public void open(Configuration parameters) throws Exception {
             super.open(parameters);
             
-            ValueStateDescriptor<UserData> descriptor = 
+            ValueStateDescriptor<UserData> descriptor =
                 new ValueStateDescriptor<>("user-data", UserData.class);
             userDataState = getRuntimeContext().getState(descriptor);
             
             // 注册指标
             MetricGroup metricGroup = getRuntimeContext().getMetricGroup();
             stateSizeCounter = metricGroup.counter("state_size_bytes");
-            stateSizeHistogram = metricGroup.histogram("state_size_distribution", 
+            stateSizeHistogram = metricGroup.histogram("state_size_distribution",
                 new DescriptiveStatisticsHistogram(1000));
         }
         
         @Override
-        public void processElement(Event event, Context ctx, Collector<Event> out) 
+        public void processElement(Event event, Context ctx, Collector<Event> out)
                 throws Exception {
             
             UserData userData = userDataState.value();
@@ -516,7 +543,7 @@ public class StateMonitoring {
             
             // 状态大小告警
             if (stateSize > STATE_SIZE_THRESHOLD) {
-                LOG.warn("Large state detected for key {}: {} bytes", 
+                LOG.warn("Large state detected for key {}: {} bytes",
                          ctx.getCurrentKey(), stateSize);
                 
                 // 可以触发状态清理或发送告警
@@ -544,6 +571,7 @@ public class StateMonitoring {
             }
         }
     }
+
 }
 ```
 
@@ -553,11 +581,14 @@ public class StateMonitoring {
 
 ```java
 /**
+
  * 检查点配置最佳实践
+
  */
 public class CheckpointOptimization {
     
     /**
+
      * 优化检查点配置
      */
     public static void configureCheckpointing(StreamExecutionEnvironment env) {
@@ -632,6 +663,7 @@ public class CheckpointOptimization {
             // 记录检查点失败指标
         }
     }
+
 }
 ```
 
@@ -639,14 +671,17 @@ public class CheckpointOptimization {
 
 ```java
 /**
+
  * 重启策略最佳实践
+
  */
 public class RestartStrategyOptimization {
     
     /**
+
      * 配置重启策略
      */
-    public static void configureRestartStrategy(StreamExecutionEnvironment env, 
+    public static void configureRestartStrategy(StreamExecutionEnvironment env,
                                               RestartStrategyType type) {
         
         switch (type) {
@@ -710,7 +745,7 @@ public class RestartStrategyOptimization {
         }
         
         @Override
-        public void processElement(Event event, Context ctx, Collector<Result> out) 
+        public void processElement(Event event, Context ctx, Collector<Result> out)
                 throws Exception {
             
             int attempts = 0;
@@ -726,7 +761,7 @@ public class RestartStrategyOptimization {
                     lastException = e;
                     attempts++;
                     
-                    LOG.warn("Retryable error processing event {} (attempt {}): {}", 
+                    LOG.warn("Retryable error processing event {} (attempt {}): {}",
                              event.getId(), attempts, e.getMessage());
                     
                     // 指数退避
@@ -739,7 +774,7 @@ public class RestartStrategyOptimization {
                     
                 } catch (NonRetryableException e) {
                     // 不可重试的异常，记录并跳过
-                    LOG.error("Non-retryable error processing event {}: {}", 
+                    LOG.error("Non-retryable error processing event {}: {}",
                               event.getId(), e.getMessage());
                     errorCounter.inc();
                     return;
@@ -747,7 +782,7 @@ public class RestartStrategyOptimization {
             }
             
             // 重试次数用完，记录错误并可能触发故障转移
-            LOG.error("Failed to process event {} after {} attempts", 
+            LOG.error("Failed to process event {} after {} attempts",
                       event.getId(), MAX_RETRY_ATTEMPTS, lastException);
             errorCounter.inc();
             
@@ -782,6 +817,7 @@ public class RestartStrategyOptimization {
     static class NonRetryableException extends Exception {
         public NonRetryableException(String message) { super(message); }
     }
+
 }
 ```
 
@@ -791,11 +827,14 @@ public class RestartStrategyOptimization {
 
 ```java
 /**
+
  * 指标监控最佳实践
+
  */
 public class MetricsMonitoring {
     
     /**
+
      * 自定义指标监控函数
      */
     public static class MetricsProcessFunction extends KeyedProcessFunction<String, Event, Event> {
@@ -830,7 +869,7 @@ public class MetricsMonitoring {
             throughputMeter = metricGroup.meter("throughput", new MeterView(processedCounter, 60));
             
             // 注册处理时间直方图
-            processingTimeHistogram = metricGroup.histogram("processing_time_ms", 
+            processingTimeHistogram = metricGroup.histogram("processing_time_ms",
                 new DescriptiveStatisticsHistogram(1000));
             
             // 注册队列大小仪表盘
@@ -843,7 +882,7 @@ public class MetricsMonitoring {
         }
         
         @Override
-        public void processElement(Event event, Context ctx, Collector<Event> out) 
+        public void processElement(Event event, Context ctx, Collector<Event> out)
                 throws Exception {
             
             long startTime = System.currentTimeMillis();
@@ -953,6 +992,7 @@ public class MetricsMonitoring {
             }
         }
     }
+
 }
 ```
 
@@ -960,11 +1000,14 @@ public class MetricsMonitoring {
 
 ```java
 /**
+
  * 日志和调试最佳实践
+
  */
 public class LoggingAndDebugging {
     
     /**
+
      * 结构化日志记录
      */
     public static class StructuredLoggingFunction extends RichMapFunction<Event, Event> {
@@ -995,7 +1038,7 @@ public class LoggingAndDebugging {
                     logData.put("timestamp", event.getTimestamp());
                     logData.put("subtaskIndex", getRuntimeContext().getIndexOfThisSubtask());
                     
-                    LOG.info(BUSINESS_MARKER, "Processing event: {}", 
+                    LOG.info(BUSINESS_MARKER, "Processing event: {}",
                              objectMapper.writeValueAsString(logData));
                 }
                 
@@ -1005,8 +1048,8 @@ public class LoggingAndDebugging {
                 // 性能日志
                 long processingTime = System.nanoTime() - startTime;
                 if (processingTime > 1_000_000) { // 超过1ms记录性能日志
-                    LOG.warn(PERFORMANCE_MARKER, 
-                             "Slow processing detected: eventId={}, processingTime={}ms", 
+                    LOG.warn(PERFORMANCE_MARKER,
+                             "Slow processing detected: eventId={}, processingTime={}ms",
                              event.getId(), processingTime / 1_000_000.0);
                 }
                 
@@ -1014,7 +1057,7 @@ public class LoggingAndDebugging {
                 
             } catch (Exception e) {
                 // 错误日志
-                LOG.error("Failed to process event: eventId={}, error={}", 
+                LOG.error("Failed to process event: eventId={}, error={}",
                           event.getId(), e.getMessage(), e);
                 throw e;
             }
@@ -1034,7 +1077,7 @@ public class LoggingAndDebugging {
         /**
          * 数据流调试函数
          */
-        public static <T> SingleOutputStreamOperator<T> debug(DataStream<T> stream, 
+        public static <T> SingleOutputStreamOperator<T> debug(DataStream<T> stream,
                                                               String debugName) {
             return stream.map(new DebugMapFunction<>(debugName));
         }
@@ -1065,7 +1108,7 @@ public class LoggingAndDebugging {
                 
                 long currentTime = System.currentTimeMillis();
                 if (currentTime - lastLogTime > 10000) { // 每10秒输出一次
-                    LOG.info("Debug [{}]: Processed {} elements, current element: {}", 
+                    LOG.info("Debug [{}]: Processed {} elements, current element: {}",
                              debugName, elementCount, element);
                     lastLogTime = currentTime;
                 }
@@ -1077,8 +1120,8 @@ public class LoggingAndDebugging {
         /**
          * 数据采样调试
          */
-        public static <T> SingleOutputStreamOperator<T> sample(DataStream<T> stream, 
-                                                               double sampleRate, 
+        public static <T> SingleOutputStreamOperator<T> sample(DataStream<T> stream,
+                                                               double sampleRate,
                                                                String sampleName) {
             return stream.filter(new SampleFilterFunction<>(sampleRate, sampleName));
         }
@@ -1110,6 +1153,7 @@ public class LoggingAndDebugging {
             }
         }
     }
+
 }
 ```
 
@@ -1233,6 +1277,7 @@ spec:
         component: jobmanager
     spec:
       containers:
+
       - name: jobmanager
         image: flink:1.14.4-scala_2.12
         args: ["jobmanager"]
@@ -1300,6 +1345,7 @@ spec:
         component: taskmanager
     spec:
       containers:
+
       - name: taskmanager
         image: flink:1.14.4-scala_2.12
         args: ["taskmanager"]
@@ -1355,6 +1401,7 @@ metadata:
 spec:
   type: ClusterIP
   ports:
+
   - name: rpc
     port: 6123
   - name: blob-server
@@ -1373,12 +1420,14 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
+
   - name: webui
     port: 8081
     targetPort: 8081
   selector:
     app: flink
     component: jobmanager
+
 ```
 
 ### 5.3 监控告警配置
@@ -1394,6 +1443,7 @@ data:
     global:
       scrape_interval: 15s
     scrape_configs:
+
     - job_name: 'flink'
       static_configs:
       - targets: ['flink-jobmanager:9249', 'flink-taskmanager:9249']
@@ -1469,6 +1519,7 @@ metadata:
 data:
   flink.rules: |
     groups:
+
     - name: flink
       rules:
       - alert: FlinkJobDown
@@ -1506,6 +1557,7 @@ data:
         annotations:
           summary: "High latency detected"
           description: "Flink operator latency is above 1000ms: {{ $value }}ms"
+
 ```
 
 ## 6. 总结

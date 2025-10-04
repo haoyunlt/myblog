@@ -42,7 +42,7 @@ graph TB
         subgraph "协议处理层"
             subgraph "S3协议栈"
                 S3Parser[S3请求解析器]
-                S3Auth[S3认证处理器] 
+                S3Auth[S3认证处理器]
                 S3Handler[S3操作处理器]
             end
             
@@ -158,19 +158,26 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * RGW存储抽象层 - 核心接口定义
  * 文件: src/rgw/rgw_sal.h:813-877
- * 
+
+ *
+
  * SAL(Store Abstraction Layer)是RGW的核心架构，分离了
  * 上层协议处理和底层存储实现，支持多种存储后端
+
  */
 
 /**
+
  * Store基类 - 存储后端的抽象接口
+
  */
 class Store {
 public:
     /**
+
      * 虚析构函数
      */
     virtual ~Store() = default;
@@ -251,17 +258,21 @@ public:
      * @param stats 输出统计信息
      * @return 操作结果
      */
-    virtual int get_cluster_stat(const DoutPrefixProvider* dpp, 
+    virtual int get_cluster_stat(const DoutPrefixProvider* dpp,
                                 optional_yield y,
                                 RGWClusterStat& stats) = 0;
+
 };
 
 /**
+
  * Bucket类 - 桶抽象接口
+
  */
 class Bucket {
 public:
     /**
+
      * 桶列表参数结构
      */
     struct ListParams {
@@ -304,10 +315,10 @@ public:
      * @param y 可选yield上下文
      * @return 操作结果
      */
-    virtual int list(const DoutPrefixProvider* dpp, 
-                    ListParams& params, 
+    virtual int list(const DoutPrefixProvider* dpp,
+                    ListParams& params,
                     int max_entries,
-                    ListResults& results, 
+                    ListResults& results,
                     optional_yield y) = 0;
     
     /**
@@ -361,13 +372,16 @@ private:
 };
 
 /**
+
  * Object类 - 对象抽象接口
+
  */
 class Object {
 public:
     // ===================== 对象操作接口 =====================
     
     /**
+
      * 读取对象数据
      * @param dpp 调试前缀提供者
      * @param ofs 读取偏移量
@@ -450,18 +464,25 @@ private:
 
 ```cpp
 /**
+
  * RGW认证体系
  * 文件: src/rgw/rgw_auth_registry.h
- * 
+
+ *
+
  * RGW支持多种认证方式，包括AWS签名v2/v4、Swift令牌认证等
+
  */
 
 /**
+
  * 认证策略注册表
+
  */
 class StrategyRegistry {
 public:
     /**
+
      * AWS签名v4认证策略
      */
     class S3AuthStrategy : public Strategy {
@@ -642,6 +663,7 @@ private:
     
 public:
     /**
+
      * 注册认证策略
      * @param strategy 认证策略对象
      */
@@ -675,6 +697,7 @@ public:
         // 所有策略都失败
         return AuthResult{AuthResult::DENIED, "All auth strategies failed"};
     }
+
 };
 ```
 
@@ -684,16 +707,21 @@ public:
 
 ```cpp
 /**
+
  * S3协议处理核心实现
  * 文件: src/rgw/rgw_rest_s3.cc:5295-5360
+
  */
 
 /**
+
  * RGWHandler_REST_Bucket_S3 - S3桶操作处理器
+
  */
 class RGWHandler_REST_Bucket_S3 : public RGWHandler_REST_S3 {
 public:
     /**
+
      * 处理HTTP PUT请求 - 创建桶或设置桶属性
      * @return 对应的操作对象
      */
@@ -822,6 +850,7 @@ public:
             return new RGWDeleteBucket_ObjStore_S3;
         }
     }
+
 };
 ```
 
@@ -829,16 +858,21 @@ public:
 
 ```cpp
 /**
+
  * Swift协议处理实现
  * 文件: src/rgw/rgw_rest_swift.cc:2857-2943
+
  */
 
 /**
+
  * RGWHandler_REST_Bucket_SWIFT - Swift容器操作处理器
+
  */
 class RGWHandler_REST_Bucket_SWIFT : public RGWHandler_REST_SWIFT {
 public:
     /**
+
      * 处理PUT请求 - Swift容器操作
      */
     RGWOp *op_put() override {
@@ -882,14 +916,18 @@ public:
             return new RGWPutMetadataBucket_ObjStore_SWIFT;
         }
     }
+
 };
 
 /**
+
  * RGWHandler_REST_Obj_SWIFT - Swift对象操作处理器
+
  */
 class RGWHandler_REST_Obj_SWIFT : public RGWHandler_REST_SWIFT {
 public:
     /**
+
      * 处理PUT请求 - 上传对象
      */
     RGWOp *op_put() override {
@@ -942,6 +980,7 @@ public:
     RGWOp *op_copy() override {
         return new RGWCopyObj_ObjStore_SWIFT;
     }
+
 };
 ```
 
@@ -1061,16 +1100,21 @@ graph TB
 
 ```cpp
 /**
+
  * 对象版本控制实现
  * 文件: src/rgw/rgw_op.cc
+
  */
 
 /**
+
  * RGWPutObj_ObjStore - 对象上传操作基类
+
  */
 class RGWPutObj_ObjStore : public RGWPutObj {
 public:
     /**
+
      * 执行对象上传，支持版本控制
      * @return 操作结果
      */
@@ -1109,7 +1153,7 @@ public:
         
         if (s->info.env->exists("HTTP_IF_NONE_MATCH")) {
             std::string if_none_match = s->info.env->get("HTTP_IF_NONE_MATCH");
-            if (object_exists && (if_none_match == "*" || 
+            if (object_exists && (if_none_match == "*" ||
                                  read_result.attrs["etag"] == if_none_match)) {
                 return -ERR_PRECONDITION_FAILED;
             }
@@ -1142,6 +1186,7 @@ public:
 
 private:
     /**
+
      * 生成版本ID
      */
     void generate_version_id() {
@@ -1150,14 +1195,15 @@ private:
         struct timespec ts;
         clock_gettime(CLOCK_REALTIME, &ts);
         
-        snprintf(version_id, sizeof(version_id), 
-                "%lu.%06lu.%d", 
+        snprintf(version_id, sizeof(version_id),
+                "%lu.%06lu.%d",
                 ts.tv_sec, ts.tv_nsec / 1000, rand());
         
         s->object->get_key().instance = version_id;
         
         ldpp_dout(s, 10) << "Generated version ID: " << version_id << dendl;
     }
+
 };
 ```
 
@@ -1165,15 +1211,20 @@ private:
 
 ```cpp
 /**
+
  * 对象生命周期管理实现
  * 文件: src/rgw/rgw_lc.h
+
  */
 
 /**
+
  * 生命周期配置结构
+
  */
 struct RGWLifecycleConfiguration {
     /**
+
      * 生命周期规则
      */
     struct Rule {
@@ -1285,14 +1336,18 @@ struct RGWLifecycleConfiguration {
         
         return Action::NONE;
     }
+
 };
 
 /**
+
  * 生命周期处理器
+
  */
 class RGWLifecycleProcessor {
 public:
     /**
+
      * 处理桶的生命周期规则
      * @param bucket_info 桶信息
      * @param lc_config 生命周期配置
@@ -1322,14 +1377,14 @@ public:
             
             // 处理每个对象
             for (const auto& entry : results.objs) {
-                RGWLifecycleConfiguration::Action action = 
+                RGWLifecycleConfiguration::Action action =
                     lc_config.apply_rules(entry.key, entry.meta, now);
                 
                 switch (action) {
                     case RGWLifecycleConfiguration::Action::DELETE:
                         ret = delete_expired_object(bucket.get(), entry.key);
                         if (ret < 0) {
-                            ldpp_dout(nullptr, 0) << "ERROR: failed to delete expired object " 
+                            ldpp_dout(nullptr, 0) << "ERROR: failed to delete expired object "
                                                   << entry.key.name << dendl;
                         }
                         break;
@@ -1337,7 +1392,7 @@ public:
                     case RGWLifecycleConfiguration::Action::TRANSITION:
                         ret = transition_object(bucket.get(), entry.key, "GLACIER");
                         if (ret < 0) {
-                            ldpp_dout(nullptr, 0) << "ERROR: failed to transition object " 
+                            ldpp_dout(nullptr, 0) << "ERROR: failed to transition object "
                                                   << entry.key.name << dendl;
                         }
                         break;
@@ -1362,6 +1417,7 @@ private:
     rgw::sal::Store* store;             // 存储后端
     
     /**
+
      * 删除过期对象
      * @param bucket 桶对象
      * @param obj_key 对象键
@@ -1385,7 +1441,7 @@ private:
      * @param storage_class 目标存储类
      * @return 操作结果
      */
-    int transition_object(rgw::sal::Bucket* bucket, 
+    int transition_object(rgw::sal::Bucket* bucket,
                          const rgw_obj_key& obj_key,
                          const std::string& storage_class) {
         
@@ -1404,7 +1460,7 @@ private:
         
         ret = obj->set_attrs(nullptr, attrs, null_yield);
         if (ret == 0) {
-            ldpp_dout(nullptr, 10) << "Transitioned object " << obj_key.name 
+            ldpp_dout(nullptr, 10) << "Transitioned object " << obj_key.name
                                   << " to storage class " << storage_class << dendl;
         }
         
@@ -1413,10 +1469,12 @@ private:
 
 public:
     /**
+
      * 构造函数
      * @param s 存储后端
      */
     explicit RGWLifecycleProcessor(rgw::sal::Store* s) : store(s) {}
+
 };
 ```
 
@@ -1674,7 +1732,7 @@ class RGWMonitor:
                 'total_ops': ops_stats['total_ops'],
                 'failed_ops': ops_stats['failed_ops'],
                 'error_rate': (ops_stats['failed_ops'] / max(ops_stats['total_ops'], 1)) * 100,
-                'cache_hit_rate': (ops_stats['cache_hit'] / 
+                'cache_hit_rate': (ops_stats['cache_hit'] /
                                  max(ops_stats['cache_hit'] + ops_stats['cache_miss'], 1)) * 100,
                 'total_bandwidth': bandwidth_stats['total_bandwidth']
             }
@@ -1733,7 +1791,7 @@ def monitor_rgw_cluster(rgw_instances: List[str], interval: int = 60):
                 print(f"  {monitor.daemon_name}: ERROR - {e}")
         
         # 输出集群汇总
-        total_error_rate = (cluster_stats['total_failed_ops'] / 
+        total_error_rate = (cluster_stats['total_failed_ops'] /
                            max(cluster_stats['total_ops'], 1)) * 100
         
         print(f"\nCluster Summary:")

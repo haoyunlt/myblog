@@ -37,11 +37,13 @@ int main(int argc, char **argv)
 ```
 
 **功能说明**:
+
 - 这是 CPython 的最小化入口点
 - 根据平台选择字符编码处理方式
 - 所有实际功能都委托给库函数实现
 
 **参数说明**:
+
 - `argc`: 命令行参数数量
 - `argv`: 命令行参数数组 (Windows 为 wchar_t，Unix 为 char)
 
@@ -78,6 +80,7 @@ int Py_BytesMain(int argc, char **argv)
 ```
 
 **数据结构说明**:
+
 ```c
 typedef struct {
     int argc;              // 参数数量

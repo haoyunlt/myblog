@@ -43,7 +43,7 @@ graph TB
         E[ReActChat] --> E1[__init__<br/>推理行动代理]
     end
     
-    subgraph "LLM服务API" 
+    subgraph "LLM服务API"
         F[get_chat_model] --> F1[模型工厂方法]
         G[BaseChatModel] --> G1[chat<br/>聊天接口]
         G --> G2[quick_chat<br/>快速聊天]
@@ -51,7 +51,7 @@ graph TB
     
     subgraph "工具系统API"
         H[register_tool] --> H1[工具注册装饰器]
-        I[BaseTool] --> I1[call<br/>工具调用接口] 
+        I[BaseTool] --> I1[call<br/>工具调用接口]
         I --> I2[function属性<br/>工具描述]
     end
     
@@ -68,6 +68,7 @@ graph TB
 #### 1.1 Agent.run() - 主要消息处理入口
 
 **函数签名**:
+
 ```python
 def run(self, messages: List[Union[Dict, Message]], **kwargs) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
     """返回基于接收消息的响应生成器
@@ -82,6 +83,7 @@ def run(self, messages: List[Union[Dict, Message]], **kwargs) -> Union[Iterator[
 ```
 
 **完整源码分析**:
+
 ```python
 def run(self, messages: List[Union[Dict, Message]], **kwargs) -> Union[Iterator[List[Message]], Iterator[List[Dict]]]:
     """Agent运行的主入口方法，负责消息预处理和类型转换"""
@@ -178,6 +180,7 @@ sequenceDiagram
 #### 1.2 Agent._call_llm() - LLM调用接口
 
 **函数签名**:
+
 ```python
 def _call_llm(
     self,
@@ -189,12 +192,14 @@ def _call_llm(
 ```
 
 **源码实现**:
+
 ```python
-def _call_llm(self, messages: List[Message], functions: Optional[List[Dict]] = None, 
+def _call_llm(self, messages: List[Message], functions: Optional[List[Dict]] = None,
               stream: bool = True, extra_generate_cfg: Optional[dict] = None) -> Iterator[List[Message]]:
     """Agent调用LLM的统一接口
     
     功能说明:
+
     1. 将Agent的系统消息前置到消息列表
     2. 调用LLM的chat方法进行推理
     3. 合并生成配置参数
@@ -207,23 +212,26 @@ def _call_llm(self, messages: List[Message], functions: Optional[List[Dict]] = N
     """
     return self.llm.chat(
         messages=messages,
-        functions=functions, 
+        functions=functions,
         stream=stream,
         extra_generate_cfg=merge_generate_cfgs(
             base_generate_cfg=self.extra_generate_cfg,  # Agent级别配置
             new_generate_cfg=extra_generate_cfg,        # 调用时配置
         )
     )
+
 ```
 
 #### 1.3 Agent._call_tool() - 工具调用接口
 
 **源码实现**:
+
 ```python  
 def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwargs) -> Union[str, List[ContentItem]]:
     """Agent调用工具的统一接口
     
     功能说明:
+
     1. 验证工具是否存在
     2. 调用具体工具实现
     3. 统一异常处理和错误返回
@@ -263,6 +271,7 @@ def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwarg
         return tool_result  # 多模态工具结果
     else:
         return json.dumps(tool_result, ensure_ascii=False, indent=4)
+
 ```
 
 ### 2. LLM服务API
@@ -270,11 +279,13 @@ def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwarg
 #### 2.1 get_chat_model() - 模型工厂方法
 
 **函数签名**:
+
 ```python
 def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
 ```
 
 **完整源码分析**:
+
 ```python
 def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
     """LLM对象实例化的统一接口
@@ -341,6 +352,7 @@ def get_chat_model(cfg: Union[dict, str] = 'qwen-plus') -> BaseChatModel:
 #### 2.2 BaseChatModel.chat() - 核心聊天接口
 
 **函数签名**:
+
 ```python
 def chat(
     self,
@@ -353,6 +365,7 @@ def chat(
 ```
 
 **关键实现逻辑**:
+
 ```python
 def chat(self, messages, functions=None, stream=True, delta_stream=False, extra_generate_cfg=None):
     """LLM聊天的核心接口，处理所有LLM交互逻辑"""
@@ -369,7 +382,7 @@ def chat(self, messages, functions=None, stream=True, delta_stream=False, extra_
             _return_message_type = 'message'
     messages = new_messages
     
-    # 2. 缓存查找 
+    # 2. 缓存查找
     if self.cache is not None:
         cache_key = dict(messages=messages, functions=functions, extra_generate_cfg=extra_generate_cfg)
         cache_key: str = json_dumps_compact(cache_key, sort_keys=True)
@@ -462,11 +475,13 @@ def chat(self, messages, functions=None, stream=True, delta_stream=False, extra_
 #### 3.1 register_tool() - 工具注册装饰器
 
 **源码实现**:
+
 ```python
 def register_tool(name, allow_overwrite=False):
     """工具注册装饰器，实现工具的自动注册机制
     
     参数说明:
+
     - name: 工具名称，必须唯一
     - allow_overwrite: 是否允许覆盖已存在的工具
     """
@@ -489,9 +504,11 @@ def register_tool(name, allow_overwrite=False):
         return cls
     
     return decorator
+
 ```
 
 **使用示例**:
+
 ```python
 @register_tool('weather_query')  
 class WeatherTool(BaseTool):
@@ -500,7 +517,7 @@ class WeatherTool(BaseTool):
     parameters = [{
         'name': 'city',
         'type': 'string',
-        'description': '城市名称', 
+        'description': '城市名称',
         'required': True
     }]
     
@@ -525,12 +542,14 @@ class WeatherTool(BaseTool):
 #### 4.1 WebUI类初始化
 
 **源码分析**:
+
 ```python  
 class WebUI:
     def __init__(self, agent: Union[Agent, MultiAgentHub, List[Agent]], chatbot_config: Optional[dict] = None):
         """WebUI初始化方法
         
         功能说明:
+
         1. 支持单Agent、多Agent Hub、Agent列表等多种输入
         2. 配置用户和Agent的显示信息
         3. 设置界面交互参数
@@ -566,6 +585,7 @@ class WebUI:
         self.input_placeholder = chatbot_config.get('input.placeholder', '跟我聊聊吧～')
         self.prompt_suggestions = chatbot_config.get('prompt.suggestions', [])
         self.verbose = chatbot_config.get('verbose', False)
+
 ```
 
 ## 🔗 API调用链路深度分析
@@ -578,7 +598,7 @@ graph TD
     B --> C[消息预处理]
     C --> C1[深拷贝消息]
     C --> C2[格式统一转换]
-    C --> C3[语言自动检测] 
+    C --> C3[语言自动检测]
     C --> C4[添加系统消息]
     
     C --> D[调用 _run 抽象方法]
@@ -625,7 +645,7 @@ sequenceDiagram
     else 缓存未命中
         B->>C: 消息预处理
         C->>C: 多模态格式化
-        C->>C: 添加上传信息 
+        C->>C: 添加上传信息
         C-->>B: 预处理完成
         
         B->>D: _chat_with_functions
@@ -714,6 +734,7 @@ def create_assistant():
     
     # 3. 系统消息配置
     system_msg = '''你是一个专业的AI助手，具备以下能力：
+
     1. 代码编写和执行
     2. 网络搜索和信息检索
     3. 多轮对话和上下文理解
@@ -730,6 +751,7 @@ def create_assistant():
     )
     
     return agent
+
 ```
 
 ### 2. 消息处理最佳实践
@@ -780,7 +802,7 @@ class FileAnalyzerTool(BaseTool):
                 'description': '要分析的文件路径'
             },
             'analysis_type': {
-                'type': 'string', 
+                'type': 'string',
                 'enum': ['summary', 'keywords', 'structure'],
                 'description': '分析类型：摘要、关键词或结构分析'
             }
@@ -884,7 +906,7 @@ class APIUsageTracker:
     def __init__(self):
         self.stats = {
             'agent_calls': 0,
-            'llm_calls': 0, 
+            'llm_calls': 0,
             'tool_calls': 0,
             'errors': 0
         }

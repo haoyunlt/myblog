@@ -49,7 +49,7 @@ sequenceDiagram
     
     Note over ToolHandler: 参数验证函数调用
     ToolHandler->>ToolHandler: RequiredParam[string](request, "owner")
-    ToolHandler->>ToolHandler: RequiredParam[string](request, "repo") 
+    ToolHandler->>ToolHandler: RequiredParam[string](request, "repo")
     ToolHandler->>ToolHandler: OptionalPaginationParams(request)
     
     Note over ToolHandler,GitHubAPI: 2. GitHub客户端获取
@@ -143,7 +143,7 @@ func OptionalPaginationParams(r mcp.CallToolRequest) (PaginationParams, error) {
     
     return PaginationParams{
         Page:    page,
-        PerPage: perPage, 
+        PerPage: perPage,
         After:   after,
     }, nil
 }
@@ -180,7 +180,7 @@ func GetIssue(getClient GetClientFn, t translations.TranslationHelperFunc) (tool
             return mcp.NewToolResultError(err.Error()), nil
         }
         
-        repo, err := RequiredParam[string](request, "repo") 
+        repo, err := RequiredParam[string](request, "repo")
         if err != nil {
             return mcp.NewToolResultError(err.Error()), nil
         }
@@ -287,7 +287,7 @@ func ListIssues(getGQLClient GetGQLClientFn, t translations.TranslationHelperFun
         // 构建GraphQL查询变量
         vars := map[string]interface{}{
             "owner":     githubv4.String(owner),
-            "repo":      githubv4.String(repo), 
+            "repo":      githubv4.String(repo),
             "states":    states,
             "orderBy":   githubv4.IssueOrderField("CREATED_AT"),
             "direction": githubv4.OrderDirection("DESC"),
@@ -473,7 +473,7 @@ func GetFileContents(getClient GetClientFn, getRawClient raw.GetRawClientFn, t t
                 }
                 
                 result := mcp.BlobResourceContents{
-                    URI:      resourceURI, 
+                    URI:      resourceURI,
                     Blob:     base64.StdEncoding.EncodeToString(body),
                     MIMEType: contentType,
                 }

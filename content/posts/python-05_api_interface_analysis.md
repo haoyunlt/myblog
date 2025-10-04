@@ -139,10 +139,12 @@ graph TB
 /* Python/pylifecycle.c - 解释器生命周期管理 */
 
 /*
+
  * 功能: 使用默认配置初始化 Python 解释器
  * 参数: 无
  * 返回: 无
  * 注意: 必须在其他 Python API 调用前调用
+
  */
 void Py_Initialize(void)
 {
@@ -150,9 +152,11 @@ void Py_Initialize(void)
 }
 
 /*
+
  * 功能: 初始化 Python 解释器（可选择是否安装信号处理器）
  * 参数: install_sigs - 是否安装信号处理器
  * 返回: 无
+
  */
 void Py_InitializeEx(int install_sigs)
 {
@@ -185,10 +189,12 @@ void Py_InitializeEx(int install_sigs)
 }
 
 /*
+
  * 功能: 从详细配置初始化 Python 解释器
  * 参数: config - 详细配置结构
  * 返回: PyStatus - 初始化状态
  * 用途: 嵌入应用的精确配置控制
+
  */
 PyStatus Py_InitializeFromConfig(const PyConfig *config)
 {
@@ -226,9 +232,11 @@ PyStatus Py_InitializeFromConfig(const PyConfig *config)
 }
 
 /*
+
  * 功能: 检查解释器是否已初始化
  * 参数: 无
  * 返回: int - 1 表示已初始化，0 表示未初始化
+
  */
 int Py_IsInitialized(void)
 {
@@ -236,10 +244,12 @@ int Py_IsInitialized(void)
 }
 
 /*
+
  * 功能: 终止 Python 解释器
  * 参数: 无
  * 返回: 无
  * 注意: 释放所有子解释器和线程状态
+
  */
 void Py_Finalize(void)
 {
@@ -269,9 +279,11 @@ void Py_Finalize(void)
 }
 
 /*
+
  * 功能: 终止解释器并设置退出码
  * 参数: sts - 退出状态码
  * 返回: 无 (不返回)
+
  */
 void Py_Exit(int sts)
 {
@@ -361,9 +373,11 @@ typedef struct PyConfig {
 } PyConfig;
 
 /*
+
  * 功能: 初始化配置为 Python 配置
  * 参数: config - 要初始化的配置结构指针
  * 返回: 无
+
  */
 void PyConfig_InitPythonConfig(PyConfig *config)
 {
@@ -394,9 +408,11 @@ void PyConfig_InitPythonConfig(PyConfig *config)
 }
 
 /*
+
  * 功能: 清理配置结构中分配的内存
  * 参数: config - 要清理的配置结构指针
  * 返回: 无
+
  */
 void PyConfig_Clear(PyConfig *config)
 {
@@ -439,10 +455,12 @@ void PyConfig_Clear(PyConfig *config)
 /* Objects/abstract.c - 抽象对象协议 */
 
 /*
+
  * 功能: 获取对象的字符串表示
  * 参数: o - 对象指针
  * 返回: PyObject* - 字符串对象，失败时返回 NULL
  * 等价于: Python 中的 repr(o)
+
  */
 PyObject *PyObject_Repr(PyObject *o)
 {
@@ -476,10 +494,12 @@ PyObject *PyObject_Repr(PyObject *o)
 }
 
 /*
+
  * 功能: 获取对象的字符串值
  * 参数: o - 对象指针
  * 返回: PyObject* - 字符串对象，失败时返回 NULL
  * 等价于: Python 中的 str(o)
+
  */
 PyObject *PyObject_Str(PyObject *o)
 {
@@ -517,11 +537,13 @@ PyObject *PyObject_Str(PyObject *o)
 }
 
 /*
+
  * 功能: 获取对象属性
  * 参数: o - 对象指针
  *      attr_name - 属性名字符串
  * 返回: PyObject* - 属性值，失败时返回 NULL
  * 等价于: Python 中的 getattr(o, attr_name)
+
  */
 PyObject *PyObject_GetAttr(PyObject *o, PyObject *attr_name)
 {
@@ -549,12 +571,14 @@ PyObject *PyObject_GetAttr(PyObject *o, PyObject *attr_name)
 }
 
 /*
+
  * 功能: 设置对象属性
  * 参数: o - 对象指针
  *      attr_name - 属性名字符串
  *      v - 属性值
  * 返回: int - 成功返回 0，失败返回 -1
  * 等价于: Python 中的 setattr(o, attr_name, v)
+
  */
 int PyObject_SetAttr(PyObject *o, PyObject *attr_name, PyObject *v)
 {
@@ -592,12 +616,14 @@ int PyObject_SetAttr(PyObject *o, PyObject *attr_name, PyObject *v)
 }
 
 /*
+
  * 功能: 调用对象
  * 参数: callable - 可调用对象
  *      args - 位置参数元组
  *      kwargs - 关键字参数字典
  * 返回: PyObject* - 调用结果，失败时返回 NULL
  * 等价于: Python 中的 callable(*args, **kwargs)
+
  */
 PyObject *PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 {
@@ -636,11 +662,13 @@ PyObject *PyObject_Call(PyObject *callable, PyObject *args, PyObject *kwargs)
 }
 
 /*
+
  * 功能: 检查对象是否为某个类型的实例
  * 参数: inst - 实例对象
  *      cls - 类对象
  * 返回: int - 是实例返回 1，不是返回 0，出错返回 -1
  * 等价于: Python 中的 isinstance(inst, cls)
+
  */
 int PyObject_IsInstance(PyObject *inst, PyObject *cls)
 {
@@ -691,10 +719,12 @@ int PyObject_IsInstance(PyObject *inst, PyObject *cls)
 /* Objects/abstract.c - 序列协议 */
 
 /*
+
  * 功能: 获取序列长度
  * 参数: o - 序列对象
  * 返回: Py_ssize_t - 长度，失败时返回 -1
  * 等价于: Python 中的 len(o)
+
  */
 Py_ssize_t PySequence_Size(PyObject *o)
 {
@@ -722,11 +752,13 @@ Py_ssize_t PySequence_Size(PyObject *o)
 }
 
 /*
+
  * 功能: 获取序列指定位置的项
  * 参数: o - 序列对象
  *      i - 索引
  * 返回: PyObject* - 项对象，失败时返回 NULL
  * 等价于: Python 中的 o[i]
+
  */
 PyObject *PySequence_GetItem(PyObject *o, Py_ssize_t i)
 {
@@ -758,12 +790,14 @@ PyObject *PySequence_GetItem(PyObject *o, Py_ssize_t i)
 }
 
 /*
+
  * 功能: 设置序列指定位置的项
  * 参数: o - 序列对象
  *      i - 索引
  *      v - 新值
  * 返回: int - 成功返回 0，失败返回 -1
  * 等价于: Python 中的 o[i] = v
+
  */
 int PySequence_SetItem(PyObject *o, Py_ssize_t i, PyObject *v)
 {
@@ -802,11 +836,13 @@ int PySequence_SetItem(PyObject *o, Py_ssize_t i, PyObject *v)
 }
 
 /*
+
  * 功能: 连接两个序列
  * 参数: o1 - 第一个序列
  *      o2 - 第二个序列
  * 返回: PyObject* - 连接后的序列，失败时返回 NULL
  * 等价于: Python 中的 o1 + o2
+
  */
 PyObject *PySequence_Concat(PyObject *o1, PyObject *o2)
 {
@@ -826,11 +862,13 @@ PyObject *PySequence_Concat(PyObject *o1, PyObject *o2)
 }
 
 /*
+
  * 功能: 重复序列
  * 参数: o - 序列对象
  *      count - 重复次数
  * 返回: PyObject* - 重复后的序列，失败时返回 NULL
  * 等价于: Python 中的 o * count
+
  */
 PyObject *PySequence_Repeat(PyObject *o, Py_ssize_t count)
 {
@@ -855,11 +893,13 @@ PyObject *PySequence_Repeat(PyObject *o, Py_ssize_t count)
 }
 
 /*
+
  * 功能: 在序列中查找项的索引
  * 参数: o - 序列对象
  *      value - 要查找的值
  * 返回: Py_ssize_t - 索引位置，未找到返回 -1
  * 等价于: Python 中的 o.index(value)
+
  */
 Py_ssize_t PySequence_Index(PyObject *o, PyObject *value)
 {
@@ -897,11 +937,13 @@ Py_ssize_t PySequence_Index(PyObject *o, PyObject *value)
 }
 
 /*
+
  * 功能: 统计序列中某值的出现次数
  * 参数: o - 序列对象
  *      value - 要统计的值
  * 返回: Py_ssize_t - 出现次数，失败时返回 -1
  * 等价于: Python 中的 o.count(value)
+
  */
 Py_ssize_t PySequence_Count(PyObject *o, PyObject *value)
 {
@@ -950,10 +992,12 @@ Py_ssize_t PySequence_Count(PyObject *o, PyObject *value)
 /* Objects/obmalloc.c - 内存管理 API */
 
 /*
+
  * 功能: 分配原始内存
  * 参数: size - 要分配的字节数
  * 返回: void* - 内存指针，失败时返回 NULL
  * 注意: 不初始化内存内容，不触发 GC
+
  */
 void *PyMem_RawMalloc(size_t size)
 {
@@ -964,10 +1008,12 @@ void *PyMem_RawMalloc(size_t size)
 }
 
 /*
+
  * 功能: 重新分配原始内存
  * 参数: ptr - 原内存指针
  *      new_size - 新的大小
  * 返回: void* - 新内存指针，失败时返回 NULL
+
  */
 void *PyMem_RawRealloc(void *ptr, size_t new_size)
 {
@@ -978,9 +1024,11 @@ void *PyMem_RawRealloc(void *ptr, size_t new_size)
 }
 
 /*
+
  * 功能: 释放原始内存
  * 参数: ptr - 要释放的内存指针
  * 返回: 无
+
  */
 void PyMem_RawFree(void *ptr)
 {
@@ -988,10 +1036,12 @@ void PyMem_RawFree(void *ptr)
 }
 
 /*
+
  * 功能: 分配内存（Python 对象）
  * 参数: size - 要分配的字节数
  * 返回: void* - 内存指针，失败时返回 NULL
  * 注意: 用于 Python 对象的内存分配，支持调试跟踪
+
  */
 void *PyMem_Malloc(size_t size)
 {
@@ -1006,10 +1056,12 @@ void *PyMem_Malloc(size_t size)
 }
 
 /*
+
  * 功能: 分配并清零内存
  * 参数: nelem - 元素数量
  *      elsize - 每个元素的大小
  * 返回: void* - 内存指针，失败时返回 NULL
+
  */
 void *PyMem_Calloc(size_t nelem, size_t elsize)
 {
@@ -1024,10 +1076,12 @@ void *PyMem_Calloc(size_t nelem, size_t elsize)
 }
 
 /*
+
  * 功能: 重新分配内存
  * 参数: ptr - 原内存指针
  *      new_size - 新的大小
  * 返回: void* - 新内存指针，失败时返回 NULL
+
  */
 void *PyMem_Realloc(void *ptr, size_t new_size)
 {
@@ -1038,9 +1092,11 @@ void *PyMem_Realloc(void *ptr, size_t new_size)
 }
 
 /*
+
  * 功能: 释放内存
  * 参数: ptr - 要释放的内存指针
  * 返回: 无
+
  */
 void PyMem_Free(void *ptr)
 {
@@ -1049,10 +1105,12 @@ void PyMem_Free(void *ptr)
 }
 
 /*
+
  * 功能: 分配 Python 对象内存
  * 参数: size - 要分配的字节数
  * 返回: void* - 内存指针，失败时返回 NULL
  * 注意: 用于可能参与垃圾回收的对象
+
  */
 void *PyObject_Malloc(size_t size)
 {
@@ -1067,10 +1125,12 @@ void *PyObject_Malloc(size_t size)
 }
 
 /*
+
  * 功能: 分配并清零对象内存
  * 参数: nelem - 元素数量
  *      elsize - 每个元素的大小
  * 返回: void* - 内存指针，失败时返回 NULL
+
  */
 void *PyObject_Calloc(size_t nelem, size_t elsize)
 {
@@ -1085,10 +1145,12 @@ void *PyObject_Calloc(size_t nelem, size_t elsize)
 }
 
 /*
+
  * 功能: 重新分配对象内存
  * 参数: ptr - 原内存指针
  *      new_size - 新的大小
  * 返回: void* - 新内存指针，失败时返回 NULL
+
  */
 void *PyObject_Realloc(void *ptr, size_t new_size)
 {
@@ -1099,9 +1161,11 @@ void *PyObject_Realloc(void *ptr, size_t new_size)
 }
 
 /*
+
  * 功能: 释放对象内存
  * 参数: ptr - 要释放的内存指针
  * 返回: 无
+
  */
 void PyObject_Free(void *ptr)
 {
@@ -1118,11 +1182,13 @@ void PyObject_Free(void *ptr)
 /* Python/errors.c - 异常处理 API */
 
 /*
+
  * 功能: 设置异常
  * 参数: exception - 异常类型
  *      string - 异常消息
  * 返回: 无
  * 用途: 设置简单的字符串异常
+
  */
 void PyErr_SetString(PyObject *exception, const char *string)
 {
@@ -1132,11 +1198,13 @@ void PyErr_SetString(PyObject *exception, const char *string)
 }
 
 /*
+
  * 功能: 使用格式化字符串设置异常
  * 参数: exception - 异常类型
  *      format - 格式化字符串
  *      ... - 可变参数
  * 返回: 无
+
  */
 void PyErr_Format(PyObject *exception, const char *format, ...)
 {
@@ -1152,10 +1220,12 @@ void PyErr_Format(PyObject *exception, const char *format, ...)
 }
 
 /*
+
  * 功能: 设置异常对象
  * 参数: exception - 异常类型
  *      value - 异常值
  * 返回: 无
+
  */
 void PyErr_SetObject(PyObject *exception, PyObject *value)
 {
@@ -1175,9 +1245,11 @@ void PyErr_SetObject(PyObject *exception, PyObject *value)
 }
 
 /*
+
  * 功能: 检查是否发生了异常
  * 参数: 无
  * 返回: int - 发生异常返回 1，否则返回 0
+
  */
 int PyErr_Occurred(void)
 {
@@ -1186,12 +1258,14 @@ int PyErr_Occurred(void)
 }
 
 /*
+
  * 功能: 获取当前异常信息
  * 参数: ptype - 异常类型输出指针
  *      pvalue - 异常值输出指针
  *      ptraceback - 回溯信息输出指针
  * 返回: 无
  * 注意: 调用后异常状态被清除
+
  */
 void PyErr_Fetch(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
 {
@@ -1219,11 +1293,13 @@ void PyErr_Fetch(PyObject **ptype, PyObject **pvalue, PyObject **ptraceback)
 }
 
 /*
+
  * 功能: 恢复异常状态
  * 参数: type - 异常类型
  *      value - 异常值
  *      traceback - 回溯信息
  * 返回: 无
+
  */
 void PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 {
@@ -1248,9 +1324,11 @@ void PyErr_Restore(PyObject *type, PyObject *value, PyObject *traceback)
 }
 
 /*
+
  * 功能: 清除当前异常状态
  * 参数: 无
  * 返回: 无
+
  */
 void PyErr_Clear(void)
 {
@@ -1258,10 +1336,12 @@ void PyErr_Clear(void)
 }
 
 /*
+
  * 功能: 检查异常是否匹配指定类型
  * 参数: given - 当前异常类型
  *      exc - 要匹配的异常类型
  * 返回: int - 匹配返回 1，否则返回 0
+
  */
 int PyErr_GivenExceptionMatches(PyObject *given, PyObject *exc)
 {
@@ -1287,9 +1367,11 @@ int PyErr_GivenExceptionMatches(PyObject *given, PyObject *exc)
 }
 
 /*
+
  * 功能: 检查当前异常是否匹配指定类型
  * 参数: exc - 要匹配的异常类型
  * 返回: int - 匹配返回 1，否则返回 0
+
  */
 int PyErr_ExceptionMatches(PyObject *exc)
 {
@@ -1297,9 +1379,11 @@ int PyErr_ExceptionMatches(PyObject *exc)
 }
 
 /*
+
  * 功能: 打印异常信息到 stderr
  * 参数: 无
  * 返回: 无
+
  */
 void PyErr_Print(void)
 {
@@ -1307,9 +1391,11 @@ void PyErr_Print(void)
 }
 
 /*
+
  * 功能: 打印异常信息
  * 参数: set_sys_last_vars - 是否设置 sys.last_* 变量
  * 返回: 无
+
  */
 void PyErr_PrintEx(int set_sys_last_vars)
 {
@@ -1377,10 +1463,12 @@ void PyErr_PrintEx(int set_sys_last_vars)
 /* Python/pystate.c - 线程状态和 GIL 管理 */
 
 /*
+
  * 功能: 获取当前线程状态
  * 参数: 无
  * 返回: PyThreadState* - 当前线程状态，可能为 NULL
  * 注意: 不检查 GIL 状态
+
  */
 PyThreadState *PyThreadState_Get(void)
 {
@@ -1392,10 +1480,12 @@ PyThreadState *PyThreadState_Get(void)
 }
 
 /*
+
  * 功能: 交换当前线程状态
  * 参数: newts - 新的线程状态
  * 返回: PyThreadState* - 之前的线程状态
  * 注意: 调用者必须持有 GIL
+
  */
 PyThreadState *PyThreadState_Swap(PyThreadState *newts)
 {
@@ -1407,10 +1497,12 @@ PyThreadState *PyThreadState_Swap(PyThreadState *newts)
 }
 
 /*
+
  * 功能: 释放 GIL 并保存线程状态
  * 参数: 无
  * 返回: PyThreadState* - 当前线程状态
  * 用途: 在长时间 CPU 操作前释放 GIL
+
  */
 PyThreadState *PyEval_SaveThread(void)
 {
@@ -1434,10 +1526,12 @@ PyThreadState *PyEval_SaveThread(void)
 }
 
 /*
+
  * 功能: 重新获取 GIL 并恢复线程状态
  * 参数: tstate - 之前保存的线程状态
  * 返回: 无
  * 用途: 在 PyEval_SaveThread() 之后重新获取 GIL
+
  */
 void PyEval_RestoreThread(PyThreadState *tstate)
 {
@@ -1459,10 +1553,12 @@ void PyEval_RestoreThread(PyThreadState *tstate)
 }
 
 /*
+
  * 功能: 确保当前线程已准备调用 Python API
  * 参数: 无
  * 返回: PyGILState_STATE - GIL 状态，用于后续恢复
  * 用途: 从 C 回调函数中安全调用 Python API
+
  */
 PyGILState_STATE PyGILState_Ensure(void)
 {
@@ -1490,9 +1586,11 @@ PyGILState_STATE PyGILState_Ensure(void)
 }
 
 /*
+
  * 功能: 恢复之前的 GIL 状态
  * 参数: oldstate - PyGILState_Ensure() 返回的状态
  * 返回: 无
+
  */
 void PyGILState_Release(PyGILState_STATE oldstate)
 {
@@ -1508,10 +1606,12 @@ void PyGILState_Release(PyGILState_STATE oldstate)
 }
 
 /*
+
  * 功能: 初始化线程支持
  * 参数: 无
  * 返回: 无
  * 注意: 在 Python 3.7+ 中，GIL 在 Py_Initialize() 时自动初始化
+
  */
 void PyEval_InitThreads(void)
 {
@@ -1520,9 +1620,11 @@ void PyEval_InitThreads(void)
 }
 
 /*
+
  * 功能: 创建新的线程状态
  * 参数: interp - 解释器状态
  * 返回: PyThreadState* - 新的线程状态
+
  */
 PyThreadState *PyThreadState_New(PyInterpreterState *interp)
 {
@@ -1573,9 +1675,11 @@ PyThreadState *PyThreadState_New(PyInterpreterState *interp)
 }
 
 /*
+
  * 功能: 删除线程状态
  * 参数: tstate - 要删除的线程状态
  * 返回: 无
+
  */
 void PyThreadState_Delete(PyThreadState *tstate)
 {
@@ -1774,10 +1878,12 @@ fail_with_config:
 #include <Python.h>
 
 /*
+
  * 功能: C 函数实现 - 计算两数之和
  * 参数: self - 模块对象
  *      args - 参数元组
  * 返回: PyObject* - 结果对象
+
  */
 static PyObject *
 math_add(PyObject *self, PyObject *args)
@@ -1797,10 +1903,12 @@ math_add(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 计算斐波那契数列
  * 参数: self - 模块对象
  *      args - 参数元组
  * 返回: PyObject* - 结果列表
+
  */
 static PyObject *
 math_fibonacci(PyObject *self, PyObject *args)
@@ -1845,11 +1953,13 @@ math_fibonacci(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 带关键字参数的函数示例
  * 参数: self - 模块对象
  *      args - 位置参数元组
  *      kwargs - 关键字参数字典
  * 返回: PyObject* - 结果对象
+
  */
 static PyObject *
 math_power(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -1931,9 +2041,11 @@ typedef struct {
 } ThreadData;
 
 /*
+
  * 功能: 线程工作函数
  * 参数: arg - ThreadData 指针
  * 返回: void* - 线程返回值
+
  */
 void *thread_worker(void *arg)
 {

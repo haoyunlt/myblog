@@ -122,6 +122,7 @@ def generate_repo(
 ```
 
 **核心功能**：
+
 - **团队组建**：创建并配置各种角色（TeamLeader、ProductManager、Architect、Engineer2、DataAnalyst）
 - **预算管理**：控制AI调用成本，防止超出预算
 - **项目执行**：协调各角色完成软件开发任务
@@ -145,6 +146,7 @@ class Team(BaseModel):
 ```
 
 **关键方法**：
+
 - `hire(roles)`: 雇佣角色到团队
 - `invest(investment)`: 设置投资预算
 - `run(n_round, idea)`: 运行团队协作
@@ -168,6 +170,7 @@ class Environment(ExtEnv):
 ```
 
 **核心功能**：
+
 - **消息路由**：在角色间传递消息和通知
 - **状态管理**：维护全局状态和历史记录
 - **资源管理**：管理共享资源和配置
@@ -399,7 +402,7 @@ def _check_balance(self):
     """检查预算余额"""
     if self.cost_manager.total_cost >= self.cost_manager.max_budget:
         raise NoMoneyException(
-            self.cost_manager.total_cost, 
+            self.cost_manager.total_cost,
             f"资金不足: {self.cost_manager.max_budget}"
         )
 ```

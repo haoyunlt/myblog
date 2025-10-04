@@ -447,6 +447,7 @@ class Thread:
         初始化线程对象
 
         参数说明:
+
         - group: 保留参数，必须为None
         - target: 线程执行的目标函数
         - name: 线程名称
@@ -675,6 +676,7 @@ class Lock:
         获取锁
 
         参数:
+
         - blocking: 是否阻塞
         - timeout: 超时时间（秒）
 

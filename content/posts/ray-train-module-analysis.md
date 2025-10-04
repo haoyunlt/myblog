@@ -11,7 +11,7 @@ weight: 1
 ---
 
 - [1. Ray Train概述](#1-ray-train概述)
-- [2. 核心架构设计](#2-核心架构设计) 
+- [2. 核心架构设计](#2-核心架构设计)
 - [3. 训练器体系](#3-训练器体系)
 - [4. 执行引擎剖析](#4-执行引擎剖析)
 - [5. 分布式训练协调](#5-分布式训练协调)
@@ -79,7 +79,7 @@ graph TB
 graph TB
     subgraph "用户接口层"
         A1[TorchTrainer]
-        A2[TensorflowTrainer] 
+        A2[TensorflowTrainer]
         A3[HorovodTrainer]
         A4[XGBoostTrainer]
     end
@@ -166,6 +166,7 @@ class BaseTrainer(abc.ABC):
     分布式训练的基础接口定义
     
     核心职责：
+
     1. 定义训练的标准流程
     2. 提供序列化和远程执行支持
     3. 管理训练配置和元数据
@@ -255,14 +256,15 @@ class BaseTrainer(abc.ABC):
 
 # 训练协调器函数
 def _train_coordinator_fn(
-    config: dict, 
-    trainer_cls: Type["BaseTrainer"], 
+    config: dict,
+    trainer_cls: Type["BaseTrainer"],
     metadata: dict
 ):
     """
     训练协调器的执行函数
     
     功能：
+
     1. 重建训练器实例
     2. 调用setup()进行初始化
     3. 执行training_loop()
@@ -274,7 +276,7 @@ def _train_coordinator_fn(
     # 设置运行时上下文
     train_context = {
         "world_rank": 0,
-        "local_rank": 0, 
+        "local_rank": 0,
         "world_size": 1,
         "datasets": trainer.datasets,
         "metadata": metadata
@@ -294,6 +296,7 @@ def _train_coordinator_fn(
     finally:
         # 清理资源
         _cleanup_training_resources()
+
 ```
 
 ### 3.2 DataParallelTrainer数据并行实现
@@ -306,6 +309,7 @@ class DataParallelTrainer(BaseTrainer):
     数据并行训练器 - SPMD模式实现
     
     核心概念：
+
     1. SPMD (Single Program, Multiple Data) - 相同程序，不同数据
     2. 多个worker并行执行相同的训练函数
     3. 数据自动分片到各个worker
@@ -424,6 +428,7 @@ class DataParallelTrainer(BaseTrainer):
                 f"train_loop_per_worker can only take 0 or 1 arguments, "
                 f"got {len(params)}"
             )
+
 ```
 
 ### 3.3 TorchTrainer实现示例
@@ -436,6 +441,7 @@ class TorchTrainer(DataParallelTrainer):
     PyTorch分布式训练器
     
     特性：
+
     1. 自动设置PyTorch分布式环境
     2. 支持NCCL/Gloo通信后端
     3. 集成PyTorch DDP
@@ -506,6 +512,7 @@ class TorchBackend(Backend):
         启动时的初始化逻辑
         
         功能：
+
         1. 设置环境变量
         2. 初始化分布式进程组
         3. 配置CUDA设备
@@ -523,7 +530,7 @@ class TorchBackend(Backend):
             
             # 设置环境变量
             os.environ["RANK"] = str(world_rank)
-            os.environ["LOCAL_RANK"] = str(local_rank) 
+            os.environ["LOCAL_RANK"] = str(local_rank)
             os.environ["WORLD_SIZE"] = str(world_size)
             
             # 初始化进程组
@@ -558,6 +565,7 @@ class TorchBackend(Backend):
                 dist.destroy_process_group()
         
         worker_group.execute(cleanup_torch)
+
 ```
 
 ---
@@ -573,6 +581,7 @@ class BackendExecutor:
     训练后端的主要执行类
     
     核心职责：
+
     1. 管理worker组生命周期
     2. 执行分布式训练函数
     3. 收集训练中间结果
@@ -614,7 +623,7 @@ class BackendExecutor:
         self._last_failure = None
     
     def start(
-        self, 
+        self,
         initialization_hook: Optional[Callable] = None,
         placement_group: Optional[PlacementGroup] = None
     ) -> None:
@@ -750,8 +759,8 @@ class BackendExecutor:
         )
     
     def _shard_datasets(
-        self, 
-        datasets: Dict[str, Dataset], 
+        self,
+        datasets: Dict[str, Dataset],
         data_config: DataConfig
     ) -> List[Dict[str, Dataset]]:
         """
@@ -775,6 +784,7 @@ class BackendExecutor:
                     shards[i][dataset_name] = dataset
         
         return shards
+
 ```
 
 ---
@@ -791,6 +801,7 @@ class _TrainSession:
     训练会话 - 管理单个worker的训练状态
     
     核心功能：
+
     1. 维护训练上下文信息
     2. 处理指标报告和检查点
     3. 协调分布式训练同步
@@ -926,6 +937,7 @@ def report(
     报告训练指标和检查点
     
     功能：
+
     1. 收集分布式训练指标
     2. 保存和同步检查点
     3. 触发回调和日志记录
@@ -987,13 +999,14 @@ def get_dataset_shard(dataset_name: str) -> Dataset:
     
     return session.dataset_shard[dataset_name]
 
-@PublicAPI(stability="stable") 
+@PublicAPI(stability="stable")
 def get_context() -> TrainContext:
     """
     获取当前训练上下文
     
     返回：
         TrainContext: 包含分布式训练信息
+
             - world_rank: 全局排名
             - local_rank: 本地排名
             - world_size: 总worker数
@@ -1009,6 +1022,7 @@ def get_context() -> TrainContext:
         world_size=session.world_size,
         metadata=session.metadata
     )
+
 ```
 
 ---
@@ -1069,6 +1083,7 @@ def train_loop_per_worker(config):
     每个worker执行的训练函数
     
     核心特性：
+
     1. 自动分布式数据并行
     2. 检查点保存和恢复
     3. 指标报告和监控
@@ -1199,9 +1214,9 @@ def prepare_data():
     
     # 下载MNIST数据集
     train_dataset = datasets.MNIST(
-        root="./data", 
-        train=True, 
-        download=True, 
+        root="./data",
+        train=True,
+        download=True,
         transform=transform
     )
     

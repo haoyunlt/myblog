@@ -28,8 +28,8 @@ slug: "metagpt-complete-analysis"
 MetaGPT采用分层架构设计，模拟真实软件公司的组织结构和工作流程：
 
 <div class="mermaid-image-container" data-chart-id="MetaGPT_complete_analysis-0">
-  <img src="/images/mermaid/MetaGPT_complete_analysis-0.svg" 
-       alt="Mermaid Chart MetaGPT_complete_analysis-0" 
+  <img src="/images/mermaid/MetaGPT_complete_analysis-0.svg"
+       alt="Mermaid Chart MetaGPT_complete_analysis-0"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -112,8 +112,8 @@ MetaGPT采用分层架构设计，模拟真实软件公司的组织结构和工�
 ## 1.3 启动流程时序图
 
 <div class="mermaid-image-container" data-chart-id="MetaGPT_complete_analysis-1">
-  <img src="/images/mermaid/MetaGPT_complete_analysis-1.svg" 
-       alt="Mermaid Chart MetaGPT_complete_analysis-1" 
+  <img src="/images/mermaid/MetaGPT_complete_analysis-1.svg"
+       alt="Mermaid Chart MetaGPT_complete_analysis-1"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -205,6 +205,7 @@ def generate_repo(
 ```
 
 **关键步骤**:
+
 1. **配置初始化**: `config.update_via_cli()` - 解析命令行参数并更新配置
 2. **上下文创建**: `Context(config=config)` - 创建全局上下文对象
 3. **团队组建**: `Team(context=ctx)` - 初始化团队实例
@@ -213,6 +214,7 @@ def generate_repo(
 6. **异步执行**: `asyncio.run(company.run(...))` - 启动主执行循环
 
 **设计亮点**:
+
 - 支持从序列化状态恢复: `Team.deserialize(stg_path)`
 - 灵活的角色配置: 可选择性启用不同角色
 - 预算控制机制: 防止无限制的LLM调用成本
@@ -244,6 +246,7 @@ async def run(self, n_round=3, idea="", send_to="", auto_archive=True):
 ```
 
 **执行逻辑**:
+
 1. **需求发布**: 如果有新想法，通过`run_project()`发布到环境
 2. **轮次控制**: 最多执行`n_round`轮，防止无限循环
 3. **空闲检测**: 所有角色都空闲时提前结束
@@ -252,6 +255,7 @@ async def run(self, n_round=3, idea="", send_to="", auto_archive=True):
 6. **自动归档**: 完成后自动保存项目状态
 
 **关键机制**:
+
 - `@serialize_decorator`: 自动序列化团队状态
 - 预算控制: `_check_balance()` 防止成本失控
 - 优雅退出: 多种退出条件确保程序正常结束
@@ -295,6 +299,7 @@ async def run(self, k=1):
 ```
 
 **并发设计**:
+
 - **异步收集**: 收集所有非空闲角色的执行任务
 - **并发执行**: 使用`asyncio.gather()`并发执行所有角色
 - **性能优化**: 跳过空闲角色，避免不必要的等待
@@ -320,12 +325,14 @@ def publish_message(self, message: Message, peekable: bool = True) -> bool:
 ```
 
 **路由算法**:
+
 1. **地址匹配**: 检查消息的`send_to`是否匹配角色的订阅地址
 2. **消息投递**: 将消息放入匹配角色的私有消息缓冲区
 3. **异常处理**: 记录无接收者的消息警告
 4. **历史记录**: 保存所有消息用于调试和回溯
 
 **设计特点**:
+
 - 基于RFC 113的路由设计，职责清晰
 - 支持一对多广播和点对点通信
 - 完整的消息追踪和调试支持
@@ -363,6 +370,7 @@ async def run(self, with_message=None) -> Message | None:
 ```
 
 **执行流程**:
+
 1. **消息预处理**: 处理外部输入消息
 2. **观察阶段**: `_observe()` 检查新消息
 3. **反应阶段**: `react()` 思考并执行动作
@@ -388,8 +396,8 @@ async def _observe(self) -> int:
     
     # 过滤感兴趣的消息
     self.rc.news = [
-        n for n in news 
-        if (n.cause_by in self.rc.watch or self.name in n.send_to) 
+        n for n in news
+        if (n.cause_by in self.rc.watch or self.name in n.send_to)
         and n not in old_messages
     ]
     
@@ -403,6 +411,7 @@ async def _observe(self) -> int:
 ```
 
 **过滤逻辑**:
+
 1. **消息获取**: 从缓冲区获取所有未处理消息
 2. **重复检测**: 与已有记忆对比，避免重复处理
 3. **兴趣过滤**: 只关注订阅的动作类型或直接发送给自己的消息
@@ -456,12 +465,14 @@ async def _think(self) -> bool:
 ```
 
 **决策策略**:
+
 1. **单动作模式**: 只有一个动作时直接执行
 2. **恢复模式**: 从序列化状态恢复时继续之前的动作
 3. **顺序模式**: 按预定义顺序执行动作
 4. **智能模式**: 使用LLM根据历史和当前状态选择最佳动作
 
 **三种反应模式**：
+
 ```python
 class RoleReactMode(str, Enum):
     REACT = "react"           # 动态选择动作
@@ -495,6 +506,7 @@ async def _act(self) -> Message:
 ```
 
 **响应处理**:
+
 1. **动作执行**: 调用当前待办动作的`run()`方法
 2. **响应封装**: 根据响应类型创建合适的消息对象
 3. **记忆更新**: 将响应添加到角色记忆中
@@ -503,8 +515,8 @@ async def _act(self) -> Message:
 ## 3.2 消息流与协作时序
 
 <div class="mermaid-image-container" data-chart-id="MetaGPT_complete_analysis-2">
-  <img src="/images/mermaid/MetaGPT_complete_analysis-2.svg" 
-       alt="Mermaid Chart MetaGPT_complete_analysis-2" 
+  <img src="/images/mermaid/MetaGPT_complete_analysis-2.svg"
+       alt="Mermaid Chart MetaGPT_complete_analysis-2"
        class="mermaid-generated-image"
        loading="lazy"
        style="max-width: 100%; height: auto;"
@@ -540,18 +552,21 @@ async def _act(self) -> Message:
 ### 协作模式
 
 **1. 流水线模式**：
+
 ```
 ProductManager → Architect → Engineer → QaEngineer
     (需求)    →   (设计)   →  (编码)  →   (测试)
 ```
 
 **2. 评审模式**：
+
 ```
 Engineer → CodeReview → Engineer
  (编码)  →   (评审)   →  (修改)
 ```
 
 **3. 团队协作模式**：
+
 ```
 TeamLeader 统筹 → 各角色并行工作 → 结果汇总
 ```
@@ -582,6 +597,7 @@ async def _run_action_node(self, *args, **kwargs):
 ```
 
 **上下文构建**:
+
 - 将历史消息格式化为上下文
 - 按时间倒序排列，最新消息在前
 - 委托给ActionNode进行结构化处理
@@ -645,12 +661,14 @@ async def fill(
 ```
 
 **多模式支持**:
+
 - **CODE_FILL**: 专门处理代码生成，支持函数名提取
 - **XML_FILL**: XML格式的结构化输出
 - **SINGLE_FILL**: 单一字段填充
 - **标准模式**: JSON/Markdown结构化输出
 
 **策略选择**:
+
 - **simple**: 一次性处理所有字段
 - **complex**: 逐个处理子节点，适合复杂嵌套结构
 
@@ -683,12 +701,14 @@ def compile(self, context, schema="json", mode="children", template=SIMPLE_TEMPL
 ```
 
 **模板组成**:
+
 1. **上下文**: 历史消息和当前请求
 2. **指令**: 字段定义和类型约束
 3. **示例**: 期望的输出格式示例
 4. **约束**: 语言和格式约束
 
 **结构化输出特性**：
+
 * **动态模型生成**：基于字段定义动态创建 Pydantic 模型
 * **多格式支持**：支持 JSON、Markdown、XML 等输出格式
 * **验证与解析**：自动验证输出格式并解析为结构化数据
@@ -716,6 +736,7 @@ def add(self, message: Message):
 ```
 
 **索引维护**:
+
 - 按动作类型建立倒排索引
 - 避免重复消息
 - 支持ID忽略模式
@@ -746,11 +767,13 @@ def find_news(self, observed: list[Message], k=0) -> list[Message]:
 ```
 
 **高效检索**:
+
 - 利用倒排索引快速定位
 - 支持多动作类型查询
 - 自动处理不存在的索引
 
 **记忆机制**：
+
 * **分层存储**：支持工作记忆和长期记忆
 * **索引优化**：按动作类型建立索引，快速检索相关消息
 * **增量更新**：支持增量添加和批量操作
@@ -795,6 +818,7 @@ async def aask(
 ```
 
 **消息处理流程**:
+
 1. **消息组装**: 系统消息 + 格式化消息 + 用户消息
 2. **多模态支持**: 处理图像输入
 3. **日志优化**: 屏蔽base64数据避免日志过长
@@ -851,6 +875,7 @@ def compress_messages(
 ```
 
 **压缩策略**:
+
 - **POST_CUT**: 保留最新消息，删除最旧的
 - **PRE_CUT**: 保留最旧消息，删除最新的
 - **TOKEN级别**: 精确到token的截断
@@ -884,6 +909,7 @@ class MGXEnv(Environment, SerializationMixin):
 ```
 
 **特性**：
+
 * **多模态支持**：自动提取和编码图像
 * **直接对话**：支持用户与特定角色的直接交互
 * **团队协调**：TeamLeader 统筹消息流转

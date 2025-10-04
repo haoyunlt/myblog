@@ -100,10 +100,12 @@ flink-runtime/
 
 ```java
 /**
+
  * JobMaster 负责单个 JobGraph 的执行
  * 提供 RPC 接口与 JobMaster 远程交互
+
  */
-public class JobMaster extends FencedRpcEndpoint<JobMasterId> 
+public class JobMaster extends FencedRpcEndpoint<JobMasterId>
     implements JobMasterGateway, JobMasterService {
     
     /** 默认的 JobManager 名称 */
@@ -140,8 +142,10 @@ public class JobMaster extends FencedRpcEndpoint<JobMasterId>
 
 ```java
 /**
+
  * JobMaster 构造函数
  * 初始化所有必要的服务和组件
+
  */
 public JobMaster(
         RpcService rpcService,
@@ -219,7 +223,9 @@ public JobMaster(
 
 ```java
 /**
+
  * 启动 JobMaster
+
  */
 @Override
 protected void onStart() throws Exception {
@@ -235,7 +241,9 @@ protected void onStart() throws Exception {
 }
 
 /**
+
  * 开始作业执行
+
  */
 private void startJobExecution(JobMasterId newJobMasterId) throws Exception {
 
@@ -252,14 +260,16 @@ private void startJobExecution(JobMasterId newJobMasterId) throws Exception {
 
     startJobMasterServices();
 
-    log.info("Starting execution of job {} ({}) under job master id {}.", 
+    log.info("Starting execution of job {} ({}) under job master id {}.",
              jobGraph.getName(), jobGraph.getJobID(), newJobMasterId);
 
     resetAndStartScheduler();
 }
 
 /**
+
  * 启动 JobMaster 服务
+
  */
 private void startJobMasterServices() throws Exception {
     startHeartbeatServices();
@@ -279,7 +289,9 @@ private void startJobMasterServices() throws Exception {
 
 ```java
 /**
+
  * 更新任务执行状态
+
  */
 @Override
 public CompletableFuture<Acknowledge> updateTaskExecutionState(
@@ -301,7 +313,9 @@ public CompletableFuture<Acknowledge> updateTaskExecutionState(
 
 ```java
 /**
+
  * 触发检查点
+
  */
 @Override
 public CompletableFuture<String> triggerCheckpoint(
@@ -313,12 +327,12 @@ public CompletableFuture<String> triggerCheckpoint(
     if (checkpointCoordinator == null) {
         return FutureUtils.completedExceptionally(new IllegalStateException(
             String.format("Job %s is not a streaming job.", jobGraph.getJobID())));
-    } else if (checkpointCoordinator.isPeriodicCheckpointingConfigured() && 
+    } else if (checkpointCoordinator.isPeriodicCheckpointingConfigured() &&
                checkpointType.equals(CheckpointType.CHECKPOINT)) {
         return FutureUtils.completedExceptionally(new IllegalStateException(
             String.format("Job %s has periodic checkpointing enabled.", jobGraph.getJobID())));
     } else {
-        final CompletableFuture<CompletedCheckpoint> checkpointFuture = 
+        final CompletableFuture<CompletedCheckpoint> checkpointFuture =
             checkpointCoordinator.triggerCheckpoint(checkpointType, System.currentTimeMillis(), false);
 
         return checkpointFuture.thenApply(CompletedCheckpoint::getExternalPointer);
@@ -332,8 +346,10 @@ public CompletableFuture<String> triggerCheckpoint(
 
 ```java
 /**
+
  * TaskExecutor 是 TaskManager 的实现
  * 负责执行任务和管理资源
+
  */
 public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
     
@@ -373,7 +389,9 @@ public class TaskExecutor extends RpcEndpoint implements TaskExecutorGateway {
 
 ```java
 /**
+
  * 提交任务到 TaskExecutor
+
  */
 @Override
 public CompletableFuture<Acknowledge> submitTask(
@@ -474,7 +492,9 @@ public CompletableFuture<Acknowledge> submitTask(
 
 ```java
 /**
+
  * 创建 Task 实例
+
  */
 private Task createTask(
         JobInformation jobInformation,
@@ -489,9 +509,9 @@ private Task createTask(
 
     GlobalAggregateManager aggregateManager = jobManagerConnection.getGlobalAggregateManager();
     LibraryCacheManager libraryCache = jobManagerConnection.getLibraryCacheManager();
-    ResultPartitionConsumableNotifier resultPartitionConsumableNotifier = 
+    ResultPartitionConsumableNotifier resultPartitionConsumableNotifier =
         jobManagerConnection.getResultPartitionConsumableNotifier();
-    PartitionProducerStateChecker partitionStateChecker = 
+    PartitionProducerStateChecker partitionStateChecker =
         jobManagerConnection.getPartitionStateChecker();
 
     // 创建本地状态存储
@@ -561,8 +581,10 @@ private Task createTask(
 
 ```java
 /**
+
  * Task 表示在 TaskManager 上执行的并行子任务
  * Task 包装 Flink 算子并运行它，提供所有必要的服务
+
  */
 public class Task implements Runnable, TaskSlotPayload, TaskActions,
         PartitionProducerStateProvider, CheckpointListener {
@@ -616,7 +638,9 @@ public class Task implements Runnable, TaskSlotPayload, TaskActions,
 
 ```java
 /**
+
  * Task 的主要执行方法
+
  */
 @Override
 public void run() {
@@ -641,7 +665,7 @@ public void run() {
         }
         else {
             if (LOG.isDebugEnabled()) {
-                LOG.debug("Task {} switched from {} to {} while being started.", 
+                LOG.debug("Task {} switched from {} to {} while being started.",
                          taskNameWithSubtask, current, this.executionState);
             }
         }
@@ -652,7 +676,9 @@ public void run() {
 }
 
 /**
+
  * 运行用户代码，监控系统退出
+
  */
 private void runWithSystemExitMonitoring() {
     boolean exitMonitoringEnabled = taskManagerConfiguration.isExitJvmOnOutOfMemoryError();
@@ -672,7 +698,9 @@ private void runWithSystemExitMonitoring() {
 }
 
 /**
+
  * 核心执行逻辑
+
  */
 private void doRun() {
     // 获取执行线程
@@ -725,22 +753,26 @@ private void doRun() {
 
 ```java
 /**
+
  * 原子地转换任务状态
+
  */
 private boolean transitionState(ExecutionState currentState, ExecutionState newState) {
     return transitionState(currentState, newState, null);
 }
 
 /**
+
  * 原子地转换任务状态，可选择提供失败原因
+
  */
 private boolean transitionState(ExecutionState currentState, ExecutionState newState, Throwable cause) {
     if (STATE_UPDATER.compareAndSet(this, currentState, newState)) {
         if (cause == null) {
-            LOG.info("{} ({}) switched from {} to {}.", 
+            LOG.info("{} ({}) switched from {} to {}.",
                     taskNameWithSubtask, executionId, currentState, newState);
         } else {
-            LOG.info("{} ({}) switched from {} to {} with failure cause: {}", 
+            LOG.info("{} ({}) switched from {} to {} with failure cause: {}",
                     taskNameWithSubtask, executionId, currentState, newState, cause.getMessage());
         }
         return true;
@@ -756,8 +788,10 @@ private boolean transitionState(ExecutionState currentState, ExecutionState newS
 
 ```java
 /**
+
  * ExecutionGraph 是协调数据流分布式执行的中心数据结构
  * 它保存每个并行任务、每个中间流以及它们之间通信的表示
+
  */
 public class ExecutionGraph implements AccessExecutionGraph {
     
@@ -801,7 +835,9 @@ public class ExecutionGraph implements AccessExecutionGraph {
 
 ```java
 /**
+
  * 调度执行图中的所有任务
+
  */
 public void scheduleForExecution() throws JobException {
     
@@ -849,10 +885,12 @@ public void scheduleForExecution() throws JobException {
 }
 
 /**
+
  * 急切调度 - 一次性调度所有任务
+
  */
 private CompletableFuture<Void> scheduleEager(
-        SlotProvider slotProvider, 
+        SlotProvider slotProvider,
         final Time allocationTimeout) {
 
     checkState(state == JobStatus.RUNNING, "job is not running currently");
@@ -863,7 +901,7 @@ private CompletableFuture<Void> scheduleEager(
     // cause the slots to get lost
     final ArrayList<CompletableFuture<Execution>> allAllocationFutures = new ArrayList<>(getNumberOfExecutionJobVertices());
 
-    final Set<AllocationID> allPreviousAllocationIds = 
+    final Set<AllocationID> allPreviousAllocationIds =
         Collections.unmodifiableSet(computePriorAllocationIdsIfRequiredByScheduling());
 
     for (ExecutionJobVertex ejv : getVerticesTopologically()) {
@@ -964,8 +1002,10 @@ sequenceDiagram
 
 ```java
 /**
+
  * RPC 端点的基类
  * 提供远程过程调用的分布式组件必须继承此基类
+
  */
 public abstract class RpcEndpoint implements RpcGateway, AutoCloseableAsync {
     
@@ -987,6 +1027,7 @@ public abstract class RpcEndpoint implements RpcGateway, AutoCloseableAsync {
     }
     
     /**
+
      * 启动 RPC 端点
      */
     public final void start() {
@@ -1027,6 +1068,7 @@ public abstract class RpcEndpoint implements RpcGateway, AutoCloseableAsync {
     protected CompletableFuture<Void> onStop() {
         return CompletableFuture.completedFuture(null);
     }
+
 }
 ```
 
@@ -1034,7 +1076,9 @@ public abstract class RpcEndpoint implements RpcGateway, AutoCloseableAsync {
 
 ```java
 /**
+
  * 所有可在 TaskManager 上执行的任务的基类
+
  */
 public abstract class AbstractInvokable {
     
@@ -1042,6 +1086,7 @@ public abstract class AbstractInvokable {
     private Environment environment;
     
     /**
+
      * 必须由子类实现的核心方法
      * 包含任务的主要逻辑
      */
@@ -1075,6 +1120,7 @@ public abstract class AbstractInvokable {
     public final ClassLoader getUserCodeClassLoader() {
         return getEnvironment().getUserClassLoader();
     }
+
 }
 ```
 

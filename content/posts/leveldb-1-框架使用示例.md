@@ -75,7 +75,7 @@ void batch_operations_example() {
     // 创建批量操作
     leveldb::WriteBatch batch;
     batch.Put("key1", "value1");
-    batch.Put("key2", "value2"); 
+    batch.Put("key2", "value2");
     batch.Put("key3", "value3");
     batch.Delete("old_key");  // 删除可能不存在的键
     
@@ -414,10 +414,10 @@ LIBS = -lleveldb -lsnappy -lpthread
 all: leveldb_example
 
 leveldb_example: main.cpp
-	$(CXX) $(CXXFLAGS) -o $@ $< $(LIBS)
+    $(CXX) $(CXXFLAGS) -o $@ $< $(LIBS)
 
 clean:
-	rm -f leveldb_example
+    rm -f leveldb_example
 
 .PHONY: all clean
 ```

@@ -423,6 +423,7 @@ static inline void
 _Py_SET_REFCNT_IMMORTAL(PyObject *op)
 {
     /*
+
      * 永生对象（如None, True, False）使用特殊的引用计数值
      * 这些对象永远不会被销毁
      */

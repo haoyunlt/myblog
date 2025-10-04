@@ -60,6 +60,7 @@ public:
 ```
 
 **关键设计理念：**
+
 - **端口模式**：通过InputPort和OutputPort进行数据传输
 - **状态机模式**：使用Status枚举管理处理器状态
 - **异步支持**：支持异步处理和调度
@@ -72,12 +73,12 @@ public:
 IProcessor::IProcessor()
 {
     // 分配处理器索引，用于调试和监控
-    processor_index = CurrentThread::isInitialized() 
-        ? CurrentThread::get().getNextPipelineProcessorIndex() 
+    processor_index = CurrentThread::isInitialized()
+        ? CurrentThread::get().getNextPipelineProcessorIndex()
         : 0;
 }
 
-IProcessor::IProcessor(InputPorts inputs_, OutputPorts outputs_) 
+IProcessor::IProcessor(InputPorts inputs_, OutputPorts outputs_)
     : inputs(std::move(inputs_)), outputs(std::move(outputs_))
 {
     // 建立端口与处理器的双向关联
@@ -86,8 +87,8 @@ IProcessor::IProcessor(InputPorts inputs_, OutputPorts outputs_)
     for (auto & port : outputs)
         port.processor = this;
         
-    processor_index = CurrentThread::isInitialized() 
-        ? CurrentThread::get().getNextPipelineProcessorIndex() 
+    processor_index = CurrentThread::isInitialized()
+        ? CurrentThread::get().getNextPipelineProcessorIndex()
         : 0;
 }
 
@@ -358,7 +359,7 @@ public:
         {
             if (action.node->type == ActionsDAG::ActionType::ARRAY_JOIN)
             {
-                throw Exception(ErrorCodes::LOGICAL_ERROR, 
+                throw Exception(ErrorCodes::LOGICAL_ERROR,
                     "ARRAY JOIN is not supported in ExpressionTransform");
             }
         }
@@ -695,10 +696,10 @@ public:
 
     /// 读取指定范围的数据行
     virtual size_t readRows(
-        size_t from_mark, 
+        size_t from_mark,
         size_t current_task_last_mark,
-        bool continue_reading, 
-        size_t max_rows_to_read, 
+        bool continue_reading,
+        size_t max_rows_to_read,
         Columns & res_columns) = 0;
 
     /// 预读取，用于异步IO优化
@@ -743,10 +744,10 @@ public:
     MergeTreeReaderWide(/* 参数列表 */) : IMergeTreeReader(/* 参数传递 */) {}
 
     size_t readRows(
-        size_t from_mark, 
+        size_t from_mark,
         size_t current_task_last_mark,
-        bool continue_reading, 
-        size_t max_rows_to_read, 
+        bool continue_reading,
+        size_t max_rows_to_read,
         Columns & res_columns) override
     {
         size_t read_rows = 0;
@@ -761,7 +762,7 @@ public:
 
             /// 从指定标记开始读取数据
             ISerialization::SubstreamsCache cache;
-            readData(name_and_type, res_columns[pos], from_mark, continue_reading, 
+            readData(name_and_type, res_columns[pos], from_mark, continue_reading,
                     current_task_last_mark, max_rows_to_read, cache);
         }
 
@@ -821,7 +822,7 @@ MergeTreeMutableDataPartPtr MergeTreeDataWriter::writeTempPart(
     
     /// 1. 生成数据部分信息
     auto part_info = MergeTreePartInfo::fromPartName(
-        data.getPartName(block_with_partition.partition), 
+        data.getPartName(block_with_partition.partition),
         data.format_version);
     
     /// 2. 选择存储卷
@@ -1018,7 +1019,7 @@ RangesInDataParts MergeTreeDataSelectExecutor::selectPartsToRead(
         /// 过滤不匹配分区条件的数据部分
         data_parts.erase(
             std::remove_if(data_parts.begin(), data_parts.end(),
-                [&](const auto & part) 
+                [&](const auto & part)
                 {
                     return !partition_pruner->canBePruned(*part);
                 }),
@@ -1033,7 +1034,7 @@ RangesInDataParts MergeTreeDataSelectExecutor::selectPartsToRead(
                 [&](const auto & part)
                 {
                     auto it = max_block_numbers_to_read->find(part->info.partition_id);
-                    return it != max_block_numbers_to_read->end() 
+                    return it != max_block_numbers_to_read->end()
                         && part->info.max_block > it->second;
                 }),
             data_parts.end());
@@ -1092,7 +1093,7 @@ void MergeTreeDataSelectExecutor::filterPartsByPrimaryKey(
             MarkRanges new_ranges = key_condition.mayBeTrueInRange(
                 range.begin, range.end, part->index, primary_key.sample_block);
                 
-            filtered_ranges.insert(filtered_ranges.end(), 
+            filtered_ranges.insert(filtered_ranges.end(),
                                  new_ranges.begin(), new_ranges.end());
         }
         
@@ -1294,7 +1295,7 @@ bool MergeTask::executeImpl()
         if (global_ctx->data->merging_params.mode != MergeTreeData::MergingParams::Ordinary)
         {
             global_ctx->new_data_part->minmax_idx->update(
-                block, 
+                block,
                 MergeTreeData::getMinMaxColumnsNames(global_ctx->metadata_snapshot->getPartitionKey()));
         }
 
@@ -1302,7 +1303,7 @@ bool MergeTask::executeImpl()
         if (global_ctx->merge_list_element_ptr)
         {
             global_ctx->merge_list_element_ptr->rows_written = global_ctx->rows_written;
-            global_ctx->merge_list_element_ptr->bytes_written_uncompressed = 
+            global_ctx->merge_list_element_ptr->bytes_written_uncompressed =
                 global_ctx->to->getBytesWritten();
         }
 

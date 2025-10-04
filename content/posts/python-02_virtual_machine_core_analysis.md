@@ -103,7 +103,7 @@ PyFrameObject* PyFrame_New(
 ) {
     // 分配帧内存
     PyFrameObject *f = (PyFrameObject*)PyObject_GC_NewVar(
-        PyFrameObject, &PyFrame_Type, 
+        PyFrameObject, &PyFrame_Type,
         code->co_nlocals + code->co_stacksize
     );
     
@@ -557,7 +557,7 @@ case POP_EXCEPT: {
     // 弹出异常处理块
     PyTryBlock *b = PyFrame_BlockPop(frame);
     if (b->b_type != SETUP_EXCEPT) {
-        PyErr_SetString(PyExc_SystemError, 
+        PyErr_SetString(PyExc_SystemError,
                        "popped block is not an except block");
         goto error;
     }

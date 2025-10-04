@@ -68,6 +68,7 @@ go build -o github-mcp-server cmd/github-mcp-server/main.go
 ### 1.3 Claude Desktop 集成示例
 
 **配置文件位置**：
+
 - macOS: `~/Library/Application Support/Claude/claude_desktop_config.json`
 - Windows: `%APPDATA%/Claude/claude_desktop_config.json`
 
@@ -304,7 +305,7 @@ func CustomRepositoryTool(getClient github.GetClientFn, t translations.Translati
                 mcp.Required(),
                 mcp.Description("仓库所有者"),
             ),
-            mcp.WithString("repo", 
+            mcp.WithString("repo",
                 mcp.Required(),
                 mcp.Description("仓库名称"),
             ),
@@ -490,6 +491,7 @@ services:
   github-mcp-server:
     image: ghcr.io/github/github-mcp-server:latest
     environment:
+
       - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PAT}
       - GITHUB_TOOLSETS=repos,issues,pull_requests,actions
       - GITHUB_READ_ONLY=false
@@ -501,6 +503,7 @@ services:
     restart: unless-stopped
     stdin_open: true
     tty: true
+
 ```
 
 ### 7.3 监控和日志分析

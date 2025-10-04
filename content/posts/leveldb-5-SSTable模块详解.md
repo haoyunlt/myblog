@@ -144,6 +144,7 @@ graph TD
 ```
 
 #### Record编码实现
+
 ```cpp
 // 文件: table/block_builder.cc (大约第30行)
 void BlockBuilder::Add(const Slice& key, const Slice& value) {
@@ -183,6 +184,7 @@ void BlockBuilder::Add(const Slice& key, const Slice& value) {
 ```
 
 **前缀压缩效果示例**:
+
 ```
 原始键序列:
   user001
@@ -235,6 +237,7 @@ void TableBuilder::WriteBlock(BlockBuilder* block, BlockHandle* handle) {
 ```
 
 Index Block记录格式：
+
 ```
 Key: 大于等于对应Data Block中最大键的最小键
 Value: Data Block的BlockHandle（offset + size）
@@ -358,8 +361,8 @@ class TwoLevelIterator : public Iterator {
   void Next() override;
   void Prev() override;
 
-  bool Valid() const override { 
-    return data_iter_.Valid(); 
+  bool Valid() const override {
+    return data_iter_.Valid();
   }
   
   Slice key() const override {
@@ -393,6 +396,7 @@ class TwoLevelIterator : public Iterator {
 ```
 
 **两级迭代器执行逻辑**:
+
 ```mermaid
 flowchart TD
     A[开始遍历] --> B[定位Index Iterator]
@@ -447,9 +451,10 @@ const int kDefaultBlockRestartInterval = 16;
 ```
 
 **重启点效果示意**:
+
 ```
 Record 0: [restart] "apple" -> "value0"
-Record 1: shared=4, "e1" -> "value1"      // 前缀："apple" -> "apple1" 
+Record 1: shared=4, "e1" -> "value1"      // 前缀："apple" -> "apple1"
 ...
 Record 15: shared=4, "e15" -> "value15"
 Record 16: [restart] "banana" -> "value16"  // 新重启点，完整键
@@ -641,6 +646,7 @@ sequenceDiagram
 ## 8. 优化建议和最佳实践
 
 ### 8.1 配置优化
+
 ```cpp
 // Block大小调优（默认4KB）
 options.block_size = 64 * 1024;  // 64KB，适合大值场景
@@ -658,6 +664,7 @@ options.filter_policy = leveldb::NewBloomFilterPolicy(10);  // 每键10位
 3. **过滤器调优**: 根据假阳性率要求调整布隆过滤器位数
 
 ### 8.3 监控指标
+
 ```cpp
 // 关键性能指标
 std::string stats;

@@ -82,6 +82,7 @@ graph TB
 class XlaCompiler {
 public:
     /**
+
      * XLA编译器选项配置
      */
     struct Options {
@@ -158,6 +159,7 @@ public:
 
 private:
     /**
+
      * 获取函数体
      * @param function 函数定义
      * @param fbody 输出函数体
@@ -177,6 +179,7 @@ private:
     xla::Client* client_;                       // XLA客户端
     FunctionLibraryRuntime* flib_runtime_;      // 函数库运行时
     std::unique_ptr<FunctionLibraryDefinition> local_flib_def_;  // 本地函数库
+
 };
 ```
 
@@ -185,12 +188,14 @@ private:
 ```cpp
 // tensorflow/compiler/tf2xla/tf2xla.cc
 /**
+
  * 将TensorFlow图转换为XLA计算
  * @param graph 输入图
  * @param config 转换配置
  * @param client XLA客户端
  * @param computation 输出XLA计算
  * @return 转换状态
+
  */
 absl::Status ConvertGraphToXla(std::unique_ptr<Graph> graph,
                                const tf2xla::Config& config,
@@ -267,6 +272,7 @@ sequenceDiagram
 class MarkForCompilationPass : public GraphOptimizationPass {
 public:
     /**
+
      * 执行编译标记Pass
      * @param options 图优化选项
      * @return 执行状态
@@ -275,6 +281,7 @@ public:
 
 private:
     /**
+
      * 分析图中的集群
      * @param graph 输入图
      * @param clusters 输出集群信息
@@ -298,6 +305,7 @@ private:
      */
     bool IsXlaCompilableOp(const NodeDef& node_def,
                            const DeviceType& device_type) const;
+
 };
 ```
 
@@ -308,6 +316,7 @@ private:
 class BuildXlaOpsPass : public GraphOptimizationPass {
 public:
     /**
+
      * 构造函数
      * @param enable_lazy_compilation 是否启用延迟编译
      */
@@ -323,6 +332,7 @@ public:
 
 private:
     /**
+
      * 替换函数调用为XLA操作
      * @param graph 输入图
      * @return 替换状态
@@ -349,6 +359,7 @@ private:
                            Graph* graph);
     
     std::optional<bool> enable_lazy_compilation_;  // 延迟编译选项
+
 };
 ```
 
@@ -391,13 +402,16 @@ namespace mlir {
 namespace TF {
 
 /**
+
  * TensorFlow方言定义
+
  */
 class TensorFlowDialect : public Dialect {
 public:
     explicit TensorFlowDialect(MLIRContext* context);
     
     /**
+
      * 获取方言名称
      */
     static StringRef getDialectNamespace() { return "tf"; }
@@ -424,19 +438,24 @@ public:
 
 private:
     /**
+
      * 初始化方言
      */
     void initialize();
+
 };
 
 /**
+
  * TensorFlow操作基类
+
  */
 class TensorFlowOp : public Op<TensorFlowOp> {
 public:
     using Op::Op;
     
     /**
+
      * 验证操作
      */
     LogicalResult verify();
@@ -453,6 +472,7 @@ public:
                       ArrayRef<Type> resultTypes,
                       ArrayRef<Value> operands,
                       ArrayRef<NamedAttribute> attributes);
+
 };
 
 } // namespace TF
@@ -466,6 +486,7 @@ public:
 class TFToStablehloPass : public PassWrapper<TFToStablehloPass, OperationPass<func::FuncOp>> {
 public:
     /**
+
      * 获取Pass名称
      */
     StringRef getArgument() const final { return "tf-to-stablehlo"; }
@@ -507,6 +528,7 @@ public:
             return signalPassFailure();
         }
     }
+
 };
 ```
 
@@ -515,11 +537,13 @@ public:
 ```cpp
 // tensorflow/compiler/mlir/tfrt/transforms/mlrt/passes.cc
 /**
+
  * 创建TF到MLRT的转换管道
  * @param pm Pass管理器
  * @param options 管道选项
  * @param fallback_state 回退状态
  * @param cost_recorder 成本记录器
+
  */
 void CreateTfToMlrtPipeline(mlir::OpPassManager& pm,
                             const TfrtPipelineOptions& options,
@@ -544,7 +568,7 @@ void CreateTfToMlrtPipeline(mlir::OpPassManager& pm,
     
     // 并行化Pass
     pm.addPass(mlrt_compiler::CreateParallelizationPass(
-        options.cost_threshold, 
+        options.cost_threshold,
         options.merge_inter_dependent_streams,
         cost_recorder));
     
@@ -619,6 +643,7 @@ classDiagram
 class ConstantFolding : public GraphOptimizer {
 public:
     /**
+
      * 构造函数
      * @param cpu_device CPU设备
      */
@@ -640,6 +665,7 @@ public:
 
 private:
     /**
+
      * 检查节点是否可以常量折叠
      * @param node 图节点
      * @return 是否可折叠
@@ -666,6 +692,7 @@ private:
     DeviceBase* cpu_device_;                    // CPU设备
     std::unique_ptr<ProcessFunctionLibraryRuntime> pflr_;  // 函数库运行时
     std::unique_ptr<FunctionLibraryDefinition> function_library_;  // 函数库定义
+
 };
 ```
 
@@ -678,6 +705,7 @@ public:
     ArithmeticOptimizer() = default;
     
     /**
+
      * 获取优化器名称
      */
     string name() const override { return "arithmetic_optimizer"; }
@@ -694,6 +722,7 @@ public:
 
 private:
     /**
+
      * 优化节点
      * @param node 节点
      * @param graph 图对象
@@ -721,6 +750,7 @@ private:
      * @return 是否消除成功
      */
     bool EliminateRedundantOps(NodeDef* node);
+
 };
 ```
 
@@ -731,10 +761,12 @@ private:
 ```cpp
 // tensorflow/compiler/aot/tfcompile.cc
 /**
+
  * AOT编译主函数
  * @param argc 参数个数
  * @param argv 参数数组
  * @return 执行状态
+
  */
 int main(int argc, char** argv) {
     // 解析命令行参数
@@ -760,12 +792,14 @@ int main(int argc, char** argv) {
 }
 
 /**
+
  * 编译图为AOT代码
  * @param config 编译配置
  * @param graph_def 图定义
  * @param flags 编译标志
  * @param result 编译结果
  * @return 编译状态
+
  */
 absl::Status CompileGraph(const tf2xla::Config& config,
                           const GraphDef& graph_def,
@@ -802,7 +836,9 @@ absl::Status CompileGraph(const tf2xla::Config& config,
 ```cpp
 // tensorflow/compiler/aot/compile.h
 /**
+
  * AOT编译结果
+
  */
 struct CompileResult {
     string header_text;         // 头文件内容
@@ -819,11 +855,13 @@ struct CompileResult {
 };
 
 /**
+
  * 生成AOT C++代码
  * @param executable XLA可执行程序
  * @param flags 编译标志
  * @param result 编译结果
  * @return 生成状态
+
  */
 absl::Status GenerateAOTCode(const xla::LocalExecutable* executable,
                              const MainFlags& flags,
@@ -909,6 +947,7 @@ def optimized_function(x, y):
     """使用XLA编译的函数
     
     功能说明:
+
     - 自动进行操作融合
     - 优化内存使用
     - 生成高效的机器代码
@@ -936,7 +975,7 @@ model.compile(
 
 ```cpp
 // 自定义MLIR优化Pass
-class CustomOptimizationPass : public PassWrapper<CustomOptimizationPass, 
+class CustomOptimizationPass : public PassWrapper<CustomOptimizationPass,
                                                   OperationPass<func::FuncOp>> {
 public:
     StringRef getArgument() const final { return "custom-optimization"; }
@@ -988,6 +1027,7 @@ def configure_graph_optimization():
     """配置TensorFlow图优化
     
     功能说明:
+
     - 启用各种图优化Pass
     - 配置优化级别
     - 设置设备特定优化
@@ -1032,6 +1072,7 @@ def analyze_xla_performance():
     """分析XLA编译性能
     
     功能说明:
+
     - 比较编译前后性能
     - 分析编译开销
     - 识别优化瓶颈
@@ -1075,6 +1116,7 @@ def analyze_xla_performance():
     print(f"未编译时间: {uncompiled_time:.4f}s")
     print(f"XLA编译时间: {compiled_time:.4f}s")
     print(f"加速比: {uncompiled_time / compiled_time:.2f}x")
+
 ```
 
 ## 总结
@@ -1088,6 +1130,7 @@ TensorFlow Compiler模块提供了完整的编译器基础设施：
 5. **AOT编译** - 提前编译工具，生成独立的可执行代码
 
 通过深入理解编译器模块的设计和实现，可以：
+
 - 更好地利用XLA编译优化模型性能
 - 开发自定义的图优化Pass
 - 使用MLIR扩展编译器功能

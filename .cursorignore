@@ -1,5 +1,5 @@
 # Cursor编辑器忽略文件配置
-# 更新时间: 2025-09-26
+# 更新时间: 2025-10-04
 
 # Hugo生成的文件和构建产物
 /public/
@@ -238,6 +238,15 @@ test-output/
 /public/
 hugo_stats.json
 
+# Hugo 缓存和临时文件
+/resources/
+/_vendor/
+
+# Hugo 模块缓存
+go.sum
+go.mod
+/mod/
+
 # 本地开发文件
 .local/
 local-config.*
@@ -302,3 +311,40 @@ dev-notes.md
 profile.out
 mem.out
 cpu.out
+
+# Markdown 元数据和缓存
+.mdx-js/
+.mdx/
+.md-cache/
+**/.vitepress/cache/
+**/.vitepress/dist/
+
+# 博客项目特定忽略
+.DS_Store
+*.DS_Store
+.AppleDouble
+.LSOverride
+
+# 大文件和归档（临时）
+*.tar.gz.tmp
+*.zip.tmp
+backup-*.tar.gz
+archive-*.zip
+
+# 临时编辑文件
+*.tmp.*
+*.swp.*
+*~.*
+.#*
+#*#
+
+# 脚本生成的日志
+/scripts/*.log
+/scripts/temp/
+/deploy/*.log
+
+# 项目文档的临时文件
+docs-temp/
+temp-docs/
+*.md.bak
+*.md.tmp

@@ -110,6 +110,7 @@ sequenceDiagram
 class OpRegistry : public OpRegistryInterface {
 public:
     /**
+
      * 注册操作到全局注册表
      * @param op_data_factory 操作数据工厂函数
      * @return 注册状态
@@ -133,7 +134,7 @@ public:
 
 private:
     // 操作注册表，使用线程安全的映射
-    mutable std::unordered_map<std::string, 
+    mutable std::unordered_map<std::string,
                                std::unique_ptr<OpRegistrationData>> registry_;
     mutable mutex mu_;  // 保护注册表的互斥锁
 };
@@ -165,6 +166,7 @@ REGISTER_OP("MatMul")
 class OpKernel {
 public:
     /**
+
      * 构造函数，从OpKernelConstruction获取配置信息
      * @param context 内核构造上下文
      */
@@ -212,15 +214,17 @@ public:
     typedef std::function<void()> DoneCallback;
     
     /**
+
      * 异步计算接口
      * @param context 操作内核上下文
      * @param done 完成回调函数
      */
-    virtual void ComputeAsync(OpKernelContext* context, 
+    virtual void ComputeAsync(OpKernelContext* context,
                               DoneCallback done) = 0;
     
     // 同步Compute接口的默认实现，调用ComputeAsync
     void Compute(OpKernelContext* context) final;
+
 };
 ```
 
@@ -231,6 +235,7 @@ public:
 class Tensor {
 public:
     /**
+
      * 默认构造函数，创建空张量
      */
     Tensor();
@@ -289,6 +294,7 @@ public:
     virtual ~Session();
     
     /**
+
      * 创建计算图
      * @param graph 图定义
      * @return 创建状态
@@ -321,6 +327,7 @@ public:
      * @return 关闭状态
      */
     virtual absl::Status Close() = 0;
+
 };
 ```
 
@@ -331,12 +338,13 @@ public:
 class DirectSession : public Session {
 public:
     /**
+
      * 构造函数
      * @param options 会话选项
      * @param device_mgr 设备管理器
      * @param factory 会话工厂
      */
-    DirectSession(const SessionOptions& options, 
+    DirectSession(const SessionOptions& options,
                   const DeviceMgr* device_mgr,
                   DirectSessionFactory* factory);
     
@@ -349,6 +357,7 @@ public:
 
 private:
     /**
+
      * 获取或创建执行器
      * @param input_tensor_names 输入张量名称
      * @param output_names 输出名称
@@ -368,6 +377,7 @@ private:
     const std::unique_ptr<const DeviceMgr> device_mgr_;  // 设备管理器
     std::unique_ptr<Graph> graph_;          // 计算图
     std::atomic<int64_t> step_id_counter_;  // 步骤ID计数器
+
 };
 ```
 
@@ -380,6 +390,7 @@ public:
     virtual ~Executor() {}
     
     /**
+
      * 异步执行图计算
      * @param args 执行参数
      * @param done 完成回调
@@ -412,6 +423,7 @@ public:
         SessionState* session_state = nullptr;   // 会话状态
         std::function<void(std::function<void()>)> runner = nullptr;  // 任务运行器
     };
+
 };
 ```
 
@@ -420,11 +432,13 @@ public:
 ```cpp
 // tensorflow/core/common_runtime/executor_factory.h
 /**
+
  * 创建本地执行器
  * @param params 本地执行器参数
  * @param graph 计算图
  * @param executor 输出参数，创建的执行器
  * @return 创建状态
+
  */
 absl::Status NewLocalExecutor(const LocalExecutorParams& params,
                               const Graph& graph,
@@ -500,6 +514,7 @@ private:
     bool transpose_b_;  // 是否转置矩阵b
     
     /**
+
      * 计算输出形状
      * @param a_shape 矩阵a的形状
      * @param b_shape 矩阵b的形状  
@@ -509,6 +524,7 @@ private:
     absl::Status GetOutputShape(const TensorShape& a_shape,
                                 const TensorShape& b_shape,
                                 TensorShape* output_shape);
+
 };
 ```
 
@@ -593,6 +609,7 @@ graph TD
 class Allocator {
 public:
     /**
+
      * 分配内存
      * @param size 分配大小
      * @param alignment 内存对齐
@@ -613,6 +630,7 @@ public:
      * @return 分配状态
      */
     absl::Status AllocateTensor(size_t size, Tensor* tensor);
+
 };
 ```
 
@@ -644,7 +662,7 @@ public:
         const Tensor& input_tensor = context->input(0);
         
         Tensor* output_tensor = nullptr;
-        OP_REQUIRES_OK(context, context->allocate_output(0, input_tensor.shape(), 
+        OP_REQUIRES_OK(context, context->allocate_output(0, input_tensor.shape(),
                                                          &output_tensor));
         
         // 实现具体计算逻辑
@@ -690,7 +708,7 @@ RunOptions run_options;
 run_options.set_trace_level(RunOptions::FULL_TRACE);
 
 RunMetadata run_metadata;
-session->Run(run_options, inputs, output_names, target_nodes, 
+session->Run(run_options, inputs, output_names, target_nodes,
              &outputs, &run_metadata);
 
 // 分析性能数据
@@ -713,6 +731,7 @@ TensorFlow Core模块是整个框架的基石，提供了：
 4. **完善的资源管理** - 内存、设备、会话的统一管理
 
 通过深入理解Core模块的设计和实现，可以更好地：
+
 - 开发自定义操作和内核
 - 优化模型性能
 - 调试运行时问题

@@ -93,8 +93,10 @@ classDiagram
 
 ```java
 /**
+
  * TypeInformation 是 Flink 类型系统的核心类
  * 为所有用作用户函数输入或返回类型的类型提供类型信息
+
  */
 @Public
 public abstract class TypeInformation<T> implements Serializable {
@@ -102,6 +104,7 @@ public abstract class TypeInformation<T> implements Serializable {
     private static final long serialVersionUID = -7742311969684489493L;
     
     /**
+
      * 检查此类型信息是否表示基本类型
      * 基本类型包括原始类型、包装类型、String、Date、Void 等
      */
@@ -173,6 +176,7 @@ public abstract class TypeInformation<T> implements Serializable {
     public static <X> TypeInformation<X> of(TypeHint<X> typeHint) {
         return typeHint.getTypeInfo();
     }
+
 }
 ```
 
@@ -180,8 +184,10 @@ public abstract class TypeInformation<T> implements Serializable {
 
 ```java
 /**
+
  * 基本类型的 TypeInformation
  * 包含所有 Java 原始类型和常用类型的预定义实例
+
  */
 @Public
 public class BasicTypeInfo<T> extends TypeInformation<T> implements AtomicType<T> {
@@ -256,8 +262,10 @@ public class BasicTypeInfo<T> extends TypeInformation<T> implements AtomicType<T
 
 ```java
 /**
+
  * 复合类型的基类
  * 复合类型是包含多个字段的类型，如 Tuple、POJO、Row 等
+
  */
 @Public
 public abstract class CompositeType<T> extends TypeInformation<T> {
@@ -265,6 +273,7 @@ public abstract class CompositeType<T> extends TypeInformation<T> {
     private static final long serialVersionUID = 1L;
     
     /**
+
      * 获取所有字段的名称
      */
     public abstract String[] getFieldNames();
@@ -308,10 +317,11 @@ public abstract class CompositeType<T> extends TypeInformation<T> {
         if (ffd.size() == 1) {
             return ffd.get(0).getType();
         } else {
-            throw new InvalidFieldReferenceException("Field expression \"" + fieldExpression + 
+            throw new InvalidFieldReferenceException("Field expression \"" + fieldExpression +
                 "\" does not reference a single field.");
         }
     }
+
 }
 ```
 
@@ -390,8 +400,10 @@ classDiagram
 
 ```java
 /**
+
  * Row 可以包含任意数量的字段，包含一组字段，这些字段可能都是不同的类型
  * Row 中的字段可以为 null
+
  */
 @PublicEvolving
 public class Row implements Serializable {
@@ -405,6 +417,7 @@ public class Row implements Serializable {
     private RowKind kind;
     
     /**
+
      * 创建具有给定元数（字段数量）的新 Row
      */
     public Row(int arity) {
@@ -505,6 +518,7 @@ public class Row implements Serializable {
         result = 31 * result + Arrays.deepHashCode(fields);
         return result;
     }
+
 }
 ```
 
@@ -636,8 +650,10 @@ classDiagram
 
 ```java
 /**
+
  * Transformation 表示创建 DataStream 的操作
  * 每个 Transformation 都有一个唯一的 ID，用于在优化过程中识别节点
+
  */
 @Internal
 public abstract class Transformation<T> {
@@ -674,6 +690,7 @@ public abstract class Transformation<T> {
     private String uiHash;
     
     /**
+
      * 创建新的 Transformation
      */
     public Transformation(String name, TypeInformation<T> outputType, int parallelism) {
@@ -731,7 +748,7 @@ public abstract class Transformation<T> {
      * 设置并行度
      */
     public void setParallelism(int parallelism) {
-        Preconditions.checkArgument(parallelism > 0 || parallelism == -1, 
+        Preconditions.checkArgument(parallelism > 0 || parallelism == -1,
             "The parallelism must be at least one, or -1 (use default).");
         this.parallelism = parallelism;
     }
@@ -747,7 +764,7 @@ public abstract class Transformation<T> {
      * 设置最大并行度
      */
     public void setMaxParallelism(int maxParallelism) {
-        Preconditions.checkArgument(maxParallelism > 0, 
+        Preconditions.checkArgument(maxParallelism > 0,
             "The maximum parallelism must be at least one.");
         this.maxParallelism = maxParallelism;
     }
@@ -784,6 +801,7 @@ public abstract class Transformation<T> {
     public String getCoLocationGroupKey() {
         return coLocationGroupKey;
     }
+
 }
 ```
 
@@ -791,7 +809,9 @@ public abstract class Transformation<T> {
 
 ```java
 /**
+
  * 此 Transformation 表示将 OneInputStreamOperator 应用于一个输入 Transformation
+
  */
 @Internal
 public class OneInputTransformation<IN, OUT> extends PhysicalTransformation<OUT> {
@@ -804,6 +824,7 @@ public class OneInputTransformation<IN, OUT> extends PhysicalTransformation<OUT>
     private TypeInformation<?> stateKeyType;
     
     /**
+
      * 从给定的输入和操作符创建新的 OneInputTransformation
      */
     public OneInputTransformation(
@@ -887,6 +908,7 @@ public class OneInputTransformation<IN, OUT> extends PhysicalTransformation<OUT>
     public final void setChainingStrategy(ChainingStrategy strategy) {
         operatorFactory.setChainingStrategy(strategy);
     }
+
 }
 ```
 
@@ -960,8 +982,10 @@ classDiagram
 
 ```java
 /**
+
  * 类型序列化器的基类
  * 负责创建实例、序列化和反序列化对象
+
  */
 @Public
 public abstract class TypeSerializer<T> implements Serializable {
@@ -969,6 +993,7 @@ public abstract class TypeSerializer<T> implements Serializable {
     private static final long serialVersionUID = 1L;
     
     /**
+
      * 获取序列化类型是否为不可变类型
      */
     public abstract boolean isImmutableType();
@@ -1037,6 +1062,7 @@ public abstract class TypeSerializer<T> implements Serializable {
      * 快照此序列化器的配置
      */
     public abstract TypeSerializerSnapshot<T> snapshotConfiguration();
+
 }
 ```
 
@@ -1103,8 +1129,10 @@ classDiagram
 
 ```java
 /**
+
  * 状态描述符的基类
  * 状态描述符定义了状态的名称、类型和默认值
+
  */
 @Public
 public abstract class StateDescriptor<S extends State, T> implements Serializable {
@@ -1124,6 +1152,7 @@ public abstract class StateDescriptor<S extends State, T> implements Serializabl
     private TypeSerializer<T> serializer;
     
     /**
+
      * 创建新的状态描述符
      */
     protected StateDescriptor(String name, TypeInformation<T> typeInfo, T defaultValue) {
@@ -1141,7 +1170,7 @@ public abstract class StateDescriptor<S extends State, T> implements Serializabl
         try {
             this.typeInfo = TypeInformation.of(type);
         } catch (InvalidTypesException e) {
-            throw new IllegalArgumentException("Cannot create TypeInformation for type " + type.getName() + 
+            throw new IllegalArgumentException("Cannot create TypeInformation for type " + type.getName() +
                 ". The most common reason is failure to infer the generic type information, " +
                 "in which case you can pass explicit type information as an argument " +
                 "to the constructor or specify it when creating the data stream / data set.", e);
@@ -1230,12 +1259,13 @@ public abstract class StateDescriptor<S extends State, T> implements Serializabl
     
     @Override
     public String toString() {
-        return getClass().getSimpleName() + 
-            "{name=" + name + 
-            ", typeInfo=" + typeInfo + 
-            ", defaultValue=" + defaultValue + 
+        return getClass().getSimpleName() +
+            "{name=" + name +
+            ", typeInfo=" + typeInfo +
+            ", defaultValue=" + defaultValue +
             ", serializer=" + serializer + "}";
     }
+
 }
 ```
 

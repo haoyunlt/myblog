@@ -99,6 +99,7 @@ async def ingest_documents(
     
     Args:
         request (IngestRequest): 入库请求对象
+
             - files: List[IngestFile] 文档文件列表
             - collection_name: str 集合名称，默认'default'
             - chunk_size: int 分块大小，默认1000字符
@@ -140,7 +141,7 @@ async def ingest_documents(
         # 1.2 验证必要参数
         if not request.files or len(request.files) == 0:
             raise VoiceHelperError(
-                ErrorCode.RAG_INVALID_QUERY, 
+                ErrorCode.RAG_INVALID_QUERY,
                 "没有提供文档文件"
             )
         
@@ -214,9 +215,10 @@ async def ingest_documents(
             "files_count": len(request.files) if request.files else 0,
         })
         raise VoiceHelperError(
-            ErrorCode.RAG_INDEXING_FAILED, 
+            ErrorCode.RAG_INDEXING_FAILED,
             f"文档入库失败: {str(e)}"
         )
+
 ```
 
 #### 入库服务核心实现
@@ -229,6 +231,7 @@ class IngestService:
     文档入库服务 - 处理文档解析、向量化、索引构建和存储
     
     主要功能:
+
     - 文档解析: 支持多种格式文档的文本提取
     - 智能分块: 基于语义的自适应文档分块
     - 向量化: BGE模型生成高质量中文向量
@@ -412,9 +415,9 @@ class IngestService:
             )
     
     async def _parse_single_document(
-        self, 
-        file: IngestFile, 
-        collection_name: str, 
+        self,
+        file: IngestFile,
+        collection_name: str,
         metadata: Optional[Dict] = None
     ) -> Document:
         """
@@ -578,6 +581,7 @@ class IngestService:
         except Exception as e:
             logger.error(f"文档分块失败: {document.title}", error=str(e))
             raise ValueError(f"文档分块失败: {str(e)}")
+
 ```
 
 ### 2. 检索查询API
@@ -593,6 +597,7 @@ async def stream_query(self, request: QueryRequest) -> AsyncGenerator[str, None]
     
     Args:
         request (QueryRequest): 查询请求对象
+
             - messages: List[Message] 对话消息列表
             - top_k: int 返回结果数量，默认10
             - temperature: float LLM生成温度，默认0.7
@@ -722,7 +727,7 @@ async def stream_query(self, request: QueryRequest) -> AsyncGenerator[str, None]
         # 3.1 多路结果融合
         fused_results = await self._fuse_retrieval_results(
             vector_results=vector_results,
-            bm25_results=bm25_results, 
+            bm25_results=bm25_results,
             graph_results=graph_results,
             original_query=user_query,
             enhanced_query=enhanced_query
@@ -756,7 +761,7 @@ async def stream_query(self, request: QueryRequest) -> AsyncGenerator[str, None]
                 "score": float(result.score),
                 "source": result.source,
                 "metadata": {
-                    k: v for k, v in result.metadata.items() 
+                    k: v for k, v in result.metadata.items()
                     if k in ["filename", "file_type", "created_at", "section"]
                 }
             }
@@ -880,6 +885,7 @@ async def stream_query(self, request: QueryRequest) -> AsyncGenerator[str, None]
             "code": "QUERY_PROCESSING_ERROR",
             "timestamp": int(time.time() * 1000)
         })
+
 ```
 
 ## 🧠 GraphRAG推理引擎
@@ -928,6 +934,7 @@ class GraphRAG:
     GraphRAG - 基于知识图谱的检索增强生成系统
     
     核心功能:
+
     - 实体识别: 使用NER模型识别文档中的实体
     - 关系抽取: 识别实体间的语义关系
     - 图谱构建: 构建结构化知识图谱
@@ -941,7 +948,7 @@ class GraphRAG:
         self.neo4j = neo4j_client
         self.embedding_service = embedding_service
         self.entity_recognizer = self._init_ner_model()
-        self.relation_extractor = self._init_re_model() 
+        self.relation_extractor = self._init_re_model()
         self.graph_embedder = self._init_graph_embedder()
     
     async def build_knowledge_graph(self, documents: List[Document]) -> Dict[str, int]:
@@ -1042,7 +1049,7 @@ class GraphRAG:
         for record in results:
             path_info = {
                 'entities': record['entity_path'],
-                'relations': record['relation_path'], 
+                'relations': record['relation_path'],
                 'path': record['path'],
                 'depth': record['depth'],
                 'confidence': self._calculate_path_confidence(record['path'])
@@ -1050,6 +1057,7 @@ class GraphRAG:
             paths.append(path_info)
         
         return paths
+
 ```
 
 ## 🎙️ 语音处理模块
@@ -1063,7 +1071,7 @@ graph TB
         
         subgraph "音频预处理"
             VAD[语音活动检测<br/>Voice Activity Detection]
-            DENOISE[噪声抑制<br/>Noise Suppression] 
+            DENOISE[噪声抑制<br/>Noise Suppression]
             RESAMPLE[重采样<br/>16kHz单声道]
         end
         
@@ -1113,6 +1121,7 @@ class EnhancedVoiceService:
     增强语音服务 - 集成ASR、TTS和智能对话的完整语音交互系统
     
     主要特性:
+
     - 多Provider支持: Whisper、Azure、Edge等多种语音服务
     - 实时处理: 流式ASR识别和TTS合成
     - 智能VAD: 语音活动检测和端点检测
@@ -1261,7 +1270,7 @@ class EnhancedVoiceService:
                     
                     # 4.3 发送最终识别结果
                     yield VoiceQueryResponse(
-                        type="asr_final", 
+                        type="asr_final",
                         session_id=session_id,
                         text=final_text,
                         confidence=final_result.confidence,
@@ -1388,9 +1397,9 @@ class EnhancedVoiceService:
             self.metrics.total_queries += 1
     
     async def _synthesize_and_stream_tts(
-        self, 
-        text: str, 
-        session_id: str, 
+        self,
+        text: str,
+        session_id: str,
         language: str,
         voice_config: dict
     ):
@@ -1463,6 +1472,7 @@ class EnhancedVoiceService:
                 session_id=session_id,
                 error=f"语音合成失败: {str(e)}"
             )
+
 ```
 
 ---
@@ -1483,7 +1493,7 @@ class AlgoServiceMetrics:
         # 检索性能指标
         self.retrieval_metrics = {
             "avg_retrieval_time": 0,
-            "vector_search_time": 0, 
+            "vector_search_time": 0,
             "graph_search_time": 0,
             "rerank_time": 0
         }
@@ -1545,7 +1555,7 @@ class MultiLevelCache:
         if key in self.memory_cache:
             return self.memory_cache[key]
         
-        # L2缓存查找 
+        # L2缓存查找
         value = await self.redis_client.get(key)
         if value:
             # 回填L1缓存

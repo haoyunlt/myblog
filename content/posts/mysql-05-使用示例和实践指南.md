@@ -140,8 +140,9 @@ services:
   mysql-mock:
     build: .
     ports:
+
       - "3306:3306"
-      - "33060:33060" 
+      - "33060:33060"
       - "8080:8080"
     volumes:
       - ./scenarios:/etc/mysql_mock
@@ -160,7 +161,7 @@ services:
     command: >
       sh -c "
         sleep 10 &&
-        mysql -hmysql-mock -P3306 -utestuser -ptestpass 
+        mysql -hmysql-mock -P3306 -utestuser -ptestpass
           -e 'SELECT @@version; SHOW DATABASES;'
       "
     networks:
@@ -178,7 +179,9 @@ networks:
 
 ```javascript
 /**
+
  * @brief 完整的握手配置示例
+
  */
 ({
   "handshake": {
@@ -221,7 +224,9 @@ networks:
 
 ```javascript
 /**
+
  * @brief 动态握手处理示例
+
  */
 ({
   "handshake": function(is_greeting) {
@@ -265,7 +270,9 @@ networks:
 
 ```javascript
 /**
+
  * @brief 静态语句响应配置
+
  */
 ({
   "stmts": [
@@ -328,7 +335,9 @@ networks:
 
 ```javascript
 /**
+
  * @brief 动态语句处理示例
+
  */
 ({
   "stmts": function(stmt) {
@@ -411,7 +420,9 @@ networks:
 
 ```javascript
 /**
+
  * @brief 复杂查询处理示例
+
  */
 ({
   "stmts": function(stmt) {
@@ -639,7 +650,9 @@ curl -X GET http://localhost:8080/api/v1/mock/globals
 
 ```javascript
 /**
+
  * @brief MySQL Router Bootstrap场景测试
+
  */
 ({
   "handshake": {
@@ -721,7 +734,9 @@ curl -X GET http://localhost:8080/api/v1/mock/globals
 
 ```javascript
 /**
+
  * @brief Group Replication状态变化模拟
+
  */
 ({
   "stmts": function(stmt) {
@@ -730,7 +745,7 @@ curl -X GET http://localhost:8080/api/v1/mock/globals
       mysqld.global.group_members = [
         {
           uuid: "550fa9ee-a1f8-4b6d-9bfe-c03ed5d30654",
-          host: "mysql-node1", 
+          host: "mysql-node1",
           port: 3306,
           state: "ONLINE",
           role: "PRIMARY"
@@ -738,7 +753,7 @@ curl -X GET http://localhost:8080/api/v1/mock/globals
         {
           uuid: "6091e3d1-b2f2-4c5d-a3e4-d04f6e7a8b9c",
           host: "mysql-node2",
-          port: 3306, 
+          port: 3306,
           state: "ONLINE",
           role: "SECONDARY"
         },
@@ -773,7 +788,7 @@ curl -X GET http://localhost:8080/api/v1/mock/globals
         "result": {
           "columns": [
             {"name": "member_id", "type": "STRING"},
-            {"name": "member_host", "type": "STRING"}, 
+            {"name": "member_host", "type": "STRING"},
             {"name": "member_port", "type": "LONG"},
             {"name": "member_state", "type": "STRING"},
             {"name": "@@group_replication_single_primary_mode", "type": "STRING"}
@@ -833,7 +848,7 @@ curl -X GET http://localhost:8080/api/v1/mock/globals
         
         // 选择新的Primary（第一个ONLINE的SECONDARY）
         for (var i = 0; i < mysqld.global.group_members.length; i++) {
-          if (mysqld.global.group_members[i].state === "ONLINE" && 
+          if (mysqld.global.group_members[i].state === "ONLINE" &&
               mysqld.global.group_members[i].role === "SECONDARY") {
             mysqld.global.group_members[i].role = "PRIMARY";
             mysqld.global.primary_member = mysqld.global.group_members[i].uuid;
@@ -890,7 +905,9 @@ curl -X GET http://localhost:8080/api/v1/mock/globals
 
 ```javascript
 /**
+
  * @brief 性能测试场景配置
+
  */
 ({
   "stmts": function(stmt) {
@@ -1057,7 +1074,7 @@ class MockServerTestFramework:
                 self.mock_process.wait(timeout=10)
                 self.mock_process = None
     
-    def create_mysql_connection(self, port, user="testuser", password="testpass", 
+    def create_mysql_connection(self, port, user="testuser", password="testpass",
                               database=None, **kwargs):
         """创建MySQL连接"""
         config = {
@@ -1231,7 +1248,7 @@ def main():
                 "ok": {"affected_rows": 1}
             },
             {
-                "stmt": "SELECT COUNT(*) FROM test_table", 
+                "stmt": "SELECT COUNT(*) FROM test_table",
                 "result": {
                     "columns": [{"name": "COUNT(*)", "type": "LONGLONG"}],
                     "rows": [["1"]]
@@ -1248,7 +1265,7 @@ def main():
             {
                 "stmt": "SELECT CONNECTION_ID()",
                 "result": {
-                    "columns": [{"name": "CONNECTION_ID()", "type": "LONG"}], 
+                    "columns": [{"name": "CONNECTION_ID()", "type": "LONG"}],
                     "rows": [["42"]]
                 }
             }
@@ -1264,7 +1281,7 @@ def main():
     
     try:
         framework.run_test_case(test_basic_connection, config_file, "基本连接测试")
-        framework.run_test_case(test_query_execution, config_file, "查询执行测试") 
+        framework.run_test_case(test_query_execution, config_file, "查询执行测试")
         framework.run_test_case(test_error_handling, config_file, "错误处理测试")
         framework.run_test_case(test_concurrent_connections, config_file, "并发连接测试")
         
@@ -1272,7 +1289,7 @@ def main():
         auth_fail_config = test_config.copy()
         auth_fail_config["handshake"]["auth"] = {"username": "admin", "password": "secret"}
         
-        auth_config_file = "auth_test_config.js" 
+        auth_config_file = "auth_test_config.js"
         with open(auth_config_file, 'w') as f:
             f.write(f"({json.dumps(auth_fail_config, indent=2)})")
         
@@ -1314,6 +1331,7 @@ jobs:
         build_type: [Debug, Release]
         
     steps:
+
     - uses: actions/checkout@v2
       with:
         submodules: recursive
@@ -1362,6 +1380,7 @@ jobs:
         path: |
           router/build/test_report.json
           router/build/performance_report.json
+
 ```
 
 ```dockerfile

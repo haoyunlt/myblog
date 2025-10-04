@@ -662,7 +662,7 @@ async def streaming_chat_example():
     try:
         stream = client.chat.create_stream(
             message="详细解释什么是Transformer架构",
-            conversation_id="conv_stream_456", 
+            conversation_id="conv_stream_456",
             retrieval_config={
                 "mode": "hybrid",
                 "top_k": 8,
@@ -802,7 +802,7 @@ class IntelligentQASystem:
             
             # 构建增强的问题上下文
             enhanced_question = self._build_enhanced_question(
-                question, 
+                question,
                 self.conversation_history[conversation_id],
                 context
             )
@@ -862,8 +862,8 @@ class IntelligentQASystem:
             }
     
     def _build_enhanced_question(
-        self, 
-        question: str, 
+        self,
+        question: str,
         history: list,
         context: dict = None
     ) -> str:
@@ -874,7 +874,7 @@ class IntelligentQASystem:
         if history:
             recent_history = history[-4:]  # 最近2轮对话
             history_context = "\n".join([
-                f"{msg['role']}: {msg['content']}" 
+                f"{msg['role']}: {msg['content']}"
                 for msg in recent_history
             ])
             context_parts.append(f"对话历史:\n{history_context}")
@@ -893,7 +893,7 @@ class IntelligentQASystem:
         # 这里可以集成更复杂的问题生成逻辑
         follow_ups = [
             "能否提供更多细节？",
-            "有什么实际应用案例吗？", 
+            "有什么实际应用案例吗？",
             "还有其他相关的概念吗？"
         ]
         return follow_ups
@@ -1103,8 +1103,8 @@ const App = () => {
       </header>
       
       {apiKey && (
-        <ChatComponent 
-          apiKey={apiKey} 
+        <ChatComponent
+          apiKey={apiKey}
           conversationId={conversationId}
         />
       )}
@@ -1270,7 +1270,7 @@ Page({
         this.recorderManager = wx.getRecorderManager();
         
         this.recorderManager.onStart(() => {
-          this.setData({ 
+          this.setData({
             isRecording: true,
             currentTranscript: '正在录音...'
           });
@@ -1283,7 +1283,7 @@ Page({
         });
 
         this.recorderManager.onStop(() => {
-          this.setData({ 
+          this.setData({
             isRecording: false,
             currentTranscript: ''
           });
@@ -1414,8 +1414,8 @@ Page({
 
   <!-- 输入区域 -->
   <view class="input-area">
-    <input 
-      type="text" 
+    <input
+      type="text"
       placeholder="输入消息..."
       value="{{inputText}}"
       bindinput="onInputChange"
@@ -1423,8 +1423,8 @@ Page({
       disabled="{{!isConnected}}"
     />
     
-    <button 
-      class="send-btn" 
+    <button
+      class="send-btn"
       bindtap="sendTextMessage"
       disabled="{{!isConnected || !inputText}}"
     >
@@ -1434,7 +1434,7 @@ Page({
 
   <!-- 语音控制按钮 -->
   <view class="voice-controls">
-    <button 
+    <button
       class="voice-btn {{isRecording ? 'recording' : ''}}"
       bindtouchstart="startRecording"
       bindtouchend="stopRecording"
@@ -1591,7 +1591,7 @@ const ChatScreen = () => {
       </View>
 
       {/* 消息列表 */}
-      <ScrollView 
+      <ScrollView
         ref={scrollViewRef}
         style={styles.messagesList}
         contentContainerStyle={styles.messagesContent}
@@ -1659,9 +1659,9 @@ const ChatScreen = () => {
         <TouchableOpacity
           style={[
             styles.voiceButton,
-            { 
+            {
               backgroundColor: isRecording ? '#FF4444' : '#007AFF',
-              opacity: !isConnected ? 0.5 : 1 
+              opacity: !isConnected ? 0.5 : 1
             }
           ]}
           onPressIn={startRecording}

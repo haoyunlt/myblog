@@ -67,9 +67,11 @@ typedef struct {
 PythonContext py_ctx = {0};
 
 /*
+
  * 功能: 初始化 Python 环境
  * 参数: script_path - Python 脚本搜索路径
  * 返回: 0 成功，-1 失败
+
  */
 int init_python(const char *script_path)
 {
@@ -134,9 +136,11 @@ fail:
 }
 
 /*
+
  * 功能: 执行 Python 代码并返回结果
  * 参数: code - Python 代码字符串
  * 返回: PyObject* - 执行结果，NULL 表示失败
+
  */
 PyObject *execute_python(const char *code)
 {
@@ -159,11 +163,13 @@ PyObject *execute_python(const char *code)
 }
 
 /*
+
  * 功能: 调用 Python 函数
  * 参数: func_name - 函数名
  *      format - 参数格式字符串
  *      ... - 可变参数
  * 返回: PyObject* - 函数返回值
+
  */
 PyObject *call_python_function(const char *func_name, const char *format, ...)
 {
@@ -198,10 +204,12 @@ PyObject *call_python_function(const char *func_name, const char *format, ...)
 }
 
 /*
+
  * 功能: 设置 Python 变量
  * 参数: name - 变量名
  *      value - 变量值（C 字符串）
  * 返回: 0 成功，-1 失败
+
  */
 int set_python_variable(const char *name, const char *value)
 {
@@ -217,9 +225,11 @@ int set_python_variable(const char *name, const char *value)
 }
 
 /*
+
  * 功能: 获取 Python 变量
  * 参数: name - 变量名
  * 返回: char* - 变量值字符串，需要调用者释放
+
  */
 char *get_python_variable(const char *name)
 {
@@ -241,7 +251,9 @@ char *get_python_variable(const char *name)
 }
 
 /*
+
  * 功能: 清理 Python 环境
+
  */
 void cleanup_python()
 {
@@ -370,11 +382,13 @@ get_module_state(PyObject *module)
 }
 
 /*
+
  * 功能: 数据统计分析
  * 参数: self - 模块对象
  *      args - 位置参数
  *      kwargs - 关键字参数
  * 返回: 统计结果字典
+
  */
 static PyObject *
 dataprocess_analyze(PyObject *self, PyObject *args, PyObject *kwargs)
@@ -504,10 +518,12 @@ dataprocess_analyze(PyObject *self, PyObject *args, PyObject *kwargs)
 }
 
 /*
+
  * 功能: 数据过滤
  * 参数: self - 模块对象
  *      args - 位置参数 (data, filter_func)
  * 返回: 过滤后的数据列表
+
  */
 static PyObject *
 dataprocess_filter(PyObject *self, PyObject *args)
@@ -578,10 +594,12 @@ dataprocess_filter(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 数据变换
  * 参数: self - 模块对象
  *      args - 位置参数 (data, transform_func)
  * 返回: 变换后的数据列表
+
  */
 static PyObject *
 dataprocess_transform(PyObject *self, PyObject *args)
@@ -638,10 +656,12 @@ dataprocess_transform(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 获取处理统计信息
  * 参数: self - 模块对象
  *      args - 参数（无）
  * 返回: 统计信息字典
+
  */
 static PyObject *
 dataprocess_get_stats(PyObject *self, PyObject *args)
@@ -660,10 +680,12 @@ dataprocess_get_stats(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 重置统计信息
  * 参数: self - 模块对象
  *      args - 参数（无）
  * 返回: None
+
  */
 static PyObject *
 dataprocess_reset_stats(PyObject *self, PyObject *args)
@@ -941,8 +963,10 @@ typedef struct {
 } WorkerContext;
 
 /*
+
  * 功能: CPU 密集型任务的线程函数
  * 说明: 演示正确的 GIL 管理
+
  */
 void *cpu_intensive_worker(void *arg)
 {
@@ -999,8 +1023,10 @@ void *cpu_intensive_worker(void *arg)
 }
 
 /*
+
  * 功能: I/O 密集型任务的线程函数
  * 说明: 演示 I/O 操作中的 GIL 管理
+
  */
 void *io_intensive_worker(void *arg)
 {
@@ -1056,7 +1082,9 @@ void *io_intensive_worker(void *arg)
 }
 
 /*
+
  * 功能: 创建和管理多线程
+
  */
 static PyObject *
 run_multithreaded_tasks(PyObject *self, PyObject *args)
@@ -1184,7 +1212,9 @@ typedef struct {
 static StringCache g_string_cache = {NULL, 0, 0};
 
 /*
+
  * 功能: 初始化字符串缓存
+
  */
 static int init_string_cache(size_t initial_capacity)
 {
@@ -1200,7 +1230,9 @@ static int init_string_cache(size_t initial_capacity)
 }
 
 /*
+
  * 功能: 缓存字符串对象
+
  */
 static void cache_string(PyObject *str)
 {
@@ -1211,7 +1243,9 @@ static void cache_string(PyObject *str)
 }
 
 /*
+
  * 功能: 查找缓存的字符串
+
  */
 static PyObject *find_cached_string(const char *str)
 {
@@ -1227,7 +1261,9 @@ static PyObject *find_cached_string(const char *str)
 }
 
 /*
+
  * 功能: 创建或获取缓存的字符串
+
  */
 static PyObject *
 get_or_create_string(PyObject *self, PyObject *args)
@@ -1258,7 +1294,9 @@ static PyObject *small_int_cache[512];  // -256 到 255
 static int cache_initialized = 0;
 
 /*
+
  * 功能: 初始化小整数缓存
+
  */
 static void init_small_int_cache(void)
 {
@@ -1273,7 +1311,9 @@ static void init_small_int_cache(void)
 }
 
 /*
+
  * 功能: 快速整数创建
+
  */
 static PyObject *
 fast_int(PyObject *self, PyObject *args)
@@ -1296,7 +1336,9 @@ fast_int(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 批量操作优化示例
+
  */
 static PyObject *
 batch_process(PyObject *self, PyObject *args)
@@ -1355,7 +1397,9 @@ batch_process(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 内存池管理示例
+
  */
 #define POOL_SIZE 1024
 static PyObject *object_pool[POOL_SIZE];
@@ -1449,7 +1493,9 @@ typedef struct {
 static PerformanceMetrics g_metrics;
 
 /*
+
  * 功能: 开始性能测量
+
  */
 static PyObject *
 start_profiling(PyObject *self, PyObject *args)
@@ -1465,7 +1511,9 @@ start_profiling(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 结束性能测量
+
  */
 static PyObject *
 stop_profiling(PyObject *self, PyObject *args)
@@ -1493,7 +1541,9 @@ stop_profiling(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 基准测试装饰器
+
  */
 static PyObject *
 benchmark_function(PyObject *self, PyObject *args)
@@ -1577,7 +1627,9 @@ typedef enum {
 static LogLevel current_log_level = LOG_LEVEL_INFO;
 
 /*
+
  * 功能: 设置日志级别
+
  */
 static PyObject *
 set_log_level(PyObject *self, PyObject *args)
@@ -1598,7 +1650,9 @@ set_log_level(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 记录日志
+
  */
 static void
 log_message(LogLevel level, const char *message)
@@ -1639,7 +1693,9 @@ log_message(LogLevel level, const char *message)
 }
 
 /*
+
  * 功能: Python 日志接口
+
  */
 static PyObject *
 log_info(PyObject *self, PyObject *args)
@@ -1681,7 +1737,9 @@ log_error(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 安全的函数执行包装器
+
  */
 static PyObject *
 safe_execute(PyObject *self, PyObject *args)
@@ -1739,7 +1797,9 @@ safe_execute(PyObject *self, PyObject *args)
 }
 
 /*
+
  * 功能: 内存使用监控
+
  */
 static PyObject *
 monitor_memory(PyObject *self, PyObject *args)
@@ -1931,52 +1991,52 @@ all: $(TARGETS)
 
 # 编译规则
 %.o: %.c
-	$(CC) $(CFLAGS) -c $< -o $@
+    $(CC) $(CFLAGS) -c $< -o $@
 
 %.so: %.o
-	$(CC) -shared $(LDFLAGS) $< -o $@ $(LIBS)
+    $(CC) -shared $(LDFLAGS) $< -o $@ $(LIBS)
 
 # 清理
 clean:
-	rm -f $(OBJECTS) $(TARGETS)
-	rm -rf build/ dist/ *.egg-info/
-	find . -name "*.pyc" -delete
-	find . -name "__pycache__" -type d -exec rm -rf {} +
+    rm -f $(OBJECTS) $(TARGETS)
+    rm -rf build/ dist/ *.egg-info/
+    find . -name "*.pyc" -delete
+    find . -name "__pycache__" -type d -exec rm -rf {} +
 
 # 安装
 install: $(TARGETS)
-	$(PYTHON) setup.py install
+    $(PYTHON) setup.py install
 
 # 开发安装
 develop: $(TARGETS)
-	$(PYTHON) setup.py develop
+    $(PYTHON) setup.py develop
 
 # 测试
 test: $(TARGETS)
-	$(PYTHON) -m pytest tests/
+    $(PYTHON) -m pytest tests/
 
 # 文档生成
 docs:
-	sphinx-build -b html docs docs/_build
+    sphinx-build -b html docs docs/_build
 
 # 代码格式化
 format:
-	clang-format -i $(SOURCES)
-	black *.py tests/*.py
+    clang-format -i $(SOURCES)
+    black *.py tests/*.py
 
 # 静态分析
 analyze:
-	cppcheck --enable=all $(SOURCES)
-	flake8 *.py tests/
+    cppcheck --enable=all $(SOURCES)
+    flake8 *.py tests/
 
 # 性能分析
 profile: $(TARGETS)
-	$(PYTHON) -m cProfile -o profile.stats performance_test.py
-	$(PYTHON) -c "import pstats; pstats.Stats('profile.stats').sort_stats('cumulative').print_stats(20)"
+    $(PYTHON) -m cProfile -o profile.stats performance_test.py
+    $(PYTHON) -c "import pstats; pstats.Stats('profile.stats').sort_stats('cumulative').print_stats(20)"
 
 # 内存检查
 memcheck: $(TARGETS)
-	valgrind --tool=memcheck --leak-check=full $(PYTHON) memory_test.py
+    valgrind --tool=memcheck --leak-check=full $(PYTHON) memory_test.py
 
 .PHONY: all clean install develop test docs format analyze profile memcheck
 ```

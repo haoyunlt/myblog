@@ -130,6 +130,7 @@ class RLModule(Checkpointable, abc.ABC):
     RLlib模型的基础类
     
     核心职责：
+
     1. 定义神经网络模型结构
     2. 实现前向传播逻辑
     3. 管理模型状态和检查点
@@ -242,6 +243,7 @@ class PPOTorchRLModule(RLModule):
     PPO算法的PyTorch实现
     
     模型结构：
+
     - 共享编码器网络
     - 策略头（输出动作分布参数）
     - 价值头（输出状态价值估计）
@@ -336,6 +338,7 @@ class PPOTorchRLModule(RLModule):
             action_mean = self.policy_mean(encoded)
             action_logstd = self.policy_logstd.expand_as(action_mean)
             return torch.cat([action_mean, action_logstd], dim=-1)
+
 ```
 
 ---
@@ -352,6 +355,7 @@ class Algorithm(Checkpointable, Trainable):
     RLlib算法的基础类
     
     核心功能：
+
     1. 算法生命周期管理
     2. 训练循环协调
     3. 评估和检查点管理
@@ -438,7 +442,7 @@ class Algorithm(Checkpointable, Trainable):
                 self._sync_weights_to_env_runners()
             
             # 4. 执行定期评估
-            if (self.config.evaluation_interval > 0 and 
+            if (self.config.evaluation_interval > 0 and
                 self._iteration % self.config.evaluation_interval == 0):
                 eval_results = self.evaluate()
                 train_results.update(eval_results)
@@ -497,6 +501,7 @@ class PPO(Algorithm):
     PPO算法实现
     
     PPO特点：
+
     1. On-policy策略梯度算法
     2. 使用clipped surrogate objective
     3. Actor-Critic架构
@@ -589,8 +594,8 @@ class PPO(Algorithm):
         advantages = batch["advantages"]
         unclipped_loss = ratio * advantages
         clipped_loss = torch.clamp(
-            ratio, 
-            1 - self.config.clip_param, 
+            ratio,
+            1 - self.config.clip_param,
             1 + self.config.clip_param
         ) * advantages
         
@@ -607,8 +612,8 @@ class PPO(Algorithm):
         
         # 总损失
         total_loss = (
-            policy_loss + 
-            self.config.vf_loss_coeff * value_loss - 
+            policy_loss +
+            self.config.vf_loss_coeff * value_loss -
             self.config.entropy_coeff * entropy
         )
         
@@ -626,6 +631,7 @@ class PPO(Algorithm):
         self.get_policy().optimizer.step()
         
         return policy_loss.item(), value_loss.item(), entropy.item()
+
 ```
 
 ---
@@ -704,6 +710,7 @@ class EnvRunner:
     环境运行器 - 负责策略与环境的交互
     
     核心功能：
+
     1. 环境管理和重置
     2. 策略执行和动作采样
     3. 经验数据收集
@@ -828,6 +835,7 @@ class EnvRunnerGroup:
     环境运行器组 - 管理多个EnvRunner的协调器
     
     功能：
+
     1. 分布式环境交互
     2. 并行数据收集
     3. 故障恢复和弹性扩展
@@ -917,9 +925,10 @@ class EnvRunnerGroup:
         # 同步到远程workers
         if self.remote_workers:
             ray.get([
-                worker.set_weights.remote(weights) 
+                worker.set_weights.remote(weights)
                 for worker in self.remote_workers
             ])
+
 ```
 
 ---
@@ -933,11 +942,13 @@ class EnvRunnerGroup:
 RLlib多环境支持系统
 
 支持的环境类型：
+
 1. Gymnasium环境
 2. Unity ML-Agents
 3. 自定义环境
 4. 多智能体环境
 5. 向量化环境
+
 """
 
 import gymnasium as gym
@@ -950,6 +961,7 @@ class CustomTradingEnv(gym.Env):
     自定义交易环境示例
     
     功能：
+
     - 模拟股票交易环境
     - 支持连续动作空间
     - 提供复杂奖励函数
@@ -1012,7 +1024,7 @@ class CustomTradingEnv(gym.Env):
         # 执行交易
         if action > 0:
             # 买入操作
-            buy_amount = min(action * self.balance / current_price, 
+            buy_amount = min(action * self.balance / current_price,
                            self.balance / current_price)
             cost = buy_amount * current_price * (1 + self.transaction_cost)
             
@@ -1207,7 +1219,7 @@ def configure_ppo_algorithm():
             model={
                 "conv_filters": [
                     [32, [8, 8], 4],
-                    [64, [4, 4], 2], 
+                    [64, [4, 4], 2],
                     [64, [3, 3], 1],
                 ],
                 "fcnet_hiddens": [512],
@@ -1364,6 +1376,7 @@ class CustomPPOAlgorithm(PPO):
     自定义PPO算法实现
     
     扩展功能：
+
     - 自定义损失函数
     - 特殊的奖励处理
     - 额外的正则化项

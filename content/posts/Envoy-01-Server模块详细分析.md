@@ -75,8 +75,10 @@ graph TB
 
 ```cpp
 /**
+
  * MainCommon 类负责Envoy的主要启动逻辑
  * 这个类处理命令行参数解析、配置加载和服务器实例创建
+
  */
 class MainCommon {
 public:
@@ -84,6 +86,7 @@ public:
   using PostServerHook = std::function<void(Server::Instance& server)>;
 
   /**
+
    * 构造函数，解析命令行参数
    * @param argc 命令行参数数量
    * @param argv 命令行参数数组
@@ -110,6 +113,7 @@ public:
 
 #ifdef ENVOY_ADMIN_FUNCTIONALITY
   /**
+
    * 发起管理控制台请求
    * @param path_and_query 请求路径和查询参数
    * @param method HTTP方法（GET或POST）
@@ -128,6 +132,7 @@ public:
 #endif
 
   /**
+
    * 获取热重启版本信息
    * @param hot_restart_enabled 是否启用热重启
    * @return 版本信息字符串
@@ -199,14 +204,17 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * InstanceBase 是服务器实例的基础实现类
  * 它管理所有核心组件的生命周期，包括网络、HTTP、上游服务等
+
  */
 class InstanceBase : Logger::Loggable<Logger::Id::main>,
                      public Instance,
                      public ServerLifecycleNotifier {
 public:
   /**
+
    * 构造函数
    * @param init_manager 初始化管理器
    * @param options 服务器选项
@@ -223,16 +231,16 @@ public:
    * @param watermark_factory 水位工厂（可选）
    * @throws EnvoyException 如果初始化失败
    */
-  InstanceBase(Init::Manager& init_manager, 
-               const Options& options, 
+  InstanceBase(Init::Manager& init_manager,
+               const Options& options,
                Event::TimeSystem& time_system,
-               ListenerHooks& hooks, 
-               HotRestart& restarter, 
+               ListenerHooks& hooks,
+               HotRestart& restarter,
                Stats::StoreRoot& store,
                Thread::BasicLockable& access_log_lock,
-               Random::RandomGeneratorPtr&& random_generator, 
+               Random::RandomGeneratorPtr&& random_generator,
                ThreadLocal::Instance& tls,
-               Thread::ThreadFactory& thread_factory, 
+               Thread::ThreadFactory& thread_factory,
                Filesystem::Instance& file_system,
                std::unique_ptr<ProcessContext> process_context,
                Buffer::WatermarkFactorySharedPtr watermark_factory = nullptr);
@@ -261,16 +269,16 @@ public:
    * 获取管理接口（如果启用）
    * @return 管理接口的可选引用
    */
-  OptRef<Admin> admin() override { 
-    return makeOptRefFromPtr(admin_.get()); 
+  OptRef<Admin> admin() override {
+    return makeOptRefFromPtr(admin_.get());
   }
   
   /**
    * 获取API接口
    * @return API接口引用
    */
-  Api::Api& api() override { 
-    return *api_; 
+  Api::Api& api() override {
+    return *api_;
   }
   
   /**
@@ -284,24 +292,24 @@ public:
    * 获取SSL上下文管理器
    * @return SSL上下文管理器引用  
    */
-  Ssl::ContextManager& sslContextManager() override { 
-    return *ssl_context_manager_; 
+  Ssl::ContextManager& sslContextManager() override {
+    return *ssl_context_manager_;
   }
   
   /**
    * 获取事件分发器
    * @return 事件分发器引用
    */
-  Event::Dispatcher& dispatcher() override { 
-    return *dispatcher_; 
+  Event::Dispatcher& dispatcher() override {
+    return *dispatcher_;
   }
   
   /**
    * 获取DNS解析器
    * @return DNS解析器共享指针
    */
-  Network::DnsResolverSharedPtr dnsResolver() override { 
-    return dns_resolver_; 
+  Network::DnsResolverSharedPtr dnsResolver() override {
+    return dns_resolver_;
   }
   
   /**
@@ -314,16 +322,16 @@ public:
    * 获取排空管理器
    * @return 排空管理器引用
    */
-  DrainManager& drainManager() override { 
-    return *drain_manager_; 
+  DrainManager& drainManager() override {
+    return *drain_manager_;
   }
   
   /**
    * 获取访问日志管理器
    * @return 访问日志管理器引用
    */
-  AccessLog::AccessLogManager& accessLogManager() override { 
-    return access_log_manager_; 
+  AccessLog::AccessLogManager& accessLogManager() override {
+    return access_log_manager_;
   }
 
   /**
@@ -336,64 +344,64 @@ public:
    * 获取热重启器
    * @return 热重启器引用  
    */
-  HotRestart& hotRestart() override { 
-    return restarter_; 
+  HotRestart& hotRestart() override {
+    return restarter_;
   }
   
   /**
    * 获取初始化管理器
    * @return 初始化管理器引用
    */
-  Init::Manager& initManager() override { 
-    return init_manager_; 
+  Init::Manager& initManager() override {
+    return init_manager_;
   }
   
   /**
    * 获取生命周期通知器
    * @return 生命周期通知器引用
    */
-  ServerLifecycleNotifier& lifecycleNotifier() override { 
-    return *this; 
+  ServerLifecycleNotifier& lifecycleNotifier() override {
+    return *this;
   }
   
   /**
    * 获取监听器管理器
    * @return 监听器管理器引用  
    */
-  ListenerManager& listenerManager() override { 
-    return *listener_manager_; 
+  ListenerManager& listenerManager() override {
+    return *listener_manager_;
   }
   
   /**
    * 获取秘钥管理器
    * @return 秘钥管理器引用
    */
-  Secret::SecretManager& secretManager() override { 
-    return *secret_manager_; 
+  Secret::SecretManager& secretManager() override {
+    return *secret_manager_;
   }
 
   /**
    * 获取互斥锁跟踪器
    * @return 互斥锁跟踪器指针
    */
-  Envoy::MutexTracer* mutexTracer() override { 
-    return mutex_tracer_; 
+  Envoy::MutexTracer* mutexTracer() override {
+    return mutex_tracer_;
   }
   
   /**
    * 获取过载管理器
    * @return 过载管理器引用
    */
-  OverloadManager& overloadManager() override { 
-    return *overload_manager_; 
+  OverloadManager& overloadManager() override {
+    return *overload_manager_;
   }
   
   /**
    * 获取空过载管理器
    * @return 空过载管理器引用
    */
-  OverloadManager& nullOverloadManager() override { 
-    return *null_overload_manager_; 
+  OverloadManager& nullOverloadManager() override {
+    return *null_overload_manager_;
   }
   
   /**
@@ -411,8 +419,8 @@ public:
    * 检查服务器是否已关闭
    * @return 是否已关闭
    */
-  bool isShutdown() final { 
-    return shutdown_; 
+  bool isShutdown() final {
+    return shutdown_;
   }
   
   /**
@@ -424,8 +432,8 @@ public:
    * 获取单例管理器
    * @return 单例管理器引用
    */
-  Singleton::Manager& singletonManager() override { 
-    return singleton_manager_; 
+  Singleton::Manager& singletonManager() override {
+    return singleton_manager_;
   }
   
   /**
@@ -438,56 +446,56 @@ public:
    * 获取服务器选项
    * @return 服务器选项引用
    */
-  const Options& options() override { 
-    return options_; 
+  const Options& options() override {
+    return options_;
   }
   
   /**
    * 获取当前纪元的启动时间
    * @return 启动时间戳
    */
-  time_t startTimeCurrentEpoch() override { 
-    return start_time_; 
+  time_t startTimeCurrentEpoch() override {
+    return start_time_;
   }
   
   /**
    * 获取第一个纪元的启动时间
    * @return 启动时间戳
    */
-  time_t startTimeFirstEpoch() override { 
-    return original_start_time_; 
+  time_t startTimeFirstEpoch() override {
+    return original_start_time_;
   }
 
   /**
    * 获取统计存储
    * @return 统计存储引用
    */
-  Stats::Store& stats() override { 
-    return stats_store_; 
+  Stats::Store& stats() override {
+    return stats_store_;
   }
   
   /**
    * 获取gRPC上下文
    * @return gRPC上下文引用
    */
-  Grpc::Context& grpcContext() override { 
-    return grpc_context_; 
+  Grpc::Context& grpcContext() override {
+    return grpc_context_;
   }
   
   /**
    * 获取HTTP上下文
    * @return HTTP上下文引用
    */
-  Http::Context& httpContext() override { 
-    return http_context_; 
+  Http::Context& httpContext() override {
+    return http_context_;
   }
   
   /**
    * 获取路由器上下文
    * @return 路由器上下文引用
    */
-  Router::Context& routerContext() override { 
-    return router_context_; 
+  Router::Context& routerContext() override {
+    return router_context_;
   }
 
   /**
@@ -500,24 +508,24 @@ public:
    * 获取线程本地存储
    * @return 线程本地存储引用
    */
-  ThreadLocal::Instance& threadLocal() override { 
-    return thread_local_; 
+  ThreadLocal::Instance& threadLocal() override {
+    return thread_local_;
   }
   
   /**
    * 获取本地信息
    * @return 本地信息引用
    */
-  LocalInfo::LocalInfo& localInfo() const override { 
-    return *local_info_; 
+  LocalInfo::LocalInfo& localInfo() const override {
+    return *local_info_;
   }
   
   /**
    * 获取时间源
    * @return 时间源引用
    */
-  TimeSource& timeSource() override { 
-    return time_source_; 
+  TimeSource& timeSource() override {
+    return time_source_;
   }
 
   /**
@@ -529,32 +537,32 @@ public:
    * 获取统计配置
    * @return 统计配置引用
    */
-  Configuration::StatsConfig& statsConfig() override { 
-    return config_.statsConfig(); 
+  Configuration::StatsConfig& statsConfig() override {
+    return config_.statsConfig();
   }
   
   /**
    * 获取正则表达式引擎
    * @return 正则表达式引擎引用
    */
-  Regex::Engine& regexEngine() override { 
-    return *regex_engine_; 
+  Regex::Engine& regexEngine() override {
+    return *regex_engine_;
   }
   
   /**
    * 获取启动配置
    * @return 启动配置引用
    */
-  envoy::config::bootstrap::v3::Bootstrap& bootstrap() override { 
-    return bootstrap_; 
+  envoy::config::bootstrap::v3::Bootstrap& bootstrap() override {
+    return bootstrap_;
   }
 
   /**
    * 获取服务器工厂上下文
    * @return 服务器工厂上下文引用
    */
-  Configuration::ServerFactoryContext& serverFactoryContext() override { 
-    return server_contexts_; 
+  Configuration::ServerFactoryContext& serverFactoryContext() override {
+    return server_contexts_;
   }
   
   /**
@@ -602,8 +610,8 @@ public:
    * 获取QUIC统计名称
    * @return QUIC统计名称引用
    */
-  Quic::QuicStatNames& quicStatNames() { 
-    return quic_stat_names_; 
+  Quic::QuicStatNames& quicStatNames() {
+    return quic_stat_names_;
   }
 
   /**
@@ -618,8 +626,8 @@ public:
    * 获取XDS管理器
    * @return XDS管理器引用
    */
-  Config::XdsManager& xdsManager() override { 
-    return *xds_manager_; 
+  Config::XdsManager& xdsManager() override {
+    return *xds_manager_;
   }
 
   // ServerLifecycleNotifier 接口实现
@@ -643,11 +651,12 @@ public:
 
 protected:
   /**
+
    * 获取配置
    * @return 主配置的常量引用
    */
-  const Configuration::MainImpl& config() { 
-    return config_; 
+  const Configuration::MainImpl& config() {
+    return config_;
   }
 
 private:
@@ -720,14 +729,17 @@ private:
 
 ```cpp
 /**
+
  * ComponentFactory 接口用于创建服务运行时需要的各种组件
  * 采用工厂模式，支持依赖注入和测试替换
+
  */
 class ComponentFactory {
 public:
   virtual ~ComponentFactory() = default;
 
   /**
+
    * 创建排空管理器
    * @param server 服务器实例引用
    * @return 排空管理器的唯一指针
@@ -741,6 +753,7 @@ public:
    * @return 运行时加载器的唯一指针
    */
   virtual Runtime::LoaderPtr createRuntime(Instance& server, Configuration::Initial& config) PURE;
+
 };
 ```
 
@@ -748,7 +761,9 @@ public:
 
 ```cpp
 /**
+
  * ProdComponentFactory 是生产环境使用的组件工厂实现
+
  */
 class ProdComponentFactory : public ComponentFactory {
 public:
@@ -804,12 +819,14 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * 加载和验证启动配置
  * @param bootstrap 启动配置对象引用
  * @param options 服务器选项
  * @param validation_visitor 消息验证访问器
  * @param api API接口引用
  * @return 配置加载状态
+
  */
 absl::Status InstanceUtil::loadBootstrapConfig(
     envoy::config::bootstrap::v3::Bootstrap& bootstrap,
@@ -840,7 +857,9 @@ absl::Status InstanceUtil::loadBootstrapConfig(
 
 ```cpp
 /**
+
  * 初始化统计系统和相关组件
+
  */
 void InstanceBase::updateServerStats() {
   // 更新服务器基础统计
@@ -892,17 +911,19 @@ graph TD
 
 ```cpp
 /**
+
  * 服务器主运行循环
+
  */
 void InstanceBase::run() {
   // 启动运行时帮助器，处理初始化完成和信号
-  RunHelper helper(*this, options_, *dispatcher_, *xds_manager_, 
-                   clusterManager(), access_log_manager_, 
-                   init_manager_, *overload_manager_, 
+  RunHelper helper(*this, options_, *dispatcher_, *xds_manager_,
+                   clusterManager(), access_log_manager_,
+                   init_manager_, *overload_manager_,
                    *null_overload_manager_,
                    [this]() -> void {
                      // 工作线程启动完成回调
-                     startWorkers(); 
+                     startWorkers();
                    });
 
   // 标记主分发循环已启动
@@ -919,7 +940,9 @@ void InstanceBase::run() {
 
 ```cpp
 /**
+
  * RunHelper 处理各种系统信号
+
  */
 class RunHelper : Logger::Loggable<Logger::Id::main> {
 public:
@@ -990,14 +1013,17 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * HotRestart 接口提供热重启功能
  * 允许新旧进程之间进行协调的交接
+
  */
 class HotRestart {
 public:
   virtual ~HotRestart() = default;
 
   /**
+
    * 获取共享内存中的统计数据
    * @return 统计数据的共享指针
    */
@@ -1032,6 +1058,7 @@ public:
    * @return 纪元编号
    */
   virtual uint64_t epoch() PURE;
+
 };
 ```
 
@@ -1072,7 +1099,9 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * 执行服务器优雅关闭
+
  */
 void InstanceBase::shutdown() {
   ENVOY_LOG(info, "开始服务器关闭");
@@ -1084,7 +1113,7 @@ void InstanceBase::shutdown() {
   notifyCallbacksForStage(Stage::ShutdownExit, [this]() {
     // 停止统计刷新定时器
     if (stat_flush_timer_) {
-      stat_flush_timer_->disableTimer(); 
+      stat_flush_timer_->disableTimer();
     }
     
     // 关闭监听器管理器
@@ -1118,7 +1147,9 @@ void InstanceBase::shutdown() {
 
 ```cpp
 /**
+
  * 所有服务器级别的统计指标定义
+
  */
 #define ALL_SERVER_STATS(COUNTER, GAUGE, HISTOGRAM)                                                \
   COUNTER(debug_assertion_failures)      /* 调试断言失败次数 */                                       \
@@ -1145,7 +1176,9 @@ void InstanceBase::shutdown() {
   HISTOGRAM(initialization_time_ms, Milliseconds) /* 初始化时间直方图 */
 
 /**
+
  * 服务器统计结构
+
  */
 struct ServerStats {
   ALL_SERVER_STATS(GENERATE_COUNTER_STRUCT, GENERATE_GAUGE_STRUCT, GENERATE_HISTOGRAM_STRUCT)
@@ -1196,12 +1229,14 @@ Server模块通过Admin接口暴露丰富的运行时信息：
 ### 常用调试技巧
 
 1. **日志级别调整**：
+
 ```bash
 # 运行时调整日志级别
 curl -X POST "http://localhost:9901/logging?level=debug"
 ```
 
-2. **统计监控**：
+1. **统计监控**：
+
 ```bash  
 # 查看服务器统计
 curl "http://localhost:9901/stats"
@@ -1210,13 +1245,15 @@ curl "http://localhost:9901/stats"
 curl "http://localhost:9901/stats?filter=server"
 ```
 
-3. **配置验证**：
+1. **配置验证**：
+
 ```bash
 # 验证配置而不启动服务
 envoy --mode validate -c envoy.yaml
 ```
 
-4. **内存分析**：
+1. **内存分析**：
+
 ```bash
 # 启用堆分析
 curl -X POST "http://localhost:9901/heapprofiler?enable=y"

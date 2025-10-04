@@ -71,6 +71,7 @@ classDiagram
 
 ```cpp
 /**
+
  * @brief MySQLServerMock构造函数
  * @param io_ctx IO上下文，用于异步网络操作
  * @param expected_queries_file 期望查询文件路径（JSON或JS）
@@ -80,11 +81,14 @@ classDiagram
  * @param debug_mode 调试模式，是否打印详细信息
  * @param tls_server_ctx TLS服务器上下文，用于SSL连接
  * @param ssl_mode SSL模式配置
- * 
+
+ *
+
  * 功能说明：
  * 1. 初始化所有成员变量
  * 2. 如果启用调试模式，打印配置文件路径
  * 3. 准备TLS上下文用于后续连接
+
  */
 MySQLServerMock::MySQLServerMock(net::io_context &io_ctx,
                                  std::string expected_queries_file,
@@ -114,9 +118,12 @@ MySQLServerMock::MySQLServerMock(net::io_context &io_ctx,
 
 ```cpp
 /**
+
  * @brief 主运行方法，启动Mock Server服务
  * @param env 插件环境指针，用于服务生命周期管理
- * 
+
+ *
+
  * 执行流程：
  * 1. 创建并初始化Acceptor
  * 2. 绑定网络地址并开始监听
@@ -124,6 +131,7 @@ MySQLServerMock::MySQLServerMock(net::io_context &io_ctx,
  * 4. 启动异步连接接受循环
  * 5. 等待停止信号
  * 6. 清理所有连接
+
  */
 void MySQLServerMock::run(mysql_harness::PluginFuncEnv *env) {
   const auto &dest = bind_destination_;
@@ -191,14 +199,20 @@ void MySQLServerMock::run(mysql_harness::PluginFuncEnv *env) {
 
 ```cpp
 /**
+
  * @brief 关闭所有活跃连接
- * 
+
+ *
+
  * 功能说明：
  * 1. 线程安全地遍历所有会话
  * 2. 调用每个会话的terminate方法
  * 3. 触发连接的优雅关闭
- * 
+
+ *
+
  * 注意：此方法可以从其他线程调用
+
  */
 void MySQLServerMock::close_all_connections() {
   client_sessions_([](auto &socks) {
@@ -308,15 +322,19 @@ classDiagram
 
 ```cpp
 /**
+
  * @brief 初始化接受器，创建监听socket
  * @param dest 目标网络地址（TCP或Unix Socket）
  * @return expected<void, error_code> 成功返回void，失败返回错误码
- * 
+
+ *
+
  * 功能说明：
  * 1. 解析网络地址
  * 2. 创建并配置socket
  * 3. 绑定地址并开始监听
  * 4. 设置socket选项优化性能
+
  */
 stdx::expected<void, std::error_code> Acceptor::init(
     const mysql_harness::Destination &dest) {
@@ -353,8 +371,8 @@ stdx::expected<void, std::error_code> Acceptor::init(
 
   // Unix socket特殊处理：设置析构时清理文件
   if (ep.is_local()) {
-    at_destruct_ = [path = ep.as_local().path()]() { 
-      unlink(path.c_str()); 
+    at_destruct_ = [path = ep.as_local().path()]() {
+      unlink(path.c_str());
     };
   }
 
@@ -369,15 +387,19 @@ stdx::expected<void, std::error_code> Acceptor::init(
 
 ```cpp
 /**
+
  * @brief 处理新接受的客户端连接
  * @param client_sock 客户端socket对象
- * 
+
+ *
+
  * 功能说明：
  * 1. 创建语句读取器
  * 2. 根据协议类型创建相应会话
  * 3. 配置断开回调
  * 4. 启动会话处理
  * 5. 继续接受下一个连接
+
  */
 void Acceptor::accepted(mysql_harness::DestinationSocket client_sock) {
   // 通过工厂方法创建语句读取器实例
@@ -434,13 +456,17 @@ void Acceptor::accepted(mysql_harness::DestinationSocket client_sock) {
 
 ```cpp
 /**
+
  * @brief 异步接受连接的主循环
- * 
+
+ *
+
  * 功能说明：
  * 1. 检查是否已停止
  * 2. 增加工作计数器
  * 3. 启动异步accept操作
  * 4. 设置完成回调处理
+
  */
 void Acceptor::async_run() {
   if (stopped()) return;
@@ -484,12 +510,16 @@ void Acceptor::async_run() {
 
 ```cpp
 /**
+
  * @brief 停止接受器
- * 
+
+ *
+
  * 功能说明：
  * 1. 标记为已停止状态
  * 2. 关闭监听socket
  * 3. 等待所有异步操作完成
+
  */
 void Acceptor::stop() {
   if (!stopped_now()) return; // 如果已经停止，直接返回
@@ -502,8 +532,10 @@ void Acceptor::stop() {
 }
 
 /**
+
  * @brief 原子性地标记为停止状态
  * @return bool 是否是本次调用设置的停止状态
+
  */
 bool Acceptor::stopped_now() {
   return stopped_([](bool &stopped) {
@@ -519,7 +551,9 @@ bool Acceptor::stopped_now() {
 
 ```cpp
 /**
+
  * @brief 析构函数，确保资源清理
+
  */
 Acceptor::~Acceptor() {
   stop(); // 确保停止所有操作
@@ -581,15 +615,19 @@ classDiagram
 
 ```cpp
 /**
+
  * @brief Connection构造函数
  * @param sock 网络socket对象
  * @param ep 端点信息
  * @param tls_ctx TLS服务器上下文
- * 
+
+ *
+
  * 功能说明：
  * 1. 初始化socket和端点信息
  * 2. 配置TCP_NODELAY优化
  * 3. 设置非阻塞模式
+
  */
 Connection::Connection(mysql_harness::DestinationSocket sock,
                        mysql_harness::DestinationEndpoint ep,
@@ -613,12 +651,16 @@ Connection::Connection(mysql_harness::DestinationSocket sock,
 
 ```cpp
 /**
+
  * @brief 初始化TLS连接
- * 
+
+ *
+
  * 功能说明：
  * 1. 创建SSL对象
  * 2. 处理预读缓冲区数据
  * 3. 配置BIO对象
+
  */
 void Connection::init_tls() {
   ssl_.reset(SSL_new(tls_ctx_.get()));
@@ -646,8 +688,10 @@ void Connection::init_tls() {
 }
 
 /**
+
  * @brief 执行TLS握手
  * @return expected<void, error_code> 成功返回void，失败返回错误码
+
  */
 stdx::expected<void, std::error_code> Connection::tls_accept() {
   auto *ssl = ssl_.get();
@@ -673,10 +717,14 @@ stdx::expected<void, std::error_code> Connection::tls_accept() {
 
 ```cpp
 /**
+
  * @brief 异步发送数据（支持TLS）
  * @param token 完成回调
- * 
+
+ *
+
  * 模板函数，支持多种回调类型
+
  */
 template <class CompletionToken>
 void Connection::async_send(CompletionToken &&token) {
@@ -689,7 +737,9 @@ void Connection::async_send(CompletionToken &&token) {
 }
 
 /**
+
  * @brief TLS异步发送实现
+
  */
 template <class CompletionToken>
 void Connection::async_send_tls(CompletionToken &&token) {
@@ -741,9 +791,11 @@ void Connection::async_send_tls(CompletionToken &&token) {
 
 ```cpp
 /**
+
  * @brief SSL写操作
  * @param buf 要发送的数据缓冲区
  * @return expected<size_t, error_code> 成功返回发送字节数，失败返回错误码
+
  */
 stdx::expected<size_t, std::error_code> Connection::write_ssl(
     const net::const_buffer &buf) {
@@ -757,9 +809,11 @@ stdx::expected<size_t, std::error_code> Connection::write_ssl(
 }
 
 /**
+
  * @brief SSL读操作
  * @param buf 接收数据的缓冲区
  * @return expected<size_t, error_code> 成功返回接收字节数，失败返回错误码
+
  */
 stdx::expected<size_t, std::error_code> Connection::read_ssl(
     const net::mutable_buffer &buf) {
@@ -776,8 +830,10 @@ stdx::expected<size_t, std::error_code> Connection::read_ssl(
 }
 
 /**
+
  * @brief 获取SSL待处理数据大小
  * @return expected<size_t, error_code> 待处理字节数
+
  */
 stdx::expected<size_t, std::error_code> Connection::avail_ssl() {
   const auto res = SSL_pending(ssl_.get());
@@ -794,13 +850,19 @@ stdx::expected<size_t, std::error_code> Connection::avail_ssl() {
 
 ```cpp
 /**
+
  * @brief 终止连接
- * 
+
+ *
+
  * 功能说明：
  * 1. 原子性设置终止标志
  * 2. 取消所有pending操作
- * 
+
+ *
+
  * 注意：此方法可从任意线程调用
+
  */
 void Connection::terminate() {
   is_terminated_([](auto &val) { val = true; });
@@ -808,11 +870,13 @@ void Connection::terminate() {
 }
 
 /**
+
  * @brief 取消所有异步操作
  * @return expected<void, error_code> 操作结果
+
  */
-stdx::expected<void, std::error_code> Connection::cancel() { 
-  return sock_.cancel(); 
+stdx::expected<void, std::error_code> Connection::cancel() {
+  return sock_.cancel();
 }
 ```
 

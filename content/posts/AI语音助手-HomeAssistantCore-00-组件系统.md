@@ -97,6 +97,7 @@ class Integration:
     """Home Assistant集成对象 - 组件系统的核心抽象
     
     职责:
+
         1. 封装集成的元数据和配置信息
         2. 管理组件的动态加载和缓存
         3. 处理平台发现和依赖关系
@@ -199,7 +200,7 @@ class Integration:
         """
         return "config_flow" in self.manifest
     
-    @cached_property 
+    @cached_property
     def documentation(self) -> str | None:
         """文档链接地址"""
         return self.manifest.get("documentation")
@@ -383,6 +384,7 @@ class Integration:
         # 动态导入平台模块
         cache[platform_path] = importlib.import_module(platform_path)
         return cache[platform_path]
+
 ```
 
 ### 2.2 Manifest清单系统
@@ -392,6 +394,7 @@ class Manifest(TypedDict, total=False):
     """集成清单文件结构定义 - manifest.json的类型化表示
     
     manifest.json是每个集成的元数据文件，包含：
+
         - 基本信息：名称、版本、描述
         - 依赖关系：Python包依赖、集成依赖
         - 功能特性：支持的平台、配置方式
@@ -449,7 +452,7 @@ EXAMPLE_MANIFEST = {
             "name": "example-*"
         }
     ],
-    "integration_type": "device", 
+    "integration_type": "device",
     "iot_class": "local_polling",
     "platforms": ["sensor", "switch", "light"]
 }
@@ -510,6 +513,7 @@ async def async_setup_component(
         组件设置是否成功
         
     功能流程:
+
         1. 检查组件是否已经加载
         2. 管理并发加载请求
         3. 调用内部设置逻辑
@@ -581,6 +585,7 @@ async def _async_setup_component(
         设置成功返回True，失败返回False
         
     详细流程:
+
         1. 获取集成对象和验证
         2. 处理依赖关系和requirements
         3. 加载和执行组件setup函数
@@ -611,7 +616,7 @@ async def _async_setup_component(
         hass, integration_set
     ):
         load_translations_task = create_eager_task(
-            translation.async_load_integrations(hass, integration_set), 
+            translation.async_load_integrations(hass, integration_set),
             loop=hass.loop
         )
     
@@ -719,12 +724,13 @@ async def _async_setup_component(
     
     # 发送组件加载完成事件
     hass.bus.async_fire_internal(
-        EVENT_COMPONENT_LOADED, 
+        EVENT_COMPONENT_LOADED,
         EventComponentLoaded(component=domain)
     )
     
     _LOGGER.info("Component %s setup completed successfully", domain)
     return True
+
 ```
 
 ### 3.3 依赖关系管理
@@ -744,6 +750,7 @@ async def _async_process_dependencies(
         成功处理的依赖集成列表
         
     依赖类型:
+
         1. dependencies: 硬依赖，必须成功加载
         2. after_dependencies: 软依赖，影响加载顺序但不强制成功
         
@@ -835,6 +842,7 @@ async def _async_process_requirements(
         integration: 集成对象
         
     功能:
+
         1. 解析requirements列表
         2. 检查包是否已安装
         3. 使用pip安装缺失的包
@@ -872,7 +880,7 @@ async def _async_process_requirements(
         deps_reqs.update(requirements_set)
         
         _LOGGER.debug(
-            "Requirements for %s installed successfully", 
+            "Requirements for %s installed successfully",
             integration.domain
         )
         
@@ -890,6 +898,7 @@ async def _async_process_requirements(
             err,
         )
         raise
+
 ```
 
 ## 4. 平台系统架构
@@ -914,7 +923,7 @@ graph TB
     
     subgraph "平台类型"
         M[sensor 传感器平台]
-        N[switch 开关平台] 
+        N[switch 开关平台]
         O[light 灯光平台]
         P[climate 气候平台]
         Q[custom 自定义平台]
@@ -945,6 +954,7 @@ async def async_prepare_setup_platform(
         平台模块对象，失败时返回None
         
     功能:
+
         1. 验证平台配置格式
         2. 加载集成和平台模块
         3. 检查平台兼容性
@@ -981,7 +991,7 @@ async def async_prepare_setup_platform(
         
         _LOGGER.debug(
             "Platform %s.%s loaded successfully",
-            platform_name, 
+            platform_name,
             domain
         )
         
@@ -1017,6 +1027,7 @@ async def async_setup_platform(
         平台设置是否成功
         
     设置流程:
+
         1. 解析平台配置
         2. 调用平台setup方法
         3. 注册创建的实体
@@ -1057,7 +1068,7 @@ async def async_setup_platform(
         # 验证setup结果
         if result is False:
             _LOGGER.error(
-                "Platform %s.%s setup failed", 
+                "Platform %s.%s setup failed",
                 platform_name, domain
             )
             return False
@@ -1074,6 +1085,7 @@ async def async_setup_platform(
             platform_name, domain, err
         )
         return False
+
 ```
 
 ## 5. 配置条目系统
@@ -1105,6 +1117,7 @@ class ConfigEntry:
     """配置条目类 - 管理集成的动态配置实例
     
     职责:
+
         1. 存储集成配置数据
         2. 管理配置生命周期
         3. 处理配置更新和重载
@@ -1189,7 +1202,7 @@ class ConfigEntry:
         # 状态检查
         if self.state != ConfigEntryState.NOT_LOADED:
             _LOGGER.warning(
-                "Config entry %s (%s) is already loaded", 
+                "Config entry %s (%s) is already loaded",
                 self.title, self.entry_id
             )
             return self.state == ConfigEntryState.LOADED
@@ -1350,6 +1363,7 @@ class ConfigEntry:
             self.title, self.domain
         )
         return True
+
 ```
 
 ## 6. 组件生命周期管理
@@ -1388,6 +1402,7 @@ class ComponentMonitor:
     """组件监控器 - 监控组件加载性能和健康状态
     
     功能:
+
         1. 记录组件加载时间
         2. 跟踪组件依赖关系
         3. 监控组件错误状态
@@ -1527,6 +1542,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     """组件设置入口点 - 推荐的组件初始化模式
     
     最佳实践:
+
         1. 验证配置参数
         2. 初始化共享资源
         3. 设置数据存储
@@ -1572,6 +1588,7 @@ async def async_setup_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """配置条目设置 - 现代集成的标准入口点
     
     最佳实践:
+
         1. 验证配置条目数据
         2. 建立外部连接
         3. 初始化更新协调器
@@ -1627,6 +1644,7 @@ async def async_unload_entry(hass: HomeAssistant, entry: ConfigEntry) -> bool:
     """配置条目卸载 - 资源清理的标准实现
     
     最佳实践:
+
         1. 卸载所有平台
         2. 停止更新协调器
         3. 关闭外部连接
@@ -1713,7 +1731,7 @@ class OptimizedAPIClient:
 
 # 2. 批量操作优化
 async def async_batch_entity_update(
-    hass: HomeAssistant, 
+    hass: HomeAssistant,
     updates: list[tuple[str, str, dict]]
 ) -> None:
     """批量更新实体状态"""
@@ -1785,5 +1803,6 @@ Home Assistant的组件系统是一个高度模块化、可扩展的架构，通
 ## 下一步分析
 
 接下来将继续深入分析其他核心模块：
+
 - [实体和平台系统详解](/posts/04-实体平台分析/)
 - [配置和数据存储系统](/posts/06-数据存储分析/)

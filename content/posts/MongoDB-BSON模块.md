@@ -69,13 +69,17 @@ BSONObj是MongoDB中最核心的数据结构，表示一个不可变的BSON文�
 
 ```cpp
 /**
+
  * BSONObj - BSON文档对象
- * 
+
+ *
+
  * 功能特点:
  * - 不可变对象，线程安全读取
  * - 内存紧凑存储，最小化空间开销
  * - 支持快速字段查找和遍历
  * - 智能指针语义，支持浅拷贝
+
  */
 class BSONObj {
 private:
@@ -89,6 +93,7 @@ private:
     
 public:
     /**
+
      * 默认构造函数，创建空对象 {}
      */
     BSONObj() : _objdata(kEmpty) {}
@@ -96,7 +101,7 @@ public:
     /**
      * 从二进制数据构造BSON对象
      * @param objdata 指向BSON二进制数据的指针
-     * 
+     *
      * 注意: 不会复制数据，需要确保数据生命周期
      */
     explicit BSONObj(const char* objdata) : _objdata(objdata) {
@@ -116,7 +121,7 @@ public:
      * 获取指定字段的元素
      * @param name 字段名
      * @return BSONElement，如果字段不存在则返回EOO类型
-     * 
+     *
      * 时间复杂度: O(n)，需要遍历所有字段
      */
     BSONElement getField(StringData name) const {
@@ -223,7 +228,7 @@ public:
     /**
      * 获取对象中字段的数量
      * @return 字段数量
-     * 
+     *
      * 注意: O(n)操作，需要遍历所有字段
      */
     int nFields() const {
@@ -278,6 +283,7 @@ public:
      */
     BSONObjIterator end() const;
     
+
 private:
     // 空对象的二进制表示：{size=5, EOO}
     static const char kEmpty[5];
@@ -295,13 +301,17 @@ BSONElement表示BSON文档中的一个字段（键值对）。
 
 ```cpp
 /**
+
  * BSONElement - BSON文档中的字段元素
- * 
+
+ *
+
  * 功能特点:
  * - 指向BSON对象内部数据，不拥有数据
  * - 提供类型安全的值访问方法
  * - 支持各种BSON数据类型的处理
  * - 高效的类型检查和转换
+
  */
 class BSONElement {
 private:
@@ -311,6 +321,7 @@ private:
     
 public:
     /**
+
      * 默认构造函数，创建EOO（End Of Object）元素
      */
     BSONElement() : _data(nullptr), _fieldNameSize(-1), _totalSize(-1) {}
@@ -488,8 +499,8 @@ public:
      */
     bool isNumber() const {
         BSONType t = type();
-        return t == BSONType::numberInt || 
-               t == BSONType::numberLong || 
+        return t == BSONType::numberInt ||
+               t == BSONType::numberLong ||
                t == BSONType::numberDouble ||
                t == BSONType::numberDecimal;
     }
@@ -525,8 +536,8 @@ public:
                 return Long();
             case BSONType::numberDouble: {
                 double d = Double();
-                if (d >= std::numeric_limits<long long>::min() && 
-                    d <= std::numeric_limits<long long>::max() && 
+                if (d >= std::numeric_limits<long long>::min() &&
+                    d <= std::numeric_limits<long long>::max() &&
                     d == trunc(d)) {
                     return static_cast<long long>(d);
                 }
@@ -590,8 +601,10 @@ public:
         return ss.str();
     }
     
+
 private:
     /**
+
      * 计算元素的总大小
      * @return 元素总字节大小
      */
@@ -632,6 +645,7 @@ private:
         
         return size;
     }
+
 };
 ```
 
@@ -641,13 +655,17 @@ BSONObjBuilder用于构建BSON对象，提供了类型安全的字段添加方�
 
 ```cpp
 /**
+
  * BSONObjBuilder - BSON对象构建器
- * 
+
+ *
+
  * 功能特点:
  * - 高效的内存管理和缓冲区扩展
  * - 类型安全的字段添加方法
  * - 支持链式调用编程风格
  * - 自动处理字节序和内存对齐
+
  */
 class BSONObjBuilder {
 private:
@@ -657,10 +675,11 @@ private:
     
 public:
     /**
+
      * 默认构造函数
      * @param initsize 初始缓冲区大小
      */
-    explicit BSONObjBuilder(int initsize = 512) 
+    explicit BSONObjBuilder(int initsize = 512)
         : _b(initsize), _offset(0), _doneCalled(false) {
         // 预留4字节用于存储文档大小
         _b.skip(4);
@@ -965,15 +984,18 @@ public:
         }
         return count;
     }
+
 };
 
 // ==================== 便利的创建函数 ====================
 
 /**
+
  * 创建包含单个字段的BSON对象
  * @param name 字段名
  * @param value 字段值
  * @return BSON对象
+
  */
 template<typename T>
 BSONObj BSON(StringData name, const T& value) {
@@ -983,16 +1005,20 @@ BSONObj BSON(StringData name, const T& value) {
 }
 
 /**
+
  * 从键值对创建BSON对象
  * @param pairs 键值对
  * @return BSON对象
+
  */
 BSONObj fromjson(StringData json);
 
 /**
+
  * 合并多个BSON对象
  * @param objs 要合并的对象列表
  * @return 合并后的对象
+
  */
 BSONObj merge(const std::vector<BSONObj>& objs);
 ```
@@ -1003,11 +1029,14 @@ BSONObj merge(const std::vector<BSONObj>& objs);
 
 ```cpp
 /**
+
  * BSON内存优化技术
+
  */
 class BSONMemoryOptimization {
 public:
     /**
+
      * 对象池技术减少内存分配
      */
     class BSONObjPool {
@@ -1053,6 +1082,7 @@ public:
             return BSONObj(_data.get());
         }
     };
+
 };
 ```
 
@@ -1060,11 +1090,14 @@ public:
 
 ```cpp
 /**
+
  * BSON解析优化
+
  */
 class BSONParseOptimization {
 public:
     /**
+
      * 延迟解析 - 只在需要时解析字段
      */
     class LazyBSONObj {
@@ -1123,6 +1156,7 @@ public:
         
         return results;
     }
+
 };
 ```
 
@@ -1192,14 +1226,17 @@ BSONObj projection = BSON("name" << 1 << "email" << 1 << "age" << 1);
 
 ```cpp
 /**
+
  * 大BSON文档的分块处理
+
  */
 class LargeBSONProcessor {
 public:
     /**
+
      * 流式处理大文档，避免将整个文档加载到内存
      */
-    void processLargeDocument(const char* bsonData, 
+    void processLargeDocument(const char* bsonData,
                             std::function<void(const BSONElement&)> processor) {
         
         BSONObjIterator it(bsonData);
@@ -1219,7 +1256,7 @@ public:
     /**
      * 分页读取大型数组字段
      */
-    void processLargeArray(const BSONElement& arrayElement, 
+    void processLargeArray(const BSONElement& arrayElement,
                           int pageSize = 1000) {
         
         invariant(arrayElement.type() == BSONType::array);
@@ -1235,6 +1272,7 @@ public:
             }
         }
     }
+
 };
 ```
 
@@ -1255,7 +1293,9 @@ public:
 
 ```cpp
 /**
+
  * BSON文档验证和诊断工具
+
  */
 class BSONValidator {
 public:
@@ -1269,6 +1309,7 @@ public:
     };
     
     /**
+
      * 全面验证BSON文档
      */
     static ValidationResult validate(const BSONObj& obj) {
@@ -1283,9 +1324,10 @@ public:
         return result;
     }
     
+
 private:
-    static void validateRecursive(const BSONObj& obj, 
-                                ValidationResult& result, 
+    static void validateRecursive(const BSONObj& obj,
+                                ValidationResult& result,
                                 int depth) {
         
         result.maxDepth = std::max(result.maxDepth, depth);

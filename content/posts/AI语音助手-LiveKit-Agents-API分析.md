@@ -62,6 +62,7 @@ class Agent:
     Agent类是LiveKit Agents框架的核心，代表一个基于LLM的语音代理
     
     主要功能：
+
     - 定义代理的行为指令和工具集
     - 管理与各种AI服务的集成
     - 处理用户交互和生成响应
@@ -118,6 +119,7 @@ class Agent:
         self._tts = tts
         self._vad = vad
         # ... 其他参数保存
+
 ```
 
 #### 2.1.2 关键方法
@@ -130,6 +132,7 @@ class Agent:
         获取代理标签
         
         返回值：
+
         - str: 代理的显示标签，用于日志和调试
         """
         return getattr(self, "_label", self.__class__.__name__)
@@ -184,6 +187,7 @@ class Agent:
         - 子类可重写实现自定义清理逻辑
         """
         pass
+
 ```
 
 ### 2.2 AgentSession 类
@@ -194,6 +198,7 @@ class Agent:
 class AgentSession(rtc.EventEmitter[EventTypes], Generic[Userdata_T]):
     """
     AgentSession是LiveKit Agents的运行时核心，负责：
+
     - 协调媒体流、语音/LLM组件和工具编排
     - 处理音频、视频、文本I/O与STT、VAD、TTS、LLM的交互
     - 管理转换检测、端点检测、中断和多步工具调用
@@ -228,6 +233,7 @@ class AgentSession(rtc.EventEmitter[EventTypes], Generic[Userdata_T]):
         conn_options: NotGivenOr[SessionConnectOptions] = NOT_GIVEN,
         loop: asyncio.AbstractEventLoop | None = None,
     ) -> None:
+
 ```
 
 #### 2.2.2 参数详细说明
@@ -262,6 +268,7 @@ class AgentSession:
         启动代理会话
         
         参数：
+
         - agent: 要运行的代理实例
         - room: LiveKit房间对象
         - room_input_options: 房间输入选项配置
@@ -321,6 +328,7 @@ class AgentSession:
         
         # 处理响应（工具调用、TTS等）
         await self._process_response(response)
+
 ```
 
 ### 2.3 JobContext 类
@@ -333,6 +341,7 @@ class JobContext:
     JobContext表示一个交互会话的起点，类似于Web服务器中的请求处理器
     
     主要功能：
+
     - 管理与LiveKit房间的连接
     - 提供日志上下文和元数据
     - 处理会话生命周期事件
@@ -393,6 +402,7 @@ class JobContext:
         - value: 要设置的上下文字段字典
         """
         self._log_context_fields = value
+
 ```
 
 #### 2.3.2 核心方法
@@ -411,6 +421,7 @@ class JobContext:
         连接到LiveKit房间
         
         参数：
+
         - auto_subscribe: 自动订阅策略
         - rtc_config: RTC配置选项
         - room_options: 房间选项配置
@@ -440,7 +451,7 @@ class JobContext:
         self._register_room_events()
     
     def add_shutdown_callback(
-        self, 
+        self,
         callback: Callable[[], Awaitable[None]]
     ) -> None:
         """
@@ -485,6 +496,7 @@ class JobContext:
             timeout=timeout,
             participant_kinds=participant_kinds or DEFAULT_PARTICIPANT_KINDS,
         )
+
 ```
 
 ### 2.4 Worker 类
@@ -498,6 +510,7 @@ class WorkerOptions:
     Worker配置选项
     
     属性说明：
+
     - entrypoint_fnc: 入口点函数，每个新作业的处理函数
     - prewarm_fnc: 预热函数，进程启动时的初始化函数
     - request_fnc: 请求处理函数，作业请求的自定义处理逻辑
@@ -529,6 +542,7 @@ class Worker:
     Worker是协调任务调度和为用户会话启动代理的主进程
     
     主要功能：
+
     - 管理多个并发作业进程
     - 处理来自LiveKit服务器的作业分配
     - 监控系统资源和负载
@@ -563,6 +577,7 @@ class Worker:
         
         # 初始化组件
         self._initialize_components()
+
 ```
 
 #### 2.4.2 核心方法
@@ -574,6 +589,7 @@ class Worker:
         启动Worker主循环
         
         功能说明：
+
         1. 启动HTTP服务器
         2. 连接到LiveKit服务器
         3. 开始监听作业分配
@@ -600,7 +616,7 @@ class Worker:
             await self._cleanup()
     
     async def _handle_job_assignment(
-        self, 
+        self,
         assignment: agent.JobAssignment
     ) -> None:
         """
@@ -637,6 +653,7 @@ class Worker:
         finally:
             # 清理作业资源
             await self._cleanup_job(assignment)
+
 ```
 
 ## 3. 工具API详细分析
@@ -655,6 +672,7 @@ def function_tool(
     函数工具装饰器，将普通函数转换为LLM可调用的工具
     
     参数：
+
     - fn: 要装饰的函数（可选，支持无参数调用）
     - name: 工具名称（可选，默认使用函数名）
     - description: 工具描述（可选，默认使用函数docstring）
@@ -723,6 +741,7 @@ def function_tool(
         return decorator
     else:
         return decorator(fn)
+
 ```
 
 ### 3.2 ChatContext 类
@@ -733,6 +752,7 @@ class ChatContext:
     聊天上下文管理类，维护对话历史和工具状态
     
     主要功能：
+
     - 管理消息历史记录
     - 跟踪工具调用和结果
     - 支持上下文复制和修改
@@ -826,6 +846,7 @@ class ChatContext:
         
         new_messages = self._messages + [message]
         return self.copy(messages=new_messages)
+
 ```
 
 ## 4. API调用链路分析

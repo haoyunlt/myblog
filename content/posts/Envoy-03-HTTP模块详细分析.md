@@ -76,8 +76,10 @@ graph TB
 
 ```cpp
 /**
+
  * ConnectionManagerImpl 是HTTP连接管理器的核心实现
  * 负责管理HTTP连接、流和过滤器链的执行
+
  */
 class ConnectionManagerImpl : Logger::Loggable<Logger::Id::http>,
                               public Network::ReadFilter,
@@ -86,6 +88,7 @@ class ConnectionManagerImpl : Logger::Loggable<Logger::Id::http>,
                               public Http::ApiListener {
 public:
   /**
+
    * 构造函数
    * @param config 连接管理器配置
    * @param drain_close 排空关闭决策器
@@ -100,12 +103,12 @@ public:
    */
   ConnectionManagerImpl(ConnectionManagerConfigSharedPtr config,
                         const Network::DrainDecision& drain_close,
-                        Random::RandomGenerator& random_generator, 
+                        Random::RandomGenerator& random_generator,
                         Http::Context& http_context,
-                        Runtime::Loader& runtime, 
+                        Runtime::Loader& runtime,
                         const LocalInfo::LocalInfo& local_info,
                         Upstream::ClusterManager& cluster_manager,
-                        Server::OverloadManager& overload_manager, 
+                        Server::OverloadManager& overload_manager,
                         TimeSource& time_system,
                         envoy::config::core::v3::TrafficDirection direction);
 
@@ -155,6 +158,7 @@ public:
 
 private:
   /**
+
    * ActiveStream 活跃流结构
    * 封装单个HTTP请求/响应对的所有状态和处理逻辑
    */
@@ -170,7 +174,7 @@ private:
      * @param buffer_limit 缓冲区限制
      * @param account 缓冲区内存账户
      */
-    ActiveStream(ConnectionManagerImpl& connection_manager, 
+    ActiveStream(ConnectionManagerImpl& connection_manager,
                  uint32_t buffer_limit,
                  Buffer::BufferMemoryAccountSharedPtr account);
 
@@ -242,6 +246,7 @@ private:
   Random::RandomGenerator& random_generator_;  // 随机数生成器
   Runtime::Loader& runtime_;                  // 运行时配置
   Upstream::ClusterManager& cluster_manager_; // 集群管理器
+
 };
 ```
 
@@ -251,14 +256,17 @@ private:
 
 ```cpp
 /**
+
  * HTTP/1.1连接实现
  * 处理HTTP/1.1协议的编解码和连接管理
+
  */
 namespace Http1 {
 class ConnectionImpl : public virtual Connection,
                        public ParserCallbacks {
 public:
   /**
+
    * 构造函数
    * @param connection 网络连接
    * @param stats 编解码器统计
@@ -267,10 +275,10 @@ public:
    * @param max_headers_kb 最大头部KB数
    * @param max_headers_count 最大头部数量
    */
-  ConnectionImpl(Network::Connection& connection, 
+  ConnectionImpl(Network::Connection& connection,
                  CodecStats& stats,
                  const Http1Settings& settings,
-                 MessageType type, 
+                 MessageType type,
                  uint32_t max_headers_kb,
                  const uint32_t max_headers_count);
 
@@ -302,14 +310,17 @@ private:
 
 ```cpp
 /**
+
  * HTTP/2连接实现
  * 基于nghttp2库实现HTTP/2协议处理
+
  */
 namespace Http2 {
 class ConnectionImpl : public virtual Connection,
                        public ConnectionCallbacks {
 public:
   /**
+
    * 构造函数
    * @param connection 网络连接
    * @param callbacks 连接回调
@@ -339,6 +350,7 @@ public:
 
 private:
   /**
+
    * 流实现基类
    */
   struct StreamImpl : public virtual Stream {
@@ -361,6 +373,7 @@ private:
   CodecStats& stats_;                  // 统计信息
   bool dispatching_ : 1;              // 是否正在分发
   bool raised_goaway_ : 1;            // 是否发送了GOAWAY
+
 };
 } // namespace Http2
 ```
@@ -371,12 +384,15 @@ private:
 
 ```cpp
 /**
+
  * FilterManager HTTP过滤器管理器
  * 管理HTTP过滤器链的执行
+
  */
 class FilterManager : Logger::Loggable<Logger::Id::http> {
 public:
   /**
+
    * 构造函数
    * @param callbacks 过滤器管理器回调
    * @param dispatcher 事件分发器
@@ -458,10 +474,11 @@ public:
 
 private:
   /**
+
    * 活跃解码器过滤器迭代器
    */
   struct ActiveStreamDecoderFilter : public StreamDecoderFilterCallbacks {
-    ActiveStreamDecoderFilter(FilterManager& parent, 
+    ActiveStreamDecoderFilter(FilterManager& parent,
                              StreamDecoderFilterSharedPtr filter);
 
     FilterManager& parent_;                     // 过滤器管理器引用
@@ -477,6 +494,7 @@ private:
   std::list<ActiveStreamDecoderFilter>::iterator decoder_filter_; // 当前解码器过滤器
   std::list<ActiveStreamEncoderFilter>::iterator encoder_filter_; // 当前编码器过滤器
   State state_;                                         // 状态标志
+
 };
 ```
 
@@ -524,12 +542,15 @@ HTTP/2和HTTP/3支持在单个连接上多路复用多个流：
 
 ```cpp
 /**
+
  * HTTP/2流管理
  * 支持并发处理多个请求流
+
  */
 class Http2StreamManager {
 public:
   /**
+
    * 创建新流
    * @param stream_id 流ID
    * @return 流对象指针
@@ -561,11 +582,14 @@ HTTP/2使用HPACK算法进行头部压缩：
 
 ```cpp
 /**
+
  * HPACK头部压缩实现
+
  */
 class HpackCompressor {
 public:
   /**
+
    * 压缩头部
    * @param headers 头部映射
    * @param output 输出缓冲区
@@ -595,14 +619,17 @@ Router过滤器是HTTP模块的核心组件，负责请求路由：
 
 ```cpp
 /**
+
  * Router过滤器实现
  * 负责将HTTP请求路由到上游集群
+
  */
 class Filter : public StreamDecoderFilter,
                public StreamEncoderFilter,
                public UpstreamRequest::Callbacks {
 public:
   /**
+
    * 构造函数
    * @param config 路由器配置
    */
@@ -620,6 +647,7 @@ public:
 
 private:
   /**
+
    * 上游请求实现
    */
   struct UpstreamRequest : public Http::StreamDecoder,
@@ -643,6 +671,7 @@ private:
   std::unique_ptr<UpstreamRequest> upstream_request_; // 上游请求
   TimeSource& time_source_;                   // 时间源
   std::unique_ptr<GenericConnectionPoolCallbacks> conn_pool_callbacks_; // 连接池回调
+
 };
 ```
 
@@ -652,7 +681,9 @@ HTTP模块提供了丰富的统计指标：
 
 ```cpp
 /**
+
  * HTTP连接管理器统计指标
+
  */
 #define ALL_HTTP_CONN_MAN_STATS(COUNTER, GAUGE, HISTOGRAM)                                        \
   COUNTER(downstream_cx_destroy)           /* 下游连接销毁数 */                                    \
@@ -685,6 +716,7 @@ HTTP模块提供了丰富的统计指标：
 **问题**: HTTP/2连接无法正常建立或性能不佳
 
 **解决方案**:
+
 ```yaml
 # HTTP/2协议配置优化
 http2_protocol_options:
@@ -700,6 +732,7 @@ http2_protocol_options:
 **问题**: 请求经常超时
 
 **解决方案**:
+
 ```yaml  
 # 超时配置调优
 route_config:
@@ -714,6 +747,7 @@ request_timeout: 60s
 **问题**: HTTP处理导致内存使用过高
 
 **解决方案**:
+
 ```yaml
 # 缓冲区限制配置
 per_connection_buffer_limit_bytes: 1048576  # 1MB
@@ -733,11 +767,13 @@ max_response_headers_kb: 60
 
 ```yaml
 http_filters:
+
 - name: envoy.filters.http.router
   typed_config:
     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
     dynamic_stats: true
     start_child_span: true
+
 ```
 
 ### 3. 监控配置
@@ -745,9 +781,11 @@ http_filters:
 ```yaml
 stats_config:
   histogram_bucket_settings:
+
   - match:
       name: "http.downstream_rq_time"
     buckets: [0.5, 1, 5, 10, 25, 50, 100, 250, 500, 1000, 2500, 5000, 10000]
+
 ```
 
 ## 总结

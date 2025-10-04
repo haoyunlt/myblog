@@ -15,10 +15,13 @@ weight: 1
 MySQL Router Mock Server 主要通过以下几种方式对外提供服务：
 
 ### 1.1 命令行接口API
+
 ```cpp
 /**
+
  * @brief 命令行参数处理接口
  * 位置：src/main.cc
+
  */
 struct MysqlServerMockConfig {
   std::string queries_filename;    // 查询文件名
@@ -51,10 +54,13 @@ struct MysqlServerMockConfig {
 Mock Server实现了完整的MySQL Client/Server协议，支持以下主要命令：
 
 #### 1.2.1 连接管理命令
+
 ```cpp
 /**
+
  * @brief MySQL协议命令枚举
  * 位置：mysqlrouter/classic_protocol_constants.h
+
  */
 enum class CommandType : uint8_t {
   COM_QUIT = 0x01,           // 退出连接
@@ -66,15 +72,18 @@ enum class CommandType : uint8_t {
 ```
 
 #### 1.2.2 认证协议API
+
 ```cpp
 /**
+
  * @brief 支持的认证方法
  * 位置：src/authentication.h
+
  */
 class CachingSha2Password {
 public:
   static constexpr const char* name = "caching_sha2_password";
-  static stdx::expected<std::vector<uint8_t>, std::error_code> 
+  static stdx::expected<std::vector<uint8_t>, std::error_code>
     scramble(const std::string &nonce, const std::string &password);
 };
 
@@ -87,7 +96,7 @@ public:
 
 class ClearTextPassword {
 public:
-  static constexpr const char* name = "mysql_clear_password"; 
+  static constexpr const char* name = "mysql_clear_password";
   static stdx::expected<std::vector<uint8_t>, std::error_code>
     scramble(const std::string &nonce, const std::string &password);
 };
@@ -98,7 +107,9 @@ public:
 
 ```javascript
 /**
+
  * @brief JavaScript配置对象结构
+
  */
 {
   // 握手配置
@@ -149,7 +160,7 @@ public:
       }
     },
     {
-      stmt: "SELECT * FROM nonexistent", 
+      stmt: "SELECT * FROM nonexistent",
       error: {                         // 错误响应
         code: 1146,
         message: "Table 'test.nonexistent' doesn't exist",
@@ -198,18 +209,23 @@ sequenceDiagram
 #### 2.1.1 关键函数代码分析
 
 **main函数（入口点）**
+
 ```cpp
 /**
+
  * @brief 程序入口函数
  * @param argc 参数个数
  * @param argv 参数数组
  * @return int 程序退出码
- * 
+
+ *
+
  * 功能说明：
  * 1. 解析命令行参数
  * 2. 初始化网络环境（Windows WSA）
  * 3. 创建前端管理器并运行
  * 4. 异常处理和错误报告
+
  */
 int main(int argc, char *argv[]) {
   MysqlServerMockFrontend frontend;
@@ -246,16 +262,21 @@ int main(int argc, char *argv[]) {
 ```
 
 **MysqlServerMockFrontend::run()方法**
+
 ```cpp
 /**
+
  * @brief 前端管理器运行方法
- * 
+
+ *
+
  * 功能说明：
  * 1. 初始化依赖注入管理器(DIM)
  * 2. 配置日志系统
  * 3. 创建并配置Loader
  * 4. 设置信号处理
  * 5. 启动所有服务
+
  */
 void MysqlServerMockFrontend::run() {
   // 初始化依赖注入管理器
@@ -439,15 +460,19 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * @brief 处理已接受的客户端连接
  * @param client_sock 客户端套接字
- * 
+
+ *
+
  * 功能说明：
  * 1. 创建语句读取器实例
  * 2. 根据协议类型创建相应的会话对象
  * 3. 设置会话断开回调
  * 4. 启动会话处理
  * 5. 继续异步接受下一个连接
+
  */
 void Acceptor::accepted(mysql_harness::DestinationSocket client_sock) {
   // 通过工厂创建语句读取器
@@ -538,13 +563,17 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * @brief 空闲状态处理函数，等待并处理客户端命令
- * 
+
+ *
+
  * 功能说明：
  * 1. 读取客户端发送的数据包
  * 2. 解析MySQL协议命令
  * 3. 根据命令类型进行相应处理
  * 4. 处理SQL查询、连接管理等命令
+
  */
 void MySQLServerMockSessionClassic::idle() {
   std::vector<uint8_t> payload;
@@ -718,15 +747,19 @@ void MySQLServerMockSessionClassic::idle() {
 
 ```cpp
 /**
+
  * @brief JavaScript语句处理核心方法
  * @param statement 客户端发送的SQL语句
  * @param protocol 协议对象，用于发送响应
- * 
+
+ *
+
  * 功能说明：
  * 1. 根据配置类型（数组/函数/线程）处理语句
  * 2. 执行JavaScript脚本获取响应配置
  * 3. 根据响应类型编码相应的MySQL协议消息
  * 4. 设置执行时间延迟
+
  */
 void DuktapeStatementReader::handle_statement(const std::string &statement,
                                               ProtocolBase *protocol) {

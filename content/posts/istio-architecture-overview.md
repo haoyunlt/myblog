@@ -368,7 +368,7 @@ Istio通过init容器在Pod启动时设置iptables规则，实现对应用流量
 流量处理遵循以下路径：
 
 ```
-应用发起请求 
+应用发起请求
     ↓
 iptables规则拦截(OUTPUT链)
     ↓  
@@ -392,6 +392,7 @@ Envoy入站监听器(0.0.0.0:15006)
 Envoy的监听器配置生成遵循以下逻辑：
 
 **出站监听器配置生成**：
+
 ```go
 // pilot/pkg/networking/core/v1alpha3/listener.go
 func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(
@@ -399,7 +400,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(
     
     var listeners []*listener.Listener
     
-    // 创建虚拟出站监听器(0.0.0.0:15001) 
+    // 创建虚拟出站监听器(0.0.0.0:15001)
     virtualOutboundListener := &listener.Listener{
         Name: VirtualOutboundListenerName,
         Address: util.BuildAddress("0.0.0.0", uint32(15001)),
@@ -415,6 +416,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarOutboundListeners(
 ```
 
 **入站监听器配置生成**：
+
 ```go
 // pilot/pkg/networking/core/v1alpha3/listener.go  
 func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
@@ -424,7 +426,7 @@ func (configgen *ConfigGeneratorImpl) buildSidecarInboundListeners(
     
     // 创建虚拟入站监听器(0.0.0.0:15006)
     virtualInboundListener := &listener.Listener{
-        Name: VirtualInboundListenerName, 
+        Name: VirtualInboundListenerName,
         Address: util.BuildAddress("0.0.0.0", uint32(15006)),
         FilterChains: configgen.buildVirtualInboundFilterChains(node, push),
         ListenerFilters: buildListenerFilters(),
@@ -576,6 +578,7 @@ Envoy作为Istio数据平面的核心，采用了高度可编程的架构设计�
 #### 5.1.1 Envoy架构核心特点
 
 **1. 模块化可扩展设计**
+
 ```go
 // Envoy过滤器链架构示例
 type FilterChain struct {
@@ -606,6 +609,7 @@ type HttpFilter interface {
 ```
 
 **2. 事件驱动的高性能模型**
+
 - **异步I/O处理**: 通过...实现的高效事件循环
 - **非阻塞架构**: 所有网络操作都是非阻塞的
 - **内存池管理**: 智能的内存分配和回收机制
@@ -614,6 +618,7 @@ type HttpFilter interface {
 #### 5.1.2 关键组件工作机制
 
 **监听器（Listeners）管理**:
+
 ```cpp
 // Envoy监听器核心实现逻辑（C++伪代码展示概念）
 class ListenerManager {
@@ -628,7 +633,7 @@ class ListenerManager {
     }
     
     // 热重载监听器配置
-    void updateListener(const std::string& name, 
+    void updateListener(const std::string& name,
                        const envoy::config::listener::v3::Listener& config) {
         if (auto it = listeners_.find(name); it != listeners_.end()) {
             it->second->drain();                    // 优雅排空现有连接
@@ -641,6 +646,7 @@ class ListenerManager {
 ```
 
 **集群（Clusters）管理**:
+
 ```cpp
 // 集群管理器实现
 class ClusterManager {
@@ -737,6 +743,7 @@ metadata:
   name: reviews-retry-policy
 spec:
   hosts:
+
   - reviews
   http:
   - match:
@@ -760,6 +767,7 @@ spec:
         percentage:
           value: 0.001                # 0.1%延迟注入
         fixedDelay: 100ms
+
 ```
 
 ### 5.2 安全架构
@@ -819,6 +827,7 @@ graph TB
 在大规模生产环境中，常见发布节奏为“影子流量 → 小流量灰度 → 渐进放量 → 全量”，并以SLO与错误预算作为闸门：
 
 1. 流量镜像（不影响线上响应）
+
    ```yaml
    apiVersion: networking.istio.io/v1beta1
    kind: VirtualService
@@ -832,9 +841,10 @@ graph TB
          weight: 100
        mirror: { host: reviews, subset: v2 }
        mirrorPercent: 10
-   ```
+```
 
 2. 小流量灰度与策略保护
+
    ```yaml
    http:
    - route:
@@ -848,7 +858,7 @@ graph TB
      timeout: 10s
      fault:
        abort: { percentage: { value: 0.0 }, httpStatus: 503 } # 混沌演练可按需开启
-   ```
+```
 
 3. 目标用户定向（Header/Cookie）与会话保持
    - 使用`match.headers`或`consistentHash`（Cookie/HTTPHeader）保障可控与稳定性；
@@ -912,6 +922,7 @@ graph TB
 - **Sidecar模式的DNS捕获与代理**：
   - 通过在Envoy引导配置中开启`dnsProxy`，将Pod内应用的DNS查询（通常发往`kube-dns/CoreDNS`）转发到Envoy内置DNS代理，再依据RDS/EDS结果解析服务域名。
   - 典型配置（概念片段）：
+
     ```yaml
     static_resources:
       listeners:
@@ -926,7 +937,8 @@ graph TB
               server_config: { inline_dns_table: {} }
     layered_runtime:
       runtime_layers: [ { name: enable_dns_proxy, static_layer: { envoy.restart_features.use_dns_filter: true } } ]
-    ```
+```
+
   - iptables常配合将53/UDP流量重定向至15053（或由应用直连127.0.0.1:15053）。
 
 - **Ambient模式（ztunnel/waypoint）**：
@@ -1162,6 +1174,7 @@ Istio服务网格架构体现了以下设计精髓：
    - 定期轮换证书和密钥
 
 方法论：
+
 - “三段式去抖 + 粒度下沉”的Push管控策略，显著降低无效推送与尾延迟；
 - 订阅驱动的按需生成与推送（WatchedResource反向裁剪），在大规模网格中保持收敛稳定；
 - 热冷分层的XDS缓存与生成器对象池化，降低GC与CPU尖峰；
@@ -1169,4 +1182,3 @@ Istio服务网格架构体现了以下设计精髓：
 - 基于SLO与错误预算的金丝雀与自动回滚闭环，确保“先观测、再晋级”。
 
 这些方案与实现路径，与上文时序和调用链相结合，可用于Istio生产网格的实施与优化。
-

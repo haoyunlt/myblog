@@ -160,6 +160,7 @@ static inline void*
 pymalloc_alloc(OMState *state, void *Py_UNUSED(ctx), size_t nbytes)
 {
     /*
+
      * 检查Valgrind环境
      * Valgrind不支持自定义内存管理，回退到系统分配器
      */
@@ -188,6 +189,7 @@ pymalloc_alloc(OMState *state, void *Py_UNUSED(ctx), size_t nbytes)
     /* 情况1：有可用的Pool */
     if (LIKELY(pool != pool->nextpool)) {
         /*
+
          * 从Pool的空闲链表中分配块
          */
         ++pool->ref.count;          /* 增加引用计数 */
@@ -206,6 +208,7 @@ pymalloc_alloc(OMState *state, void *Py_UNUSED(ctx), size_t nbytes)
     }
 
     return (void *)bp;
+
 }
 
 /* 从新Pool分配内存 */

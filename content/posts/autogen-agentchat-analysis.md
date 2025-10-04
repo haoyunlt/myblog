@@ -412,8 +412,8 @@ class ChatAgent(ABC, TaskRunner, ComponentBase[BaseModel]):
     
     @abstractmethod
     async def on_messages(
-        self, 
-        messages: Sequence[BaseChatMessage], 
+        self,
+        messages: Sequence[BaseChatMessage],
         cancellation_token: CancellationToken
     ) -> Response:
         """处理输入消息并返回响应"""
@@ -421,8 +421,8 @@ class ChatAgent(ABC, TaskRunner, ComponentBase[BaseModel]):
     
     @abstractmethod
     def on_messages_stream(
-        self, 
-        messages: Sequence[BaseChatMessage], 
+        self,
+        messages: Sequence[BaseChatMessage],
         cancellation_token: CancellationToken
     ) -> AsyncGenerator[BaseAgentEvent | BaseChatMessage | Response, None]:
         """处理消息并返回流式响应"""
@@ -655,7 +655,7 @@ class AssistantAgent(BaseChatAgent, Component[AssistantAgentConfig]):
                     # 流式推理（在同步方法中收集所有chunks）
                     chunks = []
                     async for chunk in self._model_client.create_stream(
-                        llm_messages, 
+                        llm_messages,
                         tools=self._tools,
                         cancellation_token=cancellation_token
                     ):
@@ -722,7 +722,7 @@ class AssistantAgent(BaseChatAgent, Component[AssistantAgentConfig]):
                 completion_chunks = []
                 async for chunk in self._model_client.create_stream(
                     llm_messages,
-                    tools=self._tools, 
+                    tools=self._tools,
                     cancellation_token=cancellation_token
                 ):
                     # 发送流式chunk事件
@@ -1544,7 +1544,7 @@ async def team_collaboration_example():
     )
     
     reviewer = AssistantAgent(
-        name="reviewer", 
+        name="reviewer",
         model_client=model_client,
         description="专门负责审查和改进文本的代理",
         system_message="你是一个专业的编辑，负责审查文本并提出改进建议。"

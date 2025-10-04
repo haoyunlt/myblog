@@ -55,6 +55,7 @@ async def simple_chat_example():
         model_client=model_client,
         description="一个有用的AI助手，能够回答各种问题",
         system_message="""你是一个专业的AI助手。请遵循以下原则：
+
         1. 提供准确、有用的信息
         2. 保持友好和专业的语调
         3. 如果不确定答案，请诚实说明
@@ -448,6 +449,7 @@ class Researcher(RoutedAgent):
 具体要求: {', '.join(requirements)}
 
 请提供：
+
 1. 关键概念和定义
 2. 主要发现和观点
 3. 相关数据和统计
@@ -514,8 +516,8 @@ async def research_team_example():
     
     for researcher in researchers:
         await researcher.register(
-            runtime, 
-            "Researcher", 
+            runtime,
+            "Researcher",
             lambda r=researcher: r
         )
     
@@ -630,7 +632,7 @@ class CustomerServiceRouter(RoutedAgent):
         # 代理专长映射
         self.agent_specialties = {
             "tech_support": "技术支持",
-            "account_manager": "账户问题", 
+            "account_manager": "账户问题",
             "order_specialist": "订单问题",
             "product_consultant": "产品咨询",
             "complaint_handler": "投诉建议"
@@ -1001,7 +1003,7 @@ async def customer_service_example():
                 "description": "我无法登录系统，一直提示密码错误，但我确定密码是正确的"
             },
             {
-                "customer_id": "C002", 
+                "customer_id": "C002",
                 "title": "订单支付失败",
                 "description": "我的订单支付一直失败，已经尝试了多张银行卡都不行，很着急"
             },
@@ -1515,7 +1517,7 @@ class DiagnosticAgent(RoutedAgent):
         
         # 简化的根因分析
         successful_findings = [
-            r["result"]["finding"] for r in diagnostic_results 
+            r["result"]["finding"] for r in diagnostic_results
             if r["success"] and "发现" in r["result"]["finding"]
         ]
         

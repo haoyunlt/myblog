@@ -16,6 +16,7 @@ slug: "TensorRTLLM-源码剖析_实战经验与最佳实践"
 ### 1.1 内存优化策略
 
 #### KV 缓存优化
+
 ```python
 # 最佳实践：启用 KV 缓存块重用
 from tensorrt_llm.llmapi import KvCacheConfig
@@ -49,6 +50,7 @@ def get_optimal_kv_cache_config(model_size_gb: float, gpu_memory_gb: float):
 ```
 
 #### 批次大小优化
+
 ```python
 def find_optimal_batch_size(model_path: str, max_seq_len: int, gpu_memory_gb: float):
     """动态寻找最优批次大小"""
@@ -123,6 +125,7 @@ def create_production_build_config(model_size: str, use_case: str):
 ### 1.2 并行策略优化
 
 #### 张量并行最佳实践
+
 ```python
 def calculate_optimal_tp_size(model_params: int, num_gpus: int, gpu_memory_gb: float):
     """计算最优张量并行大小"""
@@ -199,6 +202,7 @@ def create_parallel_llm(model_path: str, num_gpus: int):
 ### 1.3 量化策略优化
 
 #### 量化算法选择
+
 ```python
 def select_quantization_strategy(model_size_gb: float, target_latency_ms: float, accuracy_threshold: float):
     """选择最优量化策略"""
@@ -279,6 +283,7 @@ def create_production_quant_config(model_path: str, target_use_case: str):
 ### 2.1 生产环境部署
 
 #### Docker 容器化部署
+
 ```dockerfile
 # 生产级 Dockerfile
 FROM nvcr.io/nvidia/tensorrt:24.05-py3
@@ -347,6 +352,7 @@ exec trtllm-serve \
 ```
 
 #### Kubernetes 部署配置
+
 ```yaml
 # k8s-deployment.yaml
 apiVersion: apps/v1
@@ -366,6 +372,7 @@ spec:
         app: trtllm-service
     spec:
       containers:
+
       - name: trtllm-container
         image: your-registry/trtllm:latest
         ports:
@@ -407,6 +414,7 @@ spec:
           claimName: model-pvc
       nodeSelector:
         accelerator: nvidia-tesla-v100
+
 ---
 apiVersion: v1
 kind: Service
@@ -416,15 +424,18 @@ spec:
   selector:
     app: trtllm-service
   ports:
+
   - protocol: TCP
     port: 80
     targetPort: 8000
   type: LoadBalancer
+
 ```
 
 ### 2.2 监控和日志
 
 #### 性能监控
+
 ```python
 import time
 import psutil
@@ -569,6 +580,7 @@ def setup_monitoring(llm):
 ### 3.1 常见问题诊断
 
 #### 内存不足问题
+
 ```python
 def diagnose_memory_issues():
     """诊断内存问题"""
@@ -627,6 +639,7 @@ def memory_optimization_suggestions(model_size_gb: float, available_memory_gb: f
 ```
 
 #### 性能问题诊断
+
 ```python
 def diagnose_performance_issues(llm, test_inputs: List[str]):
     """性能问题诊断"""
@@ -753,6 +766,7 @@ def profile_model_performance(llm, num_warmup: int = 5, num_iterations: int = 20
 ### 3.2 调试技巧
 
 #### 启用详细日志
+
 ```python
 import os
 import logging
@@ -1159,6 +1173,7 @@ class AdvancedMemoryManager:
 #### 5.2.2 动态批处理优化
 
 ```python
+
 class DynamicBatchOptimizer:
     """动态批处理优化器"""
 

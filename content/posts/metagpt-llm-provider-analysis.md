@@ -280,6 +280,7 @@ class BaseLLM(ABC):
 ```
 
 **设计要点**：
+
 - **统一接口**：所有LLM提供商遵循相同的调用接口
 - **多模态支持**：内置图像输入处理能力
 - **消息格式化**：统一的消息格式转换机制
@@ -424,6 +425,7 @@ def compress_messages(
 ```
 
 **压缩策略**：
+
 - **NO_COMPRESS**：不压缩，保留所有消息
 - **POST_CUT_BY_TOKEN**：保留最新消息，按token截断
 - **POST_CUT_BY_MSG**：保留最新消息，按消息截断
@@ -759,7 +761,7 @@ class OpenAILLM(BaseLLM):
     def _make_client_kwargs(self) -> dict:
         """构建客户端参数"""
         kwargs = {
-            "api_key": self.config.api_key, 
+            "api_key": self.config.api_key,
             "base_url": self.config.base_url
         }
 
@@ -781,7 +783,7 @@ class OpenAILLM(BaseLLM):
     async def _achat_completion_stream(self, messages: list[dict], timeout=USE_CONFIG_TIMEOUT) -> str:
         """流式聊天完成"""
         response: AsyncStream[ChatCompletionChunk] = await self.aclient.chat.completions.create(
-            **self._cons_kwargs(messages, timeout=self.get_timeout(timeout)), 
+            **self._cons_kwargs(messages, timeout=self.get_timeout(timeout)),
             stream=True
         )
         
@@ -895,6 +897,7 @@ class OpenAILLM(BaseLLM):
 ```
 
 **OpenAILLM特点**：
+
 - **广泛兼容性**：支持多种OpenAI兼容的服务
 - **流式支持**：完整的流式输出处理
 - **推理模式**：支持推理模式的模型（如DeepSeek）
@@ -1125,7 +1128,7 @@ def _user_msg_with_imgs(self, msg: str, images: Optional[Union[str, list[str]]])
         # 支持HTTP URL和base64编码
         url = image if image.startswith("http") else f"data:image/jpeg;base64,{image}"
         content.append({
-            "type": "image_url", 
+            "type": "image_url",
             "image_url": {"url": url}
         })
     return {"role": "user", "content": content}
@@ -1212,7 +1215,7 @@ async def _achat_completion_stream(self, messages: list[dict], timeout=USE_CONFI
     """流式完成的异常处理"""
     try:
         response = await self.aclient.chat.completions.create(
-            **self._cons_kwargs(messages, timeout=self.get_timeout(timeout)), 
+            **self._cons_kwargs(messages, timeout=self.get_timeout(timeout)),
             stream=True
         )
         
@@ -1244,7 +1247,7 @@ async def _achat_completion_stream(self, messages: list[dict], timeout=USE_CONFI
 def _make_client_kwargs(self) -> dict:
     """优化的客户端配置"""
     kwargs = {
-        "api_key": self.config.api_key, 
+        "api_key": self.config.api_key,
         "base_url": self.config.base_url,
         "timeout": httpx.Timeout(self.config.timeout),
         "limits": httpx.Limits(
@@ -1346,7 +1349,7 @@ class CostManager:
         # 检查预算限制
         if self.max_budget > 0 and self.total_cost >= self.max_budget:
             raise NoMoneyException(
-                self.total_cost, 
+                self.total_cost,
                 f"超出预算限制: ${self.max_budget:.2f}"
             )
         

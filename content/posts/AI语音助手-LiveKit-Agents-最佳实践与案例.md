@@ -20,6 +20,7 @@ def prewarm(proc: JobProcess):
     预热函数 - 在进程启动时初始化重型组件
     
     优势：
+
     1. 减少首次会话的启动延迟
     2. 避免重复加载模型
     3. 提高资源利用效率
@@ -49,6 +50,7 @@ async def entrypoint(ctx: JobContext):
     预先生成配置 - 在用户说话时就开始LLM推理
     
     性能提升：
+
     - 减少响应延迟 30-50%
     - 提高对话流畅度
     - 更好的用户体验
@@ -68,6 +70,7 @@ async def entrypoint(ctx: JobContext):
         # 使用高级转换检测
         turn_detection=MultilingualModel(),
     )
+
 ```
 
 ### 1.3 指标收集和监控
@@ -78,6 +81,7 @@ async def entrypoint(ctx: JobContext):
     完整的指标收集和监控实现
     
     监控内容：
+
     1. 使用统计（token、请求数量）
     2. 性能指标（延迟、错误率）
     3. 成本分析
@@ -135,6 +139,7 @@ async def entrypoint(ctx: JobContext):
     
     # 注册关闭回调
     ctx.add_shutdown_callback(log_usage)
+
 ```
 
 ### 1.4 错误处理和恢复
@@ -145,6 +150,7 @@ class RobustAgent(Agent):
     健壮的代理实现 - 包含完整的错误处理机制
     
     错误处理策略：
+
     1. 分层错误处理
     2. 自动重试机制
     3. 优雅降级
@@ -160,8 +166,8 @@ class RobustAgent(Agent):
     
     @function_tool
     async def resilient_api_call(
-        self, 
-        context: RunContext, 
+        self,
+        context: RunContext,
         query: str
     ) -> str:
         """
@@ -225,6 +231,7 @@ class RobustAgent(Agent):
     def _handle_connection_fallback(self, query: str) -> str:
         """连接错误降级处理"""
         return "抱歉，无法连接到外部服务。我可以基于已有知识为您提供帮助。"
+
 ```
 
 ## 2. 架构设计最佳实践
@@ -238,6 +245,7 @@ class RestaurantUserData:
     餐厅系统用户数据结构
     
     设计原则：
+
     1. 数据结构清晰
     2. 状态管理明确
     3. 代理间数据共享
@@ -281,6 +289,7 @@ class GreeterAgent(Agent):
     迎宾代理 - 多代理系统的入口点
     
     职责：
+
     1. 欢迎用户
     2. 识别用户需求
     3. 路由到专门代理
@@ -303,7 +312,7 @@ class GreeterAgent(Agent):
     
     @function_tool
     async def handoff_to_reservation(
-        self, 
+        self,
         context: RunContext[RestaurantUserData],
         reason: str = "客户需要预订服务"
     ) -> tuple[Agent, str]:
@@ -319,7 +328,7 @@ class GreeterAgent(Agent):
     
     @function_tool
     async def handoff_to_takeaway(
-        self, 
+        self,
         context: RunContext[RestaurantUserData],
         reason: str = "客户需要外卖服务"
     ) -> tuple[Agent, str]:
@@ -337,6 +346,7 @@ class ReservationAgent(Agent):
     预订代理 - 处理餐桌预订业务
     
     专门职责：
+
     1. 收集预订信息
     2. 检查可用性
     3. 确认预订
@@ -405,6 +415,7 @@ class ReservationAgent(Agent):
         )
         
         return f"预订已确认！预订号：{reservation_id}。确认信息已发送到您的手机。"
+
 ```
 
 ### 2.2 复杂业务流程设计
@@ -415,6 +426,7 @@ class DriveThruAgent(Agent):
     汽车餐厅代理 - 复杂订单处理系统
     
     设计特点：
+
     1. 状态机驱动
     2. 动态工具生成
     3. 数据验证
@@ -516,7 +528,7 @@ class DriveThruAgent(Agent):
                 json_schema_extra={"enum": list(available_combo_ids)}
             )],
             drink_id: Annotated[str, Field(
-                description="饮料ID", 
+                description="饮料ID",
                 json_schema_extra={"enum": list(available_drink_ids)}
             )],
             sauce_ids: Annotated[list[str], Field(
@@ -592,6 +604,7 @@ class DriveThruAgent(Agent):
                 raise ToolError(f"订单处理失败：{str(e)}")
         
         return order_combo_meal
+
 ```
 
 ## 3. 用户体验优化
@@ -604,6 +617,7 @@ class NaturalConversationAgent(Agent):
     自然对话代理 - 优化用户体验的设计模式
     
     设计原则：
+
     1. 对话式交互
     2. 上下文感知
     3. 个性化响应
@@ -638,8 +652,8 @@ class NaturalConversationAgent(Agent):
         )
     
     async def on_user_turn_completed(
-        self, 
-        turn_ctx: ChatContext, 
+        self,
+        turn_ctx: ChatContext,
         new_message: ChatMessage
     ) -> None:
         """
@@ -700,7 +714,7 @@ class NaturalConversationAgent(Agent):
         """
         # 扩展查询上下文
         expanded_query = await expand_query_with_context(
-            query, 
+            query,
             context.session.history
         )
         
@@ -713,8 +727,8 @@ class NaturalConversationAgent(Agent):
         
         # 结果整合和排序
         ranked_results = rank_results_by_relevance(
-            results, 
-            query, 
+            results,
+            query,
             context.session.history
         )
         
@@ -730,6 +744,7 @@ class NaturalConversationAgent(Agent):
             return response
         else:
             return "抱歉，没有找到相关信息。您能提供更多详细信息吗？"
+
 ```
 
 ### 3.2 背景音频和氛围营造
@@ -740,6 +755,7 @@ async def entrypoint(ctx: JobContext):
     完整的背景音频配置 - 提升用户体验
     
     背景音频功能：
+
     1. 营造氛围
     2. 掩盖技术噪音
     3. 提供听觉反馈
@@ -765,7 +781,7 @@ async def entrypoint(ctx: JobContext):
         
         # 打字音效
         typing_audio=AudioConfig(
-            file_path="assets/keyboard-typing.ogg", 
+            file_path="assets/keyboard-typing.ogg",
             volume=0.2,
             loop=True,
         ),
@@ -787,6 +803,7 @@ async def entrypoint(ctx: JobContext):
     # - listening: 播放环境音
     # - thinking: 播放思考音 + 环境音
     # - speaking: 停止所有背景音
+
 ```
 
 ## 4. 安全和隐私最佳实践
@@ -799,6 +816,7 @@ class SecureAgent(Agent):
     安全代理 - 处理敏感信息的最佳实践
     
     安全措施：
+
     1. 数据脱敏
     2. 访问控制
     3. 审计日志
@@ -866,7 +884,7 @@ class SecureAgent(Agent):
             
             # 安全存储
             payment_token = await store_encrypted_payment_info(
-                encrypted_data, 
+                encrypted_data,
                 context.userdata.get("user_id")
             )
             
@@ -886,6 +904,7 @@ class SecureAgent(Agent):
         finally:
             # 清理内存中的敏感数据
             clear_sensitive_variables(card_number, cvv)
+
 ```
 
 ### 4.2 访问控制和权限管理
@@ -896,6 +915,7 @@ class RoleBasedAgent(Agent):
     基于角色的访问控制代理
     
     权限模型：
+
     1. 角色定义
     2. 权限检查
     3. 操作审计
@@ -931,8 +951,8 @@ class RoleBasedAgent(Agent):
     @function_tool
     @require_permission("read_user_data")
     async def get_user_info(
-        self, 
-        context: RunContext, 
+        self,
+        context: RunContext,
         user_id: str
     ) -> str:
         """获取用户信息 - 需要读取权限"""
@@ -940,7 +960,7 @@ class RoleBasedAgent(Agent):
         
         # 根据权限过滤敏感信息
         filtered_info = filter_user_info_by_permission(
-            user_info, 
+            user_info,
             self.permissions
         )
         
@@ -949,14 +969,14 @@ class RoleBasedAgent(Agent):
     @function_tool
     @require_permission("admin_operations")
     async def delete_user_data(
-        self, 
-        context: RunContext, 
+        self,
+        context: RunContext,
         user_id: str
     ) -> str:
         """删除用户数据 - 需要管理员权限"""
         # 额外的安全检查
         if not await verify_admin_operation(
-            context.userdata.get("user_id"), 
+            context.userdata.get("user_id"),
             "delete_user_data"
         ):
             raise ToolError("管理员操作需要额外验证")
@@ -974,6 +994,7 @@ class RoleBasedAgent(Agent):
         logger.info("管理员操作", extra=audit_log)
         
         return f"用户 {user_id} 的数据已安全删除"
+
 ```
 
 ## 5. 测试和质量保证
@@ -990,6 +1011,7 @@ class TestVoiceAgent:
     语音代理自动化测试套件
     
     测试范围：
+
     1. 功能测试
     2. 性能测试  
     3. 错误处理测试
@@ -1055,7 +1077,7 @@ class TestVoiceAgent:
                 result.expect.next_event().is_message(role="assistant")
                 assert "抱歉" in result.events[-1].data.content
     
-    @pytest.mark.asyncio 
+    @pytest.mark.asyncio
     async def test_performance_metrics(self):
         """性能指标测试"""
         start_time = time.time()
@@ -1096,6 +1118,7 @@ class TestVoiceAgent:
             result.expect.next_event().is_agent_handoff(
                 to_agent_type="ReservationAgent"
             )
+
 ```
 
 ### 5.2 性能基准测试
@@ -1106,6 +1129,7 @@ class PerformanceBenchmark:
     性能基准测试套件
     
     测试指标：
+
     1. 响应延迟
     2. 吞吐量
     3. 资源使用率
@@ -1135,7 +1159,7 @@ class PerformanceBenchmark:
         p99_latency = sorted(latencies)[99]
         
         print(f"平均延迟: {avg_latency:.2f}s")
-        print(f"P95延迟: {p95_latency:.2f}s") 
+        print(f"P95延迟: {p95_latency:.2f}s")
         print(f"P99延迟: {p99_latency:.2f}s")
         
         # 性能断言
@@ -1164,6 +1188,7 @@ class PerformanceBenchmark:
         print(f"吞吐量: {throughput:.2f} sessions/s")
         
         assert successful_sessions >= concurrent_sessions * 0.95  # 95%成功率
+
 ```
 
 这个最佳实践文档涵盖了LiveKit Agents框架的核心优化策略、架构设计模式、用户体验提升、安全实践和测试方法。每个部分都包含了详细的代码示例和实际应用场景，帮助开发者构建高质量的语音AI应用。

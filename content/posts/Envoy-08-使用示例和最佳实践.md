@@ -22,9 +22,10 @@ weight: 1
 # envoy-simple-proxy.yaml
 static_resources:
   listeners:
+
   - name: listener_0
     address:
-      socket_address: 
+      socket_address:
         address: 0.0.0.0
         port_value: 10000
     filter_chains:
@@ -72,11 +73,13 @@ admin:
 ```
 
 **功能说明**：
+
 - 在端口10000上监听HTTP请求
 - 将所有请求转发到httpbin.org
 - 提供管理接口在端口9901
 
 **启动命令**：
+
 ```bash
 envoy -c envoy-simple-proxy.yaml
 ```
@@ -87,6 +90,7 @@ envoy -c envoy-simple-proxy.yaml
 # envoy-tls-termination.yaml  
 static_resources:
   listeners:
+
   - name: listener_0
     address:
       socket_address:
@@ -184,6 +188,7 @@ admin:
 ```
 
 **功能说明**：
+
 - TLS/SSL终止
 - 基于路径的路由分发
 - URL重写功能
@@ -197,6 +202,7 @@ admin:
 # envoy-microservices-gateway.yaml
 static_resources:
   listeners:
+
   - name: listener_0
     address:
       socket_address:
@@ -424,6 +430,7 @@ admin:
 ```
 
 **功能说明**：
+
 - JWT认证保护API端点
 - 基于路径的微服务路由
 - 限流保护
@@ -450,6 +457,7 @@ dynamic_resources:
       api_type: GRPC
       transport_api_version: V3
       grpc_services:
+
       - envoy_grpc:
           cluster_name: xds_cluster
       set_node_on_first_message_only: true
@@ -466,6 +474,7 @@ dynamic_resources:
 
 static_resources:
   clusters:
+
   - name: xds_cluster
     connect_timeout: 0.25s
     type: LOGICAL_DNS
@@ -661,6 +670,7 @@ if __name__ == "__main__":
 ```
 
 **功能说明**：
+
 - 动态监听器发现(LDS)
 - 动态集群发现(CDS)  
 - gRPC流式API
@@ -678,6 +688,7 @@ services:
   envoy:
     image: envoyproxy/envoy:v1.28-latest
     ports:
+
       - "8080:8080"
       - "9901:9901"
     volumes:
@@ -701,13 +712,14 @@ services:
       - "8082:80"
 
   control-plane:
-    build: 
+    build:
       context: .
       dockerfile: Dockerfile.control-plane
     ports:
       - "18000:18000"
     environment:
       - LOG_LEVEL=info
+
 ```
 
 ### Dockerfile示例
@@ -743,6 +755,7 @@ CMD ["python", "control_plane.py"]
 # 基于CPU核数配置工作线程
 static_resources:
   listeners:
+
   - name: listener_0
     address:
       socket_address:
@@ -769,6 +782,7 @@ static_resources:
             typed_config:
               "@type": type.googleapis.com/envoy.extensions.access_loggers.file.v3.FileAccessLog
               path: "/var/log/envoy/access.log"
+
 ```
 
 #### 连接池优化
@@ -776,6 +790,7 @@ static_resources:
 ```yaml
 # 集群连接池配置
 clusters:
+
 - name: service_backend
   connect_timeout: 0.25s
   type: LOGICAL_DNS
@@ -801,6 +816,7 @@ clusters:
           max_concurrent_streams: 100
           initial_stream_window_size: 65536
           initial_connection_window_size: 1048576
+
 ```
 
 ### 2. 安全配置
@@ -810,6 +826,7 @@ clusters:
 ```yaml
 # HTTPS监听器配置
 listeners:
+
 - name: https_listener
   address:
     socket_address:
@@ -836,15 +853,16 @@ listeners:
             tls_maximum_protocol_version: TLSv1_3
             cipher_suites:
             - "ECDHE-ECDSA-AES256-GCM-SHA384"
-            - "ECDHE-RSA-AES256-GCM-SHA384" 
+            - "ECDHE-RSA-AES256-GCM-SHA384"
             - "ECDHE-ECDSA-CHACHA20-POLY1305"
             - "ECDHE-RSA-CHACHA20-POLY1305"
             - "ECDHE-ECDSA-AES128-GCM-SHA256"
             - "ECDHE-RSA-AES128-GCM-SHA256"
           # ALPN协议协商
-          alpn_protocols: 
+          alpn_protocols:
           - "h2"
           - "http/1.1"
+
 ```
 
 #### 安全头配置
@@ -852,6 +870,7 @@ listeners:
 ```yaml
 # 安全HTTP头过滤器
 http_filters:
+
 - name: envoy.filters.http.local_response
   typed_config:
     "@type": type.googleapis.com/udpa.type.v1.TypedStruct
@@ -870,7 +889,7 @@ http_filters:
             key: "X-Content-Type-Options"
             value: "nosniff"
         - header:
-            key: "X-Frame-Options" 
+            key: "X-Frame-Options"
             value: "DENY"
         - header:
             key: "X-XSS-Protection"
@@ -881,6 +900,7 @@ http_filters:
         - header:
             key: "Referrer-Policy"
             value: "strict-origin-when-cross-origin"
+
 ```
 
 ### 3. 可观测性配置
@@ -891,6 +911,7 @@ http_filters:
 stats_config:
   # 统计标签配置
   stats_tags:
+
   - tag_name: "method"
     regex: "^http\\.(.+?)\\.downstream_rq_(.+?)$"
     fixed_value: "\\1"
@@ -908,6 +929,7 @@ stats_config:
 
 # Prometheus统计接收器
 stats_sinks:
+
 - name: envoy.stat_sinks.statsd
   typed_config:
     "@type": type.googleapis.com/envoy.config.metrics.v3.StatsdSink
@@ -916,6 +938,7 @@ stats_sinks:
         address: 127.0.0.1
         port_value: 8125
     prefix: "envoy"
+
 ```
 
 #### OpenTelemetry追踪配置
@@ -934,6 +957,7 @@ tracing:
       
 # 追踪集群
 clusters:
+
 - name: jaeger
   type: LOGICAL_DNS
   dns_lookup_family: V4_ONLY
@@ -946,6 +970,7 @@ clusters:
             socket_address:
               address: jaeger-collector
               port_value: 14250
+
 ```
 
 ### 4. 容器化部署最佳实践
@@ -981,6 +1006,7 @@ spec:
         app: envoy-gateway
     spec:
       containers:
+
       - name: envoy
         image: envoyproxy/envoy:v1.28-latest
         ports:
@@ -998,7 +1024,7 @@ spec:
             cpu: "100m"
             memory: "128Mi"
           limits:
-            cpu: "500m" 
+            cpu: "500m"
             memory: "512Mi"
         # 健康检查
         livenessProbe:
@@ -1017,7 +1043,7 @@ spec:
         lifecycle:
           preStop:
             exec:
-              command: 
+              command:
               - /bin/sh
               - -c
               - "wget -qO- http://localhost:9901/healthcheck/fail && sleep 15"
@@ -1036,6 +1062,7 @@ metadata:
 spec:
   type: LoadBalancer
   ports:
+
   - port: 80
     targetPort: 8080
     protocol: TCP
@@ -1046,6 +1073,7 @@ spec:
     name: admin
   selector:
     app: envoy-gateway
+
 ```
 
 ### 5. 监控和告警
@@ -1058,6 +1086,7 @@ global:
   scrape_interval: 15s
 
 scrape_configs:
+
 - job_name: 'envoy'
   static_configs:
   - targets: ['envoy:9901']
@@ -1069,6 +1098,7 @@ scrape_configs:
   - targets: ['envoy:9901']
   metrics_path: '/server_info'
   scrape_interval: 30s
+
 ```
 
 #### Grafana仪表板示例
@@ -1090,14 +1120,14 @@ scrape_configs:
       },
       {
         "title": "Response Time",
-        "type": "graph", 
+        "type": "graph",
         "targets": [
           {
             "expr": "histogram_quantile(0.95, rate(envoy_http_downstream_rq_time_bucket[1m]))",
             "legendFormat": "95th percentile"
           },
           {
-            "expr": "histogram_quantile(0.50, rate(envoy_http_downstream_rq_time_bucket[1m]))", 
+            "expr": "histogram_quantile(0.50, rate(envoy_http_downstream_rq_time_bucket[1m]))",
             "legendFormat": "50th percentile"
           }
         ]
@@ -1183,6 +1213,7 @@ sysctl -p
 # 性能优化配置
 static_resources:
   listeners:
+
   - name: optimized_listener
     # 启用端口重用
     reuse_port: true
@@ -1205,6 +1236,7 @@ static_resources:
           # 禁用不必要的功能
           normalize_path: false
           strip_any_host_port: false
+
 ```
 
 ## 总结

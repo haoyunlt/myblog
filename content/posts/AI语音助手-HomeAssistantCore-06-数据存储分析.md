@@ -95,6 +95,7 @@ class Store[_T: Mapping[str, Any] | Sequence[Any]]:
     """存储管理核心类 - 提供结构化数据的持久化存储
     
     设计原则:
+
         1. 类型安全：使用泛型确保数据类型一致性
         2. 异步优先：所有I/O操作都是异步的
         3. 原子性：提供原子写入保证数据完整性
@@ -367,7 +368,7 @@ class Store[_T: Mapping[str, Any] | Sequence[Any]]:
             )
         
         # 执行版本迁移
-        if (stored_version < self.version or 
+        if (stored_version < self.version or
             (stored_version == self.version and stored_minor_version < self.minor_version)):
             
             _LOGGER.info(
@@ -489,7 +490,7 @@ class Store[_T: Mapping[str, Any] | Sequence[Any]]:
         
         # 设置延迟写入定时器
         self._delay_handle = self.hass.loop.call_later(
-            delay, 
+            delay,
             lambda: self.hass.async_create_task(
                 self._async_handle_write_data(),
                 f"Store {self.key} delayed write"
@@ -673,6 +674,7 @@ class Store[_T: Mapping[str, Any] | Sequence[Any]]:
         except Exception as err:
             _LOGGER.error("Error removing store file %s: %s", self.path, err)
             raise
+
 ```
 
 ### 2.2 存储管理器系统
@@ -682,6 +684,7 @@ class _StoreManager:
     """存储管理器 - 统一管理所有Store实例的缓存和生命周期
     
     核心功能:
+
         1. 全局存储缓存管理
         2. 文件系统监控和预加载
         3. 存储清理和内存优化
@@ -740,7 +743,7 @@ class _StoreManager:
         )
         
         _LOGGER.info(
-            "StoreManager initialized with %d existing files", 
+            "StoreManager initialized with %d existing files",
             len(self._files) if self._files else 0
         )
     
@@ -766,7 +769,7 @@ class _StoreManager:
             
             # 过滤有效的JSON文件
             self._files = {
-                f for f in all_files 
+                f for f in all_files
                 if f.endswith('.json') or f.endswith('')  # 允许无扩展名的文件
             }
             
@@ -790,7 +793,7 @@ class _StoreManager:
         """
         critical_files = {
             'entity_registry',
-            'device_registry', 
+            'device_registry',
             'area_registry',
             'auth',
             'auth_provider.homeassistant',
@@ -958,6 +961,7 @@ class _StoreManager:
                 total_size += len(str(data).encode('utf-8'))
         
         return total_size
+
 ```
 
 ## 3. 配置系统深度解析
@@ -977,6 +981,7 @@ async def async_hass_config_yaml(hass: HomeAssistant) -> dict:
         解析后的配置字典
         
     加载流程:
+
         1. 创建Secrets管理器
         2. 加载主配置文件
         3. 处理YAML错误和路径修正
@@ -1055,6 +1060,7 @@ def load_yaml_config_file(
         解析后的配置字典
         
     功能:
+
         1. 使用YAML加载器解析文件
         2. 验证配置文件格式
         3. 处理空值转换
@@ -1081,6 +1087,7 @@ def load_yaml_config_file(
         conf_dict[key] = value or {}
     
     return conf_dict
+
 ```
 
 ### 3.2 Secrets 密钥管理系统
@@ -1090,6 +1097,7 @@ class Secrets:
     """密钥管理系统 - 安全管理敏感配置信息
     
     功能特性:
+
         1. 从secrets.yaml文件加载敏感信息
         2. 在配置文件中使用!secret标记替换
         3. 支持嵌套密钥引用
@@ -1255,6 +1263,7 @@ class Secrets:
                     
         except Exception as err:
             _LOGGER.debug("Could not check secrets file permissions: %s", err)
+
 ```
 
 ### 3.3 Package包系统
@@ -1276,6 +1285,7 @@ async def merge_packages_config(
         合并后的配置字典
         
     Package系统特性:
+
         1. 模块化配置管理
         2. 配置复用和共享
         3. 复杂配置的组织
@@ -1350,6 +1360,7 @@ def _recursive_merge(conf: dict[str, Any], package: dict[str, Any]) -> str | Non
         冲突的键名，无冲突时返回None
         
     合并逻辑:
+
         1. 字典：递归合并子键
         2. 列表：连接列表内容
         3. 标量：检查冲突并覆盖
@@ -1396,6 +1407,7 @@ def _validate_package_definition(name: str, conf: Any) -> None:
         conf: 包配置
         
     验证内容:
+
         1. 包名称格式（slug格式）
         2. 包配置结构
         3. 必需字段检查
@@ -1426,6 +1438,7 @@ def _validate_package_definition(name: str, conf: Any) -> None:
                 "which may cause unexpected behavior",
                 name, key
             )
+
 ```
 
 ## 4. 数据迁移和版本管理
@@ -1460,6 +1473,7 @@ class DataMigrator:
     """数据迁移管理器 - 处理存储数据的版本升级
     
     核心功能:
+
         1. 版本兼容性检查
         2. 自动数据迁移
         3. 迁移失败回滚
@@ -1632,7 +1646,7 @@ class DataMigrator:
                (step_version > current_version):
                 
                 # 检查是否超出目标版本
-                if (step_version < target_version or 
+                if (step_version < target_version or
                     (step_version == target_version and step_minor <= target_minor)):
                     candidates.append((step_version, step_minor))
         
@@ -1777,6 +1791,7 @@ class StorageCache:
     """存储缓存系统 - 优化频繁访问的数据读写性能
     
     缓存特性:
+
         1. LRU淘汰策略
         2. 时间过期机制
         3. 内存使用限制
@@ -1836,7 +1851,7 @@ class CacheEntry:
     size: int
     access_count: int = 0
 
-@dataclass 
+@dataclass
 class CacheStats:
     """缓存统计"""
     hits: int = 0
@@ -1853,6 +1868,7 @@ class OptimizedStore(Store):
     """优化的存储类 - 提供更好的I/O性能
     
     优化策略:
+
         1. 批量写入合并
         2. 压缩存储支持
         3. 异步I/O队列
@@ -2309,4 +2325,5 @@ Home Assistant的数据存储系统提供了完整的数据持久化解决方案
 ## 下一步分析
 
 接下来将继续分析其他重要模块：
+
 - [服务和自动化系统](/posts/09-服务自动化分析/) - 深入分析Home Assistant的服务调用和自动化引擎

@@ -91,13 +91,17 @@ ServiceContext是MongoDB服务的全局状态管理器，负责管理整个mongo
 
 ```cpp
 /**
+
  * ServiceContext - MongoDB服务的全局上下文管理器
- * 
+
+ *
+
  * 功能特点:
  * - 单例模式，全局唯一
  * - 管理所有服务相关的全局资源
  * - 提供服务注册和查找机制
  * - 支持装饰器模式扩展
+
  */
 class ServiceContext final : public Decorable<ServiceContext> {
 private:
@@ -123,6 +127,7 @@ private:
     
 public:
     /**
+
      * 获取全局ServiceContext实例
      * @return 当前进程的ServiceContext指针
      */
@@ -165,6 +170,7 @@ public:
      * @param job 要执行的周期性任务
      */
     void schedulePeriodicJob(PeriodicRunner::PeriodicJob job);
+
 };
 ```
 
@@ -174,13 +180,17 @@ OperationContext是每个数据库操作的执行上下文，包含执行操作�
 
 ```cpp
 /**
+
  * OperationContext - 数据库操作执行上下文
- * 
+
+ *
+
  * 功能特点:
  * - 每个数据库操作都有独立的上下文
  * - 管理锁状态、事务状态、超时设置
  * - 支持操作中断和取消
  * - 提供恢复单元管理
+
  */
 class OperationContext : public Decorable<OperationContext>,
                         public LockerStorageInterface {
@@ -201,12 +211,13 @@ private:
     
 public:
     /**
+
      * 构造函数
      * @param client 关联的客户端
      * @param opId 操作ID
      * @param lsid 逻辑会话ID
      */
-    OperationContext(Client* client, 
+    OperationContext(Client* client,
                     unsigned int opId,
                     boost::optional<LogicalSessionId> lsid);
     
@@ -278,6 +289,7 @@ public:
      * @return 写关注配置
      */
     const WriteConcernOptions& getWriteConcern() const;
+
 };
 ```
 
@@ -287,17 +299,22 @@ DatabaseHolder管理系统中所有打开的数据库实例，提供数据库的
 
 ```cpp
 /**
+
  * DatabaseHolder - 数据库注册表和管理器
- * 
+
+ *
+
  * 功能特点:
  * - 管理所有打开的数据库实例
  * - 提供数据库生命周期管理
  * - 支持数据库级别的锁控制
  * - 线程安全的数据库访问
+
  */
 class DatabaseHolder {
 public:
     /**
+
      * 获取DatabaseHolder实例
      * @param opCtx 操作上下文
      * @return DatabaseHolder指针
@@ -309,10 +326,10 @@ public:
      * @param opCtx 操作上下文
      * @param dbName 数据库名称
      * @return 数据库指针，如果不存在返回nullptr
-     * 
+     *
      * 注意：调用者必须持有数据库级MODE_IS锁
      */
-    virtual Database* getDb(OperationContext* opCtx, 
+    virtual Database* getDb(OperationContext* opCtx,
                            const DatabaseName& dbName) const = 0;
     
     /**
@@ -320,10 +337,10 @@ public:
      * @param opCtx 操作上下文
      * @param dbName 数据库名称
      * @return 如果存在返回true
-     * 
+     *
      * 注意：此方法无需持有数据库锁
      */
-    virtual bool dbExists(OperationContext* opCtx, 
+    virtual bool dbExists(OperationContext* opCtx,
                          const DatabaseName& dbName) const = 0;
     
     /**
@@ -332,7 +349,7 @@ public:
      * @param dbName 数据库名称
      * @param justCreated 输出参数，指示是否为新创建
      * @return 数据库指针
-     * 
+     *
      * 注意：调用者必须持有数据库级MODE_IX锁
      */
     virtual Database* openDb(OperationContext* opCtx,
@@ -343,7 +360,7 @@ public:
      * 物理删除数据库
      * @param opCtx 操作上下文
      * @param db 要删除的数据库
-     * 
+     *
      * 注意：调用者必须持有数据库级MODE_X锁
      */
     virtual void dropDb(OperationContext* opCtx, Database* db) = 0;
@@ -352,7 +369,7 @@ public:
      * 关闭数据库
      * @param opCtx 操作上下文
      * @param db 要关闭的数据库
-     * 
+     *
      * 注意：调用者必须持有数据库级MODE_X锁
      */
     virtual void close(OperationContext* opCtx, Database* db) = 0;
@@ -362,6 +379,7 @@ public:
      * @return 数据库名称列表
      */
     virtual std::vector<DatabaseName> getNames() = 0;
+
 };
 ```
 
@@ -397,12 +415,16 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * Collection::insertDocument - 文档插入核心实现
- * 
+
+ *
+
  * @param opCtx 操作上下文
  * @param doc 要插入的BSON文档
  * @param checkRecordId 是否检查记录ID
  * @return 插入操作状态
+
  */
 Status Collection::insertDocument(OperationContext* opCtx,
                                 const BSONObj& doc,
@@ -498,14 +520,18 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * QueryPlanner::plan - 查询规划核心实现
- * 
+
+ *
+
  * @param query 查询条件
  * @param collectionPtr 集合指针
  * @param indexCatalog 索引目录
  * @return 查询执行计划列表
+
  */
-StatusWith<std::vector<std::unique_ptr<QueryPlan>>> 
+StatusWith<std::vector<std::unique_ptr<QueryPlan>>>
 QueryPlanner::plan(const CanonicalQuery& query,
                   const Collection* collectionPtr,
                   const IndexCatalog* indexCatalog) {
@@ -551,7 +577,7 @@ QueryPlanner::plan(const CanonicalQuery& query,
         plan->estimatedCost = estimatePlanCost(*plan, collectionPtr);
     }
     
-    std::sort(plans.begin(), plans.end(), 
+    std::sort(plans.begin(), plans.end(),
               [](const auto& a, const auto& b) {
                   return a->estimatedCost < b->estimatedCost;
               });
@@ -560,13 +586,17 @@ QueryPlanner::plan(const CanonicalQuery& query,
 }
 
 /**
+
  * QueryExecutor::execute - 查询执行核心实现
- * 
+
+ *
+
  * @param opCtx 操作上下文
  * @param plan 查询计划
  * @return 查询结果状态
+
  */
-StatusWith<std::unique_ptr<PlanExecutor>> 
+StatusWith<std::unique_ptr<PlanExecutor>>
 QueryExecutor::execute(OperationContext* opCtx,
                       std::unique_ptr<QueryPlan> plan) {
     
@@ -612,13 +642,17 @@ graph TD
 
 ```cpp
 /**
+
  * Locker - 锁管理器接口实现
- * 
+
+ *
+
  * 功能特点:
  * - 支持多粒度锁控制
  * - 实现死锁检测和避免
  * - 提供锁升级和降级
  * - 支持锁超时机制
+
  */
 class LockerImpl : public Locker {
 private:
@@ -633,6 +667,7 @@ private:
     
 public:
     /**
+
      * 获取锁
      * @param opCtx 操作上下文
      * @param resourceId 资源ID
@@ -722,6 +757,7 @@ public:
         
         return compatibilityMatrix[held][requested];
     }
+
 };
 ```
 
@@ -731,21 +767,26 @@ MongoDB支持可插拔的存储引擎架构，默认使用WiredTiger：
 
 ```cpp
 /**
+
  * StorageEngine - 存储引擎抽象接口
- * 
+
+ *
+
  * 定义了所有存储引擎必须实现的核心接口
  * 支持多种存储后端（WiredTiger、InMemory等）
+
  */
 class StorageEngine {
 public:
     /**
+
      * 创建记录存储
      * @param opCtx 操作上下文
      * @param ns 命名空间
      * @param options 存储选项
      * @return 记录存储指针
      */
-    virtual std::unique_ptr<RecordStore> 
+    virtual std::unique_ptr<RecordStore>
     getRecordStore(OperationContext* opCtx,
                   const NamespaceString& ns,
                   const CollectionOptions& options) = 0;
@@ -778,8 +819,9 @@ public:
      * 支持的功能检查
      * @return 功能支持位掩码
      */
-    virtual int64_t getIdentSize(OperationContext* opCtx, 
+    virtual int64_t getIdentSize(OperationContext* opCtx,
                                 StringData ident) = 0;
+
 };
 ```
 
@@ -834,7 +876,7 @@ db.products.find({
 // 优化：创建复合索引
 db.products.createIndex({
     category: 1,
-    inStock: 1, 
+    inStock: 1,
     price: 1,
     rating: -1
 });
@@ -845,6 +887,7 @@ db.products.createIndex({
 ## 监控和调试工具
 
 ### 1. 性能分析
+
 ```javascript
 // 查询执行计划分析
 db.collection.find(query).explain("executionStats");
@@ -857,6 +900,7 @@ db.setProfilingLevel(2, {slowms: 100});
 ```
 
 ### 2. 锁状态监控
+
 ```javascript
 // 查看当前锁状态
 db.runCommand({lockInfo: 1});

@@ -159,7 +159,7 @@ func NewErasure(ctx context.Context, dataBlocks, parityBlocks int, blockSize int
         once.Do(func() {
             // 根据分片大小自动选择 goroutine 数量
             encoder, err := reedsolomon.New(
-                dataBlocks, 
+                dataBlocks,
                 parityBlocks,
                 reedsolomon.WithAutoGoroutines(int(e.ShardSize())),
             )
@@ -291,7 +291,7 @@ sequenceDiagram
 
 ```go
 // erasureCreateFile 创建纠删码文件
-func erasureCreateFile(ctx context.Context, disks []StorageAPI, bucket, object string, 
+func erasureCreateFile(ctx context.Context, disks []StorageAPI, bucket, object string,
     fileSize int64, erasure Erasure, data io.Reader, writeQuorum int) (int64, error) {
     
     // 创建写入器数组
@@ -361,7 +361,7 @@ func erasureCreateFile(ctx context.Context, disks []StorageAPI, bucket, object s
 
 ```go
 // HealObject 修复损坏的对象
-func (er erasureObjects) HealObject(ctx context.Context, bucket, object, versionID string, 
+func (er erasureObjects) HealObject(ctx context.Context, bucket, object, versionID string,
     opts madmin.HealOpts) (madmin.HealResultItem, error) {
     
     // 读取对象元数据
@@ -388,7 +388,7 @@ func (er erasureObjects) HealObject(ctx context.Context, bucket, object, version
     latestMetadata := pickValidFileInfo(ctx, availableMetadata, er.defaultParityCount)
     
     // 执行数据修复
-    erasure, err := NewErasure(ctx, latestMetadata.Erasure.DataBlocks, 
+    erasure, err := NewErasure(ctx, latestMetadata.Erasure.DataBlocks,
         latestMetadata.Erasure.ParityBlocks, latestMetadata.Erasure.BlockSize)
     if err != nil {
         return madmin.HealResultItem{}, err
@@ -404,7 +404,7 @@ func (er erasureObjects) HealObject(ctx context.Context, bucket, object, version
     
     // 并行修复各个分片
     for partIndex := 0; partIndex < len(latestMetadata.Parts); partIndex++ {
-        err := er.healObjectPart(ctx, bucket, object, versionID, partIndex, 
+        err := er.healObjectPart(ctx, bucket, object, versionID, partIndex,
             storageDisks, availableDisks, latestMetadata, erasure)
         if err != nil {
             healResult.Detail = fmt.Sprintf("Failed to heal part %d: %v", partIndex, err)
@@ -443,7 +443,7 @@ func (b *BitrotVerifier) Verify(buf []byte) error {
 }
 
 // newBitrotWriter 创建带位腐败检测的写入器
-func newBitrotWriter(disk StorageAPI, bucket, object string, shardSize int64, 
+func newBitrotWriter(disk StorageAPI, bucket, object string, shardSize int64,
     algo BitrotAlgorithm, shardFileSize int64) io.WriteCloser {
     
     return &bitrotWriter{
@@ -673,7 +673,7 @@ var (
     // 数据重建计数器
     dataReconstructionTotal = prometheus.NewCounterVec(
         prometheus.CounterOpts{
-            Name: "minio_data_reconstruction_total", 
+            Name: "minio_data_reconstruction_total",
             Help: "Total number of data reconstruction operations",
         },
         []string{"type"},

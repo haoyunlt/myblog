@@ -33,6 +33,7 @@ ClickHouse是一个开源的列式数据库管理系统（DBMS），专为在线
 - **磁盘**：至少50GB可用空间
 
 #### 构建步骤
+
 ```bash
 # 1. 克隆代码仓库
 git clone --recursive https://github.com/ClickHouse/ClickHouse.git
@@ -53,6 +54,7 @@ sudo make install
 ```
 
 #### 关键CMake选项
+
 ```cmake
 # 启用测试
 -DENABLE_TESTS=ON
@@ -103,6 +105,7 @@ ClickHouse/
 ### 1.4 开发环境配置
 
 #### IDE配置（CLion）
+
 ```json
 {
   "cmake.buildDirectory": "${workspaceFolder}/build",
@@ -119,6 +122,7 @@ ClickHouse/
 ```
 
 #### 调试配置
+
 ```gdb
 # .gdbinit
 set print pretty on
@@ -250,6 +254,7 @@ graph TB
 ### 2.2 模块交互时序图
 
 #### HTTP查询处理时序图
+
 ```mermaid
 sequenceDiagram
     participant Client as HTTP Client
@@ -275,6 +280,7 @@ sequenceDiagram
 ```
 
 #### TCP查询处理时序图
+
 ```mermaid
 sequenceDiagram
     participant Client as Native Client
@@ -373,10 +379,10 @@ public:
 class HTTPHandler : public HTTPRequestHandler
 {
 public:
-    HTTPHandler(IServer & server_, const HTTPHandlerConnectionConfig & connection_config_, 
+    HTTPHandler(IServer & server_, const HTTPHandlerConnectionConfig & connection_config_,
                 const std::string & name, const HTTPResponseHeaderSetup & http_response_headers_override_);
     
-    void handleRequest(HTTPServerRequest & request, HTTPServerResponse & response, 
+    void handleRequest(HTTPServerRequest & request, HTTPServerResponse & response,
                       const ProfileEvents::Event & write_event) override;
 
     virtual void customizeContext(HTTPServerRequest & request, ContextMutablePtr context, ReadBuffer & body) {}
@@ -391,6 +397,7 @@ private:
 ```
 
 **关键功能说明：**
+
 - `handleRequest`: HTTP请求的主入口点，处理所有HTTP请求
 - `processQuery`: 核心查询处理逻辑，包括参数解析、会话管理、查询执行
 - `customizeContext`: 允许子类自定义查询上下文
@@ -400,7 +407,7 @@ private:
 
 ```cpp
 // src/Server/HTTPHandler.cpp - processQuery方法核心逻辑
-void HTTPHandler::processQuery(HTTPServerRequest & request, HTMLForm & params, 
+void HTTPHandler::processQuery(HTTPServerRequest & request, HTMLForm & params,
                               HTTPServerResponse & response, Output & used_output,
                               std::optional<CurrentThread::QueryScope> & query_scope,
                               const ProfileEvents::Event & write_event)
@@ -435,7 +442,7 @@ void HTTPHandler::processQuery(HTTPServerRequest & request, HTMLForm & params,
     std::string query = getQuery(request, params, context);
     
     // 8. 执行查询
-    executeQuery(query, context, used_output.out_maybe_delayed_and_compressed, 
+    executeQuery(query, context, used_output.out_maybe_delayed_and_compressed,
                 query_scope, write_event);
 }
 ```
@@ -1984,6 +1991,7 @@ public:
 #### 6.1.1 查询优化技巧
 
 **1. 合理使用主键和排序键**
+
 ```sql
 -- 好的实践：根据查询模式设计主键
 CREATE TABLE events (
@@ -2006,6 +2014,7 @@ ORDER BY (event_type, value, user_id, date)  -- 低选择性列在前
 ```
 
 **2. 利用投影优化查询**
+
 ```sql
 -- 创建投影以优化聚合查询
 ALTER TABLE events ADD PROJECTION daily_stats (
@@ -2021,6 +2030,7 @@ GROUP BY date, event_type;
 ```
 
 **3. 合理使用物化视图**
+
 ```sql
 -- 创建物化视图预聚合数据
 CREATE MATERIALIZED VIEW events_daily_mv
@@ -2038,6 +2048,7 @@ GROUP BY date, event_type;
 #### 6.1.2 存储优化策略
 
 **1. 选择合适的存储引擎**
+
 ```cpp
 // 高频写入场景：使用ReplicatedMergeTree
 CREATE TABLE high_write_table (
@@ -2064,6 +2075,7 @@ TTL date + INTERVAL 1 YEAR;
 ```
 
 **2. 压缩算法选择**
+
 ```sql
 -- 根据数据特性选择压缩算法
 CREATE TABLE logs (
@@ -2078,6 +2090,7 @@ ORDER BY timestamp;
 #### 6.1.3 内存管理优化
 
 **1. 查询内存限制**
+
 ```sql
 -- 设置查询级别内存限制
 SET max_memory_usage = 10000000000;  -- 10GB
@@ -2088,6 +2101,7 @@ CREATE USER analyst SETTINGS max_memory_usage = 20000000000;
 ```
 
 **2. 缓存配置优化**
+
 ```xml
 <!-- config.xml -->
 <clickhouse>
@@ -2220,6 +2234,7 @@ WHERE absolute_delay > 60;  -- 延迟超过60秒
 #### 6.3.2 常见问题诊断
 
 **1. 查询性能问题**
+
 ```sql
 -- 分析慢查询
 SELECT
@@ -2253,6 +2268,7 @@ ORDER BY partition;
 ```
 
 **2. 内存使用问题**
+
 ```sql
 -- 监控内存使用
 SELECT
@@ -2512,8 +2528,8 @@ ASTPtr tryParseQuery(
     
     /// 1. 词法分析 - 将SQL文本转换为Token流
     Tokens tokens(query_begin, all_queries_end, max_query_size, skip_insignificant);
-    IParser::Pos token_iterator(tokens, 
-        static_cast<uint32_t>(max_parser_depth), 
+    IParser::Pos token_iterator(tokens,
+        static_cast<uint32_t>(max_parser_depth),
         static_cast<uint32_t>(max_parser_backtracks));
 
     /// 2. 检查空查询
@@ -2530,7 +2546,7 @@ ASTPtr tryParseQuery(
     IParser::Pos lookahead(token_iterator);
     if (!ParserKeyword(Keyword::INSERT_INTO).ignore(lookahead))
     {
-        while (lookahead->type != TokenType::Semicolon && 
+        while (lookahead->type != TokenType::Semicolon &&
                lookahead->type != TokenType::EndOfStream)
         {
             if (lookahead->isError())
@@ -2873,8 +2889,8 @@ void QueryAnalyzer::resolve(QueryTreeNodePtr & node, const QueryTreeNodePtr & ta
         }
         default:
         {
-            throw Exception(ErrorCodes::LOGICAL_ERROR, 
-                "Node {} with type {} is not supported by query analyzer", 
+            throw Exception(ErrorCodes::LOGICAL_ERROR,
+                "Node {} with type {} is not supported by query analyzer",
                 node->formatASTForErrorMessage(), node->getNodeTypeName());
         }
     }
@@ -2897,7 +2913,7 @@ void QueryAnalyzer::resolveQuery(const QueryTreeNodePtr & query_node, Identifier
     /// 验证GROUP BY修饰符的兼容性
     bool is_rollup_or_cube = query_node_typed.isGroupByWithRollup() || query_node_typed.isGroupByWithCube();
     
-    if (query_node_typed.isGroupByWithGroupingSets() && query_node_typed.isGroupByWithTotals() 
+    if (query_node_typed.isGroupByWithGroupingSets() && query_node_typed.isGroupByWithTotals()
         && query_node_typed.getGroupBy().getNodes().size() != 1)
         throw Exception(ErrorCodes::NOT_IMPLEMENTED, "WITH TOTALS and GROUPING SETS are not supported together");
 
@@ -2917,14 +2933,14 @@ void QueryAnalyzer::resolveQuery(const QueryTreeNodePtr & query_node, Identifier
             auto * union_node = with_node->as<UnionNode>();
             
             if (!subquery_node && !union_node)
-                throw Exception(ErrorCodes::LOGICAL_ERROR, 
-                    "WITH expression expected to be query or union node. Actual {}", 
+                throw Exception(ErrorCodes::LOGICAL_ERROR,
+                    "WITH expression expected to be query or union node. Actual {}",
                     with_node->formatASTForErrorMessage());
 
             auto with_node_alias = with_node->getAlias();
             if (with_node_alias.empty())
-                throw Exception(ErrorCodes::LOGICAL_ERROR, 
-                    "WITH expression {} does not have alias", 
+                throw Exception(ErrorCodes::LOGICAL_ERROR,
+                    "WITH expression {} does not have alias",
                     with_node->formatASTForErrorMessage());
 
             /// 注册CTE到作用域
@@ -3078,8 +3094,8 @@ void QueryAnalyzer::resolveIdentifier(QueryTreeNodePtr & node, IdentifierResolve
     }
 
     /// 6. 标识符无法解析，抛出异常
-    throw Exception(ErrorCodes::UNKNOWN_IDENTIFIER, 
-        "Unknown identifier {}. In scope {}", 
+    throw Exception(ErrorCodes::UNKNOWN_IDENTIFIER,
+        "Unknown identifier {}. In scope {}",
         identifier.getFullName(), scope.scope_node->formatASTForErrorMessage());
 }
 ```
@@ -3579,7 +3595,7 @@ public:
         buildQueryPlan(query_plan);
 
         auto builder = query_plan.buildQueryPipeline(
-            QueryPlanOptimizationSettings(context), 
+            QueryPlanOptimizationSettings(context),
             BuildQueryPipelineSettings(context));
 
         res.pipeline = QueryPipelineBuilder::getPipeline(std::move(*builder));
@@ -3597,6 +3613,7 @@ private:
         ProfileEvents::increment(ProfileEvents::QueriesWithSubqueries);
 
         /** 数据流处理策略：
+
          * 如果没有GROUP BY，则在ORDER BY和LIMIT之前并行执行所有操作，
          * 如果有ORDER BY，则使用ResizeProcessor连接流，然后使用MergeSorting变换，
          * 如果没有，则使用ResizeProcessor连接，然后应用LIMIT。
@@ -3624,22 +3641,22 @@ private:
         /// 2. 执行PREWHERE过滤
         if (expressions.prewhere_info)
         {
-            executePrewhere(query_plan, expressions.prewhere_info, 
+            executePrewhere(query_plan, expressions.prewhere_info,
                            expressions.prewhere_info->remove_prewhere_column);
         }
 
         /// 3. 执行WHERE过滤
         if (expressions.hasWhere())
         {
-            executeWhere(query_plan, expressions.where_expression, 
+            executeWhere(query_plan, expressions.where_expression,
                         expressions.remove_where_filter);
         }
 
         /// 4. 执行聚合
         if (expressions.hasAggregation())
         {
-            executeAggregation(query_plan, expressions.before_aggregation, 
-                              expressions.overflow_row, expressions.final, 
+            executeAggregation(query_plan, expressions.before_aggregation,
+                              expressions.overflow_row, expressions.final,
                               group_by_info);
             
             /// 执行HAVING过滤
@@ -3650,7 +3667,7 @@ private:
         }
         else if (expressions.hasHaving())
         {
-            throw Exception(ErrorCodes::HAVING_WITHOUT_AGGREGATION, 
+            throw Exception(ErrorCodes::HAVING_WITHOUT_AGGREGATION,
                           "HAVING clause without aggregation");
         }
 
@@ -3663,7 +3680,7 @@ private:
         /// 6. 执行ORDER BY排序
         if (expressions.hasOrderBy())
         {
-            executeOrderBy(query_plan, sorting_info, query.limitLength(), 
+            executeOrderBy(query_plan, sorting_info, query.limitLength(),
                           need_merge_sorted_columns);
         }
 
@@ -3676,7 +3693,7 @@ private:
         /// 8. 执行DISTINCT
         if (query.distinct)
         {
-            executeDistinct(query_plan, expressions.selected_columns, 
+            executeDistinct(query_plan, expressions.selected_columns,
                            expressions.has_having);
         }
 
@@ -3700,7 +3717,7 @@ private:
     }
 
     /// 从存储获取列数据
-    void executeFetchColumns(QueryProcessingStage::Enum processing_stage, 
+    void executeFetchColumns(QueryProcessingStage::Enum processing_stage,
                             QueryPlan & query_plan)
     {
         /// 构建存储读取步骤
@@ -3719,7 +3736,7 @@ private:
     }
 
     /// 执行WHERE过滤
-    void executeWhere(QueryPlan & query_plan, const ActionsDAGPtr & expression, 
+    void executeWhere(QueryPlan & query_plan, const ActionsDAGPtr & expression,
                      bool remove_filter)
     {
         auto where_step = std::make_unique<FilterStep>(
@@ -3734,7 +3751,7 @@ private:
 
     /// 执行聚合
     void executeAggregation(QueryPlan & query_plan, const ActionsDAGPtr & expression,
-                           bool overflow_row, bool final, 
+                           bool overflow_row, bool final,
                            InputOrderInfoPtr group_by_info)
     {
         /// 聚合前的表达式计算
@@ -3810,6 +3827,7 @@ private:
     /// 查询信息
     SelectQueryInfo query_info;
     QueryProcessingStage::Enum from_stage = QueryProcessingStage::FetchColumns;
+
 };
 ```
 
@@ -3900,6 +3918,7 @@ public:
 
     /** 'prepare'方法负责所有廉价的（"瞬时"：数据量的O(1)，无等待）计算。
       *
+
       * 它可以访问输入和输出端口，
       * 通过返回NeedData或PortFull来指示需要另一个处理器的工作，
       * 或通过返回Finished来指示没有工作，
@@ -3974,12 +3993,12 @@ protected:
 // src/Processors/IProcessor.cpp - 基础实现
 IProcessor::IProcessor()
 {
-    processor_index = CurrentThread::isInitialized() 
-        ? CurrentThread::get().getNextPipelineProcessorIndex() 
+    processor_index = CurrentThread::isInitialized()
+        ? CurrentThread::get().getNextPipelineProcessorIndex()
         : 0;
 }
 
-IProcessor::IProcessor(InputPorts inputs_, OutputPorts outputs_) 
+IProcessor::IProcessor(InputPorts inputs_, OutputPorts outputs_)
     : inputs(std::move(inputs_)), outputs(std::move(outputs_))
 {
     /// 建立端口与处理器的关联
@@ -3988,20 +4007,20 @@ IProcessor::IProcessor(InputPorts inputs_, OutputPorts outputs_)
     for (auto & port : outputs)
         port.processor = this;
         
-    processor_index = CurrentThread::isInitialized() 
-        ? CurrentThread::get().getNextPipelineProcessorIndex() 
+    processor_index = CurrentThread::isInitialized()
+        ? CurrentThread::get().getNextPipelineProcessorIndex()
         : 0;
 }
 
 IProcessor::Status IProcessor::prepare()
 {
-    throw Exception(ErrorCodes::NOT_IMPLEMENTED, 
+    throw Exception(ErrorCodes::NOT_IMPLEMENTED,
         "Method 'prepare' is not implemented for {} processor", getName());
 }
 
 void IProcessor::work()
 {
-    throw Exception(ErrorCodes::NOT_IMPLEMENTED, 
+    throw Exception(ErrorCodes::NOT_IMPLEMENTED,
         "Method 'work' is not implemented for {} processor", getName());
 }
 
@@ -4234,6 +4253,7 @@ bool PipelineExecutor::executeStepImpl(size_t thread_num, std::atomic_bool * yie
 ```
 
 通过这些深入的模块分析，开发者可以：
+
 1. 理解SQL解析的完整流程和AST构建机制
 2. 掌握查询分析器的语义分析和类型推导过程
 3. 深入了解MergeTree的合并算法和后台任务调度机制
@@ -4844,19 +4864,19 @@ public:
         switch (delta_bytes_size)
         {
             case 1:
-                decompressDataForType<UInt8>(source + delta_bytes_size, source_size - delta_bytes_size, 
+                decompressDataForType<UInt8>(source + delta_bytes_size, source_size - delta_bytes_size,
                                            dest, uncompressed_size);
                 break;
             case 2:
-                decompressDataForType<UInt16>(source + delta_bytes_size, source_size - delta_bytes_size, 
+                decompressDataForType<UInt16>(source + delta_bytes_size, source_size - delta_bytes_size,
                                             dest, uncompressed_size);
                 break;
             case 4:
-                decompressDataForType<UInt32>(source + delta_bytes_size, source_size - delta_bytes_size, 
+                decompressDataForType<UInt32>(source + delta_bytes_size, source_size - delta_bytes_size,
                                             dest, uncompressed_size);
                 break;
             case 8:
-                decompressDataForType<UInt64>(source + delta_bytes_size, source_size - delta_bytes_size, 
+                decompressDataForType<UInt64>(source + delta_bytes_size, source_size - delta_bytes_size,
                                             dest, uncompressed_size);
                 break;
         }
@@ -5096,9 +5116,9 @@ graph TB
 class IMergeTreeIndex
 {
 public:
-    IMergeTreeIndex(String name_, String type_, const Names & columns_, const DataTypes & data_types_, 
+    IMergeTreeIndex(String name_, String type_, const Names & columns_, const DataTypes & data_types_,
                     const Block & header_, size_t granularity_, const IndexDescription & index_)
-        : name(std::move(name_)), type(std::move(type_)), columns(columns_), data_types(data_types_), 
+        : name(std::move(name_)), type(std::move(type_)), columns(columns_), data_types(data_types_),
           header(header_), granularity(granularity_), index(index_) {}
 
     virtual ~IMergeTreeIndex() = default;
@@ -5142,7 +5162,7 @@ protected:
 class MergeTreeIndexMinMax : public IMergeTreeIndex
 {
 public:
-    MergeTreeIndexMinMax(String name_, const Names & columns_, const DataTypes & data_types_, 
+    MergeTreeIndexMinMax(String name_, const Names & columns_, const DataTypes & data_types_,
                         const Block & header_, size_t granularity_, const IndexDescription & index_)
         : IMergeTreeIndex(std::move(name_), "minmax", columns_, data_types_, header_, granularity_, index_) {}
 
@@ -5183,7 +5203,7 @@ public:
     /// 检查索引粒度是否可能包含匹配的行
     bool alwaysUnknownOrTrue() const override
     {
-        return std::all_of(key_ranges.begin(), key_ranges.end(), 
+        return std::all_of(key_ranges.begin(), key_ranges.end(),
                           [](const Range & range) { return range.isUnbounded(); });
     }
 
@@ -5587,10 +5607,10 @@ public:
         {
             /// 设置读取顺序优化标志
             auto & select_mutable = const_cast<ASTSelectQuery &>(select);
-            select_mutable.setExpression(ASTSelectQuery::Expression::SETTINGS, 
+            select_mutable.setExpression(ASTSelectQuery::Expression::SETTINGS,
                 createOptimizationSettings(matching_prefix_length));
 
-            LOG_DEBUG(context->getLogger("ReadInOrderOptimizer"), 
+            LOG_DEBUG(context->getLogger("ReadInOrderOptimizer"),
                      "Enabled read-in-order optimization for {} columns", matching_prefix_length);
         }
     }
@@ -5619,15 +5639,16 @@ private:
 #### 9.1 高级性能优化技巧
 
 **1. 查询计划优化实战**
+
 ```sql
 -- 使用EXPLAIN分析查询计划
 EXPLAIN PLAN SELECT * FROM events WHERE date = '2023-01-01' AND user_id = 12345;
 
 -- 使用投影优化聚合查询
 ALTER TABLE events ADD PROJECTION hourly_stats (
-    SELECT toStartOfHour(timestamp) as hour, 
-           event_type, 
-           count(), 
+    SELECT toStartOfHour(timestamp) as hour,
+           event_type,
+           count(),
            uniq(user_id)
     GROUP BY hour, event_type
 );
@@ -5646,6 +5667,7 @@ GROUP BY hour, event_type;
 ```
 
 **2. 存储引擎选择策略**
+
 ```cpp
 // 高频写入场景配置
 CREATE TABLE high_frequency_writes (
@@ -5653,7 +5675,7 @@ CREATE TABLE high_frequency_writes (
     data String
 ) ENGINE = MergeTree()
 ORDER BY timestamp
-SETTINGS 
+SETTINGS
     merge_with_ttl_timeout = 3600,           -- 1小时后合并TTL数据
     max_parts_in_total = 10000,              -- 最大数据部分数
     parts_to_delay_insert = 150,             -- 延迟插入的部分数阈值
@@ -5662,6 +5684,7 @@ SETTINGS
 ```
 
 **3. 内存和缓存优化**
+
 ```xml
 <!-- config.xml 高级配置 -->
 <clickhouse>
@@ -5685,6 +5708,7 @@ SETTINGS
 #### 9.2 故障排查和调试技巧
 
 **1. 系统表监控查询**
+
 ```sql
 -- 监控慢查询
 SELECT
@@ -5732,6 +5756,7 @@ ORDER BY absolute_delay DESC;
 ```
 
 **2. 性能分析工具使用**
+
 ```sql
 -- 启用查询性能分析
 SET query_profiler_real_time_period_ns = 10000000;  -- 10ms
@@ -5754,6 +5779,7 @@ WHERE query_id = 'your_query_id'
 #### 9.3 扩展开发最佳实践
 
 **1. 自定义聚合函数开发模板**
+
 ```cpp
 // 自定义聚合函数实现模板
 template <typename T>
@@ -5803,6 +5829,7 @@ public:
 ```
 
 **2. 自定义表函数开发**
+
 ```cpp
 // 自定义表函数实现
 class TableFunctionCustom : public ITableFunction
@@ -5854,6 +5881,7 @@ public:
 ```
 
 通过这些深入的模块分析和实战经验，开发者可以：
+
 1. 理解ClickHouse的完整技术栈和核心算法
 2. 掌握性能优化的高级技巧和最佳实践  
 3. 学会使用系统表进行监控和故障排查

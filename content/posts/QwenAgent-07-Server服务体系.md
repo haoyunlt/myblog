@@ -168,7 +168,7 @@ def parse_args():
     )
     
     parser.add_argument(
-        '-k', '--api_key', 
+        '-k', '--api_key',
         type=str,
         default='',
         help='API密钥，支持DashScope或OpenAI兼容服务'
@@ -176,7 +176,7 @@ def parse_args():
     
     parser.add_argument(
         '-l', '--llm',
-        type=str, 
+        type=str,
         default='qwen-plus',
         help='模型名称，如qwen-max/qwen-plus/qwen-turbo或自定义模型名'
     )
@@ -190,7 +190,7 @@ def parse_args():
     )
     
     parser.add_argument(
-        '--workstation_port', 
+        '--workstation_port',
         type=int,
         default=8003,
         help='工作站服务端口号'
@@ -198,7 +198,7 @@ def parse_args():
     
     parser.add_argument(
         '--database_port',
-        type=int, 
+        type=int,
         default=8004,
         help='数据库服务端口号'
     )
@@ -216,6 +216,7 @@ def main():
     """主启动函数 - 协调多个服务的启动
     
     启动流程:
+
         1. 解析命令行参数
         2. 更新服务配置文件
         3. 启动数据库服务（后台进程）
@@ -337,7 +338,7 @@ def start_assistant_server(args):
 def start_workstation_server(args):
     """启动工作站服务"""
     workstation_cmd = [
-        sys.executable, '-m', 'qwen_server.workstation_server', 
+        sys.executable, '-m', 'qwen_server.workstation_server',
         '--port', str(args.workstation_port)
     ]
     
@@ -359,6 +360,7 @@ class AssistantServer:
     """基础助手聊天服务 - 提供简洁的对话界面
     
     设计目标:
+
         1. 提供简单易用的聊天界面
         2. 支持文档问答和网页浏览
         3. 快速部署和启动
@@ -406,15 +408,15 @@ class AssistantServer:
         
         # 4. 文件路径设置
         self.cache_file_popup_url = os.path.join(
-            self.server_config.path.work_space_root, 
+            self.server_config.path.work_space_root,
             'popup_url.jsonl'
         )
         self.meta_file = os.path.join(
-            self.server_config.path.work_space_root, 
+            self.server_config.path.work_space_root,
             'meta_data.jsonl'
         )
         self.history_dir = os.path.join(
-            self.server_config.path.work_space_root, 
+            self.server_config.path.work_space_root,
             'history'
         )
         
@@ -511,13 +513,13 @@ class AssistantServer:
             
             # 事件绑定
             self._bind_events(
-                chatbot, msg_input, submit_btn, clear_btn, 
+                chatbot, msg_input, submit_btn, clear_btn,
                 history_state, current_url
             )
         
         return demo
     
-    def _bind_events(self, chatbot, msg_input, submit_btn, clear_btn, 
+    def _bind_events(self, chatbot, msg_input, submit_btn, clear_btn,
                     history_state, current_url):
         """绑定界面事件"""
         
@@ -546,7 +548,7 @@ class AssistantServer:
         )
         
         msg_input.submit(
-            fn=submit_message, 
+            fn=submit_message,
             inputs=[msg_input, history_state],
             outputs=[chatbot, history_state, msg_input]
         )
@@ -587,7 +589,7 @@ class AssistantServer:
         # 2. 构建消息
         user_message = history[-1][0]
         messages = [{
-            'role': 'user', 
+            'role': 'user',
             'content': [
                 {'text': user_message},
                 {'file': page_url}
@@ -684,6 +686,7 @@ class WorkstationServer:
     """多功能工作站服务 - 提供完整的Agent工作环境
     
     设计目标:
+
         1. 支持多种Agent类型和功能模式
         2. 提供丰富的工具集成和文件处理
         3. 支持代码执行、文档分析等高级功能
@@ -739,7 +742,7 @@ class WorkstationServer:
         
         # 文件路径
         self.meta_file = os.path.join(
-            self.server_config.path.work_space_root, 
+            self.server_config.path.work_space_root,
             'meta_data.jsonl'
         )
         
@@ -942,7 +945,7 @@ class WorkstationServer:
                 return (
                     gr.update(visible=False),  # doc_chatbot
                     gr.update(visible=True),   # pure_chatbot
-                    gr.update(visible=False),  # file_upload 
+                    gr.update(visible=False),  # file_upload
                     gr.update(visible=True),   # ci_file_upload
                 )
         
@@ -1039,6 +1042,7 @@ class WorkstationServer:
             show_api=False,
             show_error=True
         )
+
 ```
 
 ## 💾 DatabaseServer - 数据存储服务
@@ -1050,6 +1054,7 @@ class DatabaseServer:
     """数据库服务 - 提供数据存储和管理API
     
     设计目标:
+
         1. 提供RESTful API接口
         2. 支持文件缓存和元数据管理
         3. 处理浏览器扩展的数据请求
@@ -1096,15 +1101,15 @@ class DatabaseServer:
         
         # 文件路径设置
         self.cache_file_popup_url = os.path.join(
-            self.server_config.path.work_space_root, 
+            self.server_config.path.work_space_root,
             'popup_url.jsonl'
         )
         self.meta_file = os.path.join(
-            self.server_config.path.work_space_root, 
+            self.server_config.path.work_space_root,
             'meta_data.jsonl'
         )
         self.history_dir = os.path.join(
-            self.server_config.path.work_space_root, 
+            self.server_config.path.work_space_root,
             'history'
         )
     
@@ -1172,7 +1177,7 @@ class DatabaseServer:
             except Exception as e:
                 logger.error(f"缓存页面失败: {str(e)}")
                 return JSONResponse({
-                    "status": "error", 
+                    "status": "error",
                     "message": f"缓存失败: {str(e)}"
                 }, status_code=500)
         
@@ -1273,8 +1278,8 @@ class DatabaseServer:
         if not get_file_type(url) in ['pdf', 'docx', 'pptx', 'txt']:
             url_hash = hash_sha256(url)
             url = os.path.join(
-                self.server_config.path.download_root, 
-                url_hash, 
+                self.server_config.path.download_root,
+                url_hash,
                 get_basename_from_url(url)
             )
         
@@ -1367,7 +1372,7 @@ DEFAULT_CONFIG = {
     "server": {
         "llm": "qwen-plus",
         "api_key": "",
-        "model_server": "dashscope", 
+        "model_server": "dashscope",
         "assistant_port": 8002,
         "workstation_port": 8003,
         "database_port": 8004,

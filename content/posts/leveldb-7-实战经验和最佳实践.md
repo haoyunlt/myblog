@@ -15,6 +15,7 @@ weight: 1
 ### 1.1 写入性能优化
 
 #### 批量写入策略
+
 ```cpp
 // ❌ 错误做法：频繁的单个写入
 for (int i = 0; i < 10000; i++) {
@@ -45,6 +46,7 @@ if (batch.ApproximateSize() > 0) {
 ```
 
 #### 异步写入配置
+
 ```cpp
 // 高吞吐场景的写入配置
 leveldb::WriteOptions write_options;
@@ -82,6 +84,7 @@ public:
 ```
 
 #### MemTable大小优化
+
 ```cpp
 leveldb::Options options;
 
@@ -112,6 +115,7 @@ void MonitorMemTableSwitching() {
 ### 1.2 读取性能优化
 
 #### Block Cache配置
+
 ```cpp
 #include "leveldb/cache.h"
 
@@ -133,7 +137,7 @@ private:
     std::atomic<uint64_t> miss_count_{0};
     
 public:
-    AdaptiveCacheManager(size_t initial_size) 
+    AdaptiveCacheManager(size_t initial_size)
         : cache_(leveldb::NewLRUCache(initial_size)) {}
     
     void RecordCacheAccess(bool hit) {
@@ -159,6 +163,7 @@ public:
 ```
 
 #### 布隆过滤器优化
+
 ```cpp
 #include "leveldb/filter_policy.h"
 
@@ -198,9 +203,10 @@ public:
 ```
 
 #### 迭代器使用最佳实践
+
 ```cpp
 // ❌ 错误做法：每次查询都创建新迭代器
-std::vector<std::string> GetRangeValues(const std::string& start_key, 
+std::vector<std::string> GetRangeValues(const std::string& start_key,
                                        const std::string& end_key) {
     std::vector<std::string> results;
     for (std::string key = start_key; key <= end_key; /* increment key */) {
@@ -262,6 +268,7 @@ public:
 ### 1.3 存储空间优化
 
 #### 压缩配置优化
+
 ```cpp
 leveldb::Options options;
 
@@ -277,7 +284,7 @@ options.block_size = 64 * 1024;  // 增大块大小减少索引开销
 class AdaptiveCompression {
 public:
     static leveldb::CompressionType SelectCompression(
-        double cpu_usage, 
+        double cpu_usage,
         double storage_usage,
         size_t data_size) {
         
@@ -298,6 +305,7 @@ public:
 ```
 
 #### 手动压缩策略
+
 ```cpp
 class CompactionManager {
 private:
@@ -417,7 +425,7 @@ private:
     size_t shard_count_;
     
 public:
-    ShardedDatabase(const std::string& base_path, size_t shard_count) 
+    ShardedDatabase(const std::string& base_path, size_t shard_count)
         : shard_count_(shard_count) {
         
         for (size_t i = 0; i < shard_count_; ++i) {
@@ -455,8 +463,8 @@ public:
         for (auto& shard : shards_) {
             leveldb::Iterator* it = shard->NewIterator(leveldb::ReadOptions());
             
-            for (it->Seek(start_key); 
-                 it->Valid() && it->key().ToString() <= end_key; 
+            for (it->Seek(start_key);
+                 it->Valid() && it->key().ToString() <= end_key;
                  it->Next()) {
                 results.emplace_back(it->key().ToString(), it->value().ToString());
             }
@@ -495,7 +503,7 @@ private:
     std::atomic<bool> running_{true};
     
 public:
-    ReadWriteSeparatedDB(const std::string& write_path, 
+    ReadWriteSeparatedDB(const std::string& write_path,
                         const std::vector<std::string>& read_paths) {
         // 打开主写数据库
         leveldb::Options write_options;
@@ -563,7 +571,7 @@ private:
 public:
     enum class ErrorSeverity {
         INFO,
-        WARNING, 
+        WARNING,
         ERROR,
         CRITICAL
     };
@@ -597,8 +605,8 @@ public:
     }
     
 private:
-    void HandleError(const std::string& operation, 
-                    const leveldb::Status& status, 
+    void HandleError(const std::string& operation,
+                    const leveldb::Status& status,
                     ErrorSeverity severity) {
         
         std::string error_msg = operation + ": " + status.ToString();
@@ -634,11 +642,11 @@ private:
             if (open_status.ok()) {
                 std::cout << "Database repair successful" << std::endl;
             } else {
-                std::cerr << "Failed to reopen repaired database: " 
+                std::cerr << "Failed to reopen repaired database: "
                          << open_status.ToString() << std::endl;
             }
         } else {
-            std::cerr << "Database repair failed: " 
+            std::cerr << "Database repair failed: "
                      << repair_status.ToString() << std::endl;
         }
     }
@@ -739,8 +747,8 @@ private:
         
         if (!read_latency_history_.empty()) {
             double avg_read_latency = std::accumulate(
-                read_latency_history_.begin(), 
-                read_latency_history_.end(), 
+                read_latency_history_.begin(),
+                read_latency_history_.end(),
                 0.0) / read_latency_history_.size();
             
             ReportMetric("avg_read_latency_ms", avg_read_latency);
@@ -806,7 +814,7 @@ private:
         }
     }
     
-    void ReportMetric(const std::string& name, double value, 
+    void ReportMetric(const std::string& name, double value,
                      const std::map<std::string, std::string>& tags = {}) {
         // 发送指标到监控系统（如Prometheus、StatsD等）
         std::cout << "Metric: " << name << " = " << value;
@@ -916,7 +924,7 @@ public:
     };
     
     static std::vector<CheckResult> RunDeploymentChecks(
-        const std::string& db_path, 
+        const std::string& db_path,
         const leveldb::Options& options) {
         
         std::vector<CheckResult> results;
@@ -948,7 +956,7 @@ private:
             uint64_t min_required = 10LL * 1024 * 1024 * 1024;  // 10GB
             
             if (available_bytes < min_required) {
-                return {false, "Insufficient disk space", 
+                return {false, "Insufficient disk space",
                        "Ensure at least 10GB free space for database growth"};
             }
         }
@@ -970,7 +978,7 @@ private:
     
     static CheckResult CheckMemoryConfiguration(const leveldb::Options& options) {
         // 估算内存使用
-        size_t estimated_memory = 
+        size_t estimated_memory =
             options.write_buffer_size +  // MemTable
             options.write_buffer_size +  // Immutable MemTable
             (options.block_cache ? options.block_cache->TotalCharge() : 0);
@@ -1001,7 +1009,7 @@ private:
     std::atomic<bool> running_{true};
     
 public:
-    BackupManager(leveldb::DB* db, const std::string& backup_dir) 
+    BackupManager(leveldb::DB* db, const std::string& backup_dir)
         : db_(db), backup_dir_(backup_dir) {
         
         // 创建备份目录

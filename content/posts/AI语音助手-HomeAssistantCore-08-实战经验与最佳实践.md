@@ -78,6 +78,7 @@ async def async_setup_platform(
         discovery_info: 发现信息（可选）
         
     功能说明:
+
         1. 解析和验证配置参数
         2. 创建数据更新协调器
         3. 初始化传感器实体
@@ -116,6 +117,7 @@ class MyDataUpdateCoordinator(DataUpdateCoordinator):
     """自定义数据更新协调器 - 管理传感器数据的获取和更新
     
     职责:
+
         1. 定期从数据源获取最新数据
         2. 处理数据获取异常和重试逻辑
         3. 通知所有相关实体进行状态更新
@@ -258,6 +260,7 @@ class MyTemperatureSensor(CoordinatorEntity, SensorEntity):
     """温度传感器实体 - 展示传感器实体的标准实现
     
     继承关系:
+
         - CoordinatorEntity: 提供数据协调器集成
         - SensorEntity: 提供传感器特定功能
         
@@ -352,14 +355,14 @@ class MyTemperatureSensor(CoordinatorEntity, SensorEntity):
             - 外部服务是否正常
         """
         return (
-            self.coordinator.last_update_success 
+            self.coordinator.last_update_success
             and self.coordinator.data is not None
             and "temperature" in self.coordinator.data
         )
 
 # 配置入口点设置
 async def async_setup_entry(
-    hass: HomeAssistant, 
+    hass: HomeAssistant,
     entry: ConfigEntry
 ) -> bool:
     """配置条目设置 - 现代Home Assistant集成的标准入口
@@ -372,6 +375,7 @@ async def async_setup_entry(
         设置是否成功
         
     功能:
+
         - 解析配置条目数据
         - 初始化集成组件
         - 设置平台（传感器、开关等）
@@ -389,7 +393,7 @@ async def async_setup_entry(
     return True
 
 async def async_unload_entry(
-    hass: HomeAssistant, 
+    hass: HomeAssistant,
     entry: ConfigEntry
 ) -> bool:
     """卸载配置条目 - 清理集成资源
@@ -402,6 +406,7 @@ async def async_unload_entry(
         卸载是否成功
         
     清理内容:
+
         - 停止数据更新协调器
         - 移除实体和平台
         - 清理存储的数据
@@ -417,6 +422,7 @@ async def async_unload_entry(
         hass.data[DOMAIN].pop(entry.entry_id)
     
     return unload_ok
+
 ```
 
 ### 1.2 高级服务开发示例
@@ -441,6 +447,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     """注册自定义服务 - 服务注册的最佳实践示例
     
     服务设计原则:
+
         1. 明确的参数验证和文档
         2. 丰富的响应数据
         3. 完整的错误处理
@@ -525,15 +532,15 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     # 注册服务
     hass.services.async_register(
         DOMAIN,
-        "analyze_data", 
+        "analyze_data",
         async_analyze_sensor_data,
         schema=SERVICE_ANALYZE_DATA_SCHEMA,
         supports_response=SupportsResponse.ONLY,  # 仅支持响应模式
     )
 
 async def _get_entity_history(
-    hass: HomeAssistant, 
-    entity_id: str, 
+    hass: HomeAssistant,
+    entity_id: str,
     period_hours: int
 ) -> list[State]:
     """获取实体历史数据 - 历史数据查询的高效实现
@@ -547,6 +554,7 @@ async def _get_entity_history(
         状态历史列表
         
     优化策略:
+
         - 限制查询时间范围避免性能问题
         - 使用recorder组件的高效查询API
         - 实现数据采样减少内存使用
@@ -572,7 +580,7 @@ async def _get_entity_history(
     return history_data.get(entity_id, [])
 
 async def _perform_data_analysis(
-    history_data: list[State], 
+    history_data: list[State],
     analysis_type: str
 ) -> dict[str, Any]:
     """执行数据分析 - 统计计算和趋势分析
@@ -585,6 +593,7 @@ async def _perform_data_analysis(
         分析结果字典
         
     支持的分析类型:
+
         - basic: 基本统计（最大值、最小值、平均值）
         - detailed: 详细统计（标准差、分位数、异常值）
         - statistical: 高级统计（趋势分析、相关性、预测）
@@ -637,6 +646,7 @@ async def _perform_data_analysis(
         })
     
     return result
+
 ```
 
 ## 2. 性能优化最佳实践
@@ -680,6 +690,7 @@ class OptimizedDataCoordinator(DataUpdateCoordinator):
         """高效的数据更新实现
         
         性能优化策略:
+
             1. 并发API调用 - 同时请求多个数据源
             2. 连接池复用 - 避免重复建立TCP连接
             3. 合理的超时设置 - 平衡响应时间和可靠性
@@ -690,7 +701,7 @@ class OptimizedDataCoordinator(DataUpdateCoordinator):
             # 并发执行多个API调用
             tasks = [
                 self._fetch_sensor_data("temperature"),
-                self._fetch_sensor_data("humidity"), 
+                self._fetch_sensor_data("humidity"),
                 self._fetch_sensor_data("pressure"),
                 self._fetch_weather_data(),
             ]
@@ -752,7 +763,7 @@ class OptimizedDataCoordinator(DataUpdateCoordinator):
 
 # 高效的批量操作示例
 async def async_batch_update_entities(
-    hass: HomeAssistant, 
+    hass: HomeAssistant,
     entity_updates: dict[str, dict[str, Any]]
 ) -> None:
     """批量更新实体状态 - 减少事件总线负载
@@ -762,6 +773,7 @@ async def async_batch_update_entities(
         entity_updates: 实体更新数据字典
         
     优化策略:
+
         1. 批量状态设置减少事件数量
         2. 使用单个上下文避免重复创建
         3. 预验证数据减少运行时错误
@@ -824,6 +836,7 @@ async def async_batch_update_entities(
             _LOGGER.debug("Batch updated %d entities", len(update_tasks))
         except Exception as err:
             _LOGGER.error("Batch update failed: %s", err)
+
 ```
 
 ### 2.2 内存和资源优化
@@ -842,6 +855,7 @@ class OptimizedEntity:
     """内存优化的实体类实现
     
     优化技术:
+
         1. __slots__ 减少内存占用
         2. 弱引用避免循环引用
         3. 延迟计算减少初始化开销
@@ -888,6 +902,7 @@ class EntityPool:
     """实体对象池 - 减少对象创建和销毁开销
     
     设计特点:
+
         1. 对象复用减少内存分配
         2. 类型安全的对象管理
         3. 自动清理机制
@@ -971,7 +986,7 @@ class MemoryMonitor:
                 await self._check_memory_usage()
         
         hass.async_create_background_task(
-            _periodic_monitor(), 
+            _periodic_monitor(),
             "memory_monitor"
         )
     
@@ -1064,6 +1079,7 @@ def robust_operation(
         exceptions: 需要重试的异常类型
         
     特性:
+
         - 智能重试策略
         - 异常分类处理
         - 详细的错误日志
@@ -1130,6 +1146,7 @@ class CircuitBreaker:
     """断路器模式实现 - 防止级联故障
     
     状态转换:
+
         - CLOSED: 正常工作状态，允许请求通过
         - OPEN: 故障状态，直接拒绝请求  
         - HALF_OPEN: 测试状态，允许少量请求测试恢复
@@ -1269,6 +1286,7 @@ class ResilientIntegration:
         """处理降级模式 - 系统故障时的降级策略
         
         降级策略:
+
             1. 使用缓存数据
             2. 返回默认/安全值
             3. 禁用非关键功能
@@ -1316,6 +1334,7 @@ class ResilientIntegration:
             "consecutive_failures": self.health_status["consecutive_failures"],
             "circuit_breaker_state": self.api_circuit_breaker.state,
         }
+
 ```
 
 ### 3.2 数据验证和清理
@@ -1352,6 +1371,7 @@ class DataSanitizer:
     """数据清理和安全处理工具类
     
     功能:
+
         1. 输入数据验证和清理
         2. XSS和注入攻击防护  
         3. 数据格式标准化
@@ -1463,7 +1483,7 @@ class DataSanitizer:
         
         return sanitized
     
-    @classmethod 
+    @classmethod
     def sanitize_list(cls, data: list[Any], max_depth: int = 10) -> list[Any]:
         """清理列表数据"""
         if max_depth <= 0:
@@ -1497,6 +1517,7 @@ class SecureEntityValidator:
         """验证实体ID的安全性和格式
         
         验证项目:
+
             1. 格式正确性（domain.object_id）
             2. 长度限制
             3. 字符安全性
@@ -1576,7 +1597,7 @@ class SecureEntityValidator:
 # 实际应用示例
 async def secure_entity_update(
     hass: HomeAssistant,
-    entity_id: str, 
+    entity_id: str,
     state: Any,
     attributes: dict[str, Any] | None = None
 ) -> None:
@@ -1593,19 +1614,19 @@ async def secure_entity_update(
         # 执行状态更新
         hass.states.async_set(
             clean_entity_id,
-            clean_state, 
+            clean_state,
             clean_attributes,
             force_update=False,  # 避免不必要的事件
         )
         
         _LOGGER.debug(
-            "Securely updated entity %s to state %s", 
+            "Securely updated entity %s to state %s",
             clean_entity_id, clean_state
         )
         
     except Exception as err:
         _LOGGER.error(
-            "Secure entity update failed for %s: %s", 
+            "Secure entity update failed for %s: %s",
             entity_id, err
         )
         
@@ -1644,7 +1665,7 @@ def mock_api_client():
     client.set_state = AsyncMock()
     return client
 
-@pytest.fixture 
+@pytest.fixture
 async def integration_setup(hass: HomeAssistant, mock_api_client):
     """集成设置fixture"""
     config = {
@@ -1677,7 +1698,7 @@ class TestMyIntegration:
         
         # 触发数据更新
         await hass.services.async_call(
-            "homeassistant", "update_entity", 
+            "homeassistant", "update_entity",
             {"entity_id": "sensor.my_temperature"}
         )
         await hass.async_block_till_done()
@@ -1740,8 +1761,8 @@ class TestMyIntegration:
         ),
     ])
     async def test_data_processing(
-        self, 
-        hass: HomeAssistant, 
+        self,
+        hass: HomeAssistant,
         integration_setup,
         api_response,
         expected_state,
@@ -2014,7 +2035,7 @@ async def debug_integration_startup(hass: HomeAssistant, integration_name: str):
         
         # 导出系统状态
         await DebugTools.dump_system_state(
-            hass, 
+            hass,
             f"/tmp/{integration_name}_debug.json"
         )
         
@@ -2087,7 +2108,7 @@ class EnvironmentConfig:
         
         if env == "development":
             base_config.update({
-                "log_level": "DEBUG", 
+                "log_level": "DEBUG",
                 "update_interval": 10,
                 "enable_debug_features": True,
             })
@@ -2139,7 +2160,7 @@ class IntegrationMonitor:
         try:
             # 检查实体状态
             entities = [
-                state.entity_id 
+                state.entity_id
                 for state in self.hass.states.async_all()
                 if state.entity_id.startswith(self.integration_name)
             ]

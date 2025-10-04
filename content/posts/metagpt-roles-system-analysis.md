@@ -34,7 +34,7 @@ classDiagram
         <<abstract>>
         +name: str
         +is_idle: bool
-        +think()* 
+        +think()*
         +act()*
         +react()* Message
         +run()* Message
@@ -208,6 +208,7 @@ class BaseRole(BaseSerialization):
 ```
 
 **设计要点**：
+
 - **抽象性**：定义核心行为接口，不涉及具体实现
 - **可扩展性**：支持不同类型的角色实现
 - **一致性**：所有角色遵循统一的生命周期管理
@@ -273,6 +274,7 @@ def set_env(self, env: BaseEnvironment):
 ```
 
 **功能说明**：
+
 - **环境绑定**：将角色与执行环境关联
 - **消息路由**：配置角色的消息接收地址
 - **LLM配置**：设置大语言模型的系统提示和成本管理
@@ -291,6 +293,7 @@ def is_watch(self, caused_by: str):
 ```
 
 **设计原理**：
+
 - **选择性观察**：角色只关注与其职责相关的消息
 - **效率优化**：避免处理无关消息，提高响应效率
 - **解耦设计**：通过动作类型而非具体角色进行关联
@@ -307,6 +310,7 @@ def _set_state(self, state: int):
 ```
 
 **状态机制**：
+
 - **状态驱动**：角色行为由当前状态决定
 - **动作映射**：每个状态对应特定的动作
 - **生命周期管理**：-1状态表示初始或终止状态
@@ -414,6 +418,7 @@ async def _think(self) -> bool:
 ```
 
 **思考机制特点**：
+
 - **上下文感知**：结合历史记忆、当前状态和可用工具
 - **经验驱动**：利用历史经验指导决策
 - **工具推荐**：智能推荐最适合的工具
@@ -456,6 +461,7 @@ async def _quick_think(self) -> Tuple[Message, str]:
 ```
 
 **快速思考优势**：
+
 - **效率提升**：简单问题直接回答，无需复杂流程
 - **智能路由**：根据问题类型选择处理方式
 - **成本优化**：减少不必要的LLM调用
@@ -483,16 +489,16 @@ def set_tool_execution(self) -> "RoleZero":
     # 浏览器工具
     self.tool_execution_map.update({
         f"Browser.{i}": getattr(self.browser, i)
-        for i in ["click", "close_tab", "go_back", "go_forward", "goto", 
+        for i in ["click", "close_tab", "go_back", "go_forward", "goto",
                  "hover", "press", "scroll", "tab_focus", "type"]
     })
     
     # 编辑器工具
     self.tool_execution_map.update({
         f"Editor.{i}": getattr(self.editor, i)
-        for i in ["append_file", "create_file", "edit_file_by_replace", 
-                 "find_file", "goto_line", "insert_content_at_line", 
-                 "open_file", "read", "scroll_down", "scroll_up", 
+        for i in ["append_file", "create_file", "edit_file_by_replace",
+                 "find_file", "goto_line", "insert_content_at_line",
+                 "open_file", "read", "scroll_down", "scroll_up",
                  "search_dir", "search_file", "similarity_search", "write"]
     })
     
@@ -540,6 +546,7 @@ async def _run_commands(self, commands) -> str:
 ```
 
 **命令执行特点**：
+
 - **统一接口**：所有工具通过统一的命令接口调用
 - **异步支持**：支持同步和异步工具函数
 - **错误处理**：完善的异常捕获和错误报告
@@ -586,6 +593,7 @@ class ProductManager(RoleZero):
 ```
 
 **产品经理特点**：
+
 - **双模式支持**：固定SOP和动态反应两种工作模式
 - **文档导向**：专注于PRD和市场研究文档的创建
 - **工具集成**：集成浏览器、编辑器和搜索增强QA工具
@@ -617,7 +625,7 @@ class TeamLeader(RoleZero):
         
         # 发布用户消息给指定角色
         self.publish_message(
-            UserMessage(content=content, sent_from=self.name, send_to=send_to, cause_by=RunCommand), 
+            UserMessage(content=content, sent_from=self.name, send_to=send_to, cause_by=RunCommand),
             send_to=send_to
         )
 
@@ -632,6 +640,7 @@ class TeamLeader(RoleZero):
 ```
 
 **团队领导特点**：
+
 - **协调管理**：负责任务分配和团队协调
 - **消息路由**：智能地将任务分配给合适的团队成员
 - **状态控制**：发布消息后暂停，等待团队成员响应
@@ -655,6 +664,7 @@ class Architect(RoleZero):
 ```
 
 **架构师特点**：
+
 - **技术导向**：专注于系统架构和技术规范设计
 - **终端集成**：集成终端工具进行技术验证
 - **设计能力**：具备系统设计和技术决策能力
@@ -702,6 +712,7 @@ class RoleReactMode(str, Enum):
 ```
 
 **反应模式特点**：
+
 - **REACT模式**：适合动态环境，能够根据观察结果调整行为
 - **BY_ORDER模式**：适合固定流程，按预定义顺序执行
 - **PLAN_AND_ACT模式**：适合复杂任务，先制定详细计划
@@ -737,6 +748,7 @@ class RoleContext:
 ```
 
 **记忆层次**：
+
 - **短期记忆**：存储最近的对话和观察
 - **工作记忆**：存储当前任务相关的信息
 - **长期记忆**：存储历史经验和学习成果
@@ -753,6 +765,7 @@ def _retrieve_experience(self) -> str:
 ```
 
 **经验系统特点**：
+
 - **上下文相关**：基于当前上下文检索相关经验
 - **可扩展性**：支持不同的检索策略
 - **学习能力**：从历史执行中学习最佳实践
@@ -813,6 +826,7 @@ async def llm_cached_aask(self, *, req: list[dict], system_msgs: list[str], **kw
 ```
 
 **缓存优势**：
+
 - **成本降低**：避免重复的LLM调用
 - **响应加速**：缓存命中时快速返回结果
 - **经验积累**：将成功的交互作为经验保存
@@ -1010,4 +1024,3 @@ sequenceDiagram
         R-->>E: idle
     end
 ```
-

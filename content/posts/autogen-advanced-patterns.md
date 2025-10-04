@@ -29,7 +29,7 @@ graph TB
     subgraph "微服务代理架构模式"
         subgraph "业务代理层"
             UA[用户管理代理]
-            OA[订单处理代理] 
+            OA[订单处理代理]
             PA[支付代理]
             IA[库存代理]
             NA[通知代理]
@@ -90,8 +90,8 @@ class BusinessProcessOrchestrator(RoutedAgent):
     
     @rpc
     async def orchestrate_order_process(
-        self, 
-        order_request: OrderRequest, 
+        self,
+        order_request: OrderRequest,
         ctx: MessageContext
     ) -> OrderResult:
         """
@@ -476,7 +476,7 @@ class HierarchicalDecisionSystem:
     def __init__(self):
         self.decision_layers = {
             'operational': OperationalDecisionAgent(),
-            'tactical': TacticalDecisionAgent(), 
+            'tactical': TacticalDecisionAgent(),
             'strategic': StrategicDecisionAgent()
         }
         self.escalation_rules = EscalationRuleEngine()
@@ -905,7 +905,7 @@ class SmartRoutingAgent(RoutedAgent):
             # 尝试次优代理
             if len(agent_scores) > 1:
                 second_best_agent = sorted(
-                    agent_scores.keys(), 
+                    agent_scores.keys(),
                     key=lambda a: agent_scores[a],
                     reverse=True
                 )[1]
@@ -1079,9 +1079,9 @@ class AgentPool:
     """代理池 - 管理同类型代理的池化和复用"""
     
     def __init__(
-        self, 
-        agent_type: str, 
-        min_size: int = 5, 
+        self,
+        agent_type: str,
+        min_size: int = 5,
         max_size: int = 50,
         scale_threshold: float = 0.8
     ):
@@ -1134,13 +1134,13 @@ class AgentPool:
                     self.usage_stats['average_wait_time'] * 0.9 + wait_time * 0.1
                 )
                 self.usage_stats['peak_usage'] = max(
-                    self.usage_stats['peak_usage'], 
+                    self.usage_stats['peak_usage'],
                     len(self.busy_agents)
                 )
             
             # 3. 检查是否需要扩容
             current_usage = len(self.busy_agents) / self.total_agents
-            if (current_usage > self.scale_threshold and 
+            if (current_usage > self.scale_threshold and
                 self.total_agents < self.max_size):
                 asyncio.create_task(self._scale_up())
             
@@ -1164,7 +1164,7 @@ class AgentPool:
                 await self.available_agents.put(agent_id)
             
             # 检查是否需要缩容
-            if (self.available_agents.qsize() > self.min_size and 
+            if (self.available_agents.qsize() > self.min_size and
                 len(self.busy_agents) < self.total_agents * 0.3):
                 asyncio.create_task(self._scale_down())
     
@@ -1348,8 +1348,8 @@ class AdvancedToolAgent(RoutedAgent):
     
     @rpc
     async def execute_tool_chain(
-        self, 
-        request: ToolChainRequest, 
+        self,
+        request: ToolChainRequest,
         ctx: MessageContext
     ) -> ToolChainResponse:
         """执行工具链"""
@@ -1413,8 +1413,8 @@ class EventBus(RoutedAgent):
         self.dead_letter_queue = DeadLetterQueue()
     
     async def subscribe_to_event(
-        self, 
-        event_type: str, 
+        self,
+        event_type: str,
         subscriber: AgentId,
         filter_condition: Optional[Callable] = None
     ) -> str:
@@ -1466,7 +1466,7 @@ class EventBus(RoutedAgent):
             
             # 处理分发失败
             failed_deliveries = [
-                result for result in results 
+                result for result in results
                 if isinstance(result, Exception)
             ]
             
@@ -1474,8 +1474,8 @@ class EventBus(RoutedAgent):
                 logger.warning(f"事件分发失败: {len(failed_deliveries)}/{len(delivery_tasks)}")
     
     async def _deliver_event_to_subscriber(
-        self, 
-        event: DomainEvent, 
+        self,
+        event: DomainEvent,
         subscription: EventSubscription
     ) -> None:
         """分发事件给订阅者"""
@@ -1488,7 +1488,7 @@ class EventBus(RoutedAgent):
         except Exception as e:
             # 分发失败，添加到死信队列
             await self.dead_letter_queue.add(
-                event, 
+                event,
                 f"分发到 {subscription.subscriber} 失败: {str(e)}"
             )
             raise
@@ -1538,8 +1538,8 @@ class StateMachineAgent(RoutedAgent):
     
     @rpc
     async def trigger_transition(
-        self, 
-        trigger: StateTrigger, 
+        self,
+        trigger: StateTrigger,
         ctx: MessageContext
     ) -> StateTransitionResult:
         """触发状态转换"""
@@ -1618,9 +1618,9 @@ class StateMachineAgent(RoutedAgent):
             )
     
     async def _execute_pre_transition(
-        self, 
-        from_state: str, 
-        to_state: str, 
+        self,
+        from_state: str,
+        to_state: str,
         trigger: StateTrigger
     ) -> TransitionResult:
         """执行转换前处理"""
@@ -1634,9 +1634,9 @@ class StateMachineAgent(RoutedAgent):
         return TransitionResult(success=True)
     
     async def _execute_post_transition(
-        self, 
-        from_state: str, 
-        to_state: str, 
+        self,
+        from_state: str,
+        to_state: str,
         trigger: StateTrigger
     ) -> TransitionResult:
         """执行转换后处理"""
@@ -1719,8 +1719,8 @@ class DistributedLockAgent(RoutedAgent):
     
     @rpc
     async def acquire_lock(
-        self, 
-        request: LockRequest, 
+        self,
+        request: LockRequest,
         ctx: MessageContext
     ) -> LockResult:
         """获取分布式锁"""
@@ -1880,8 +1880,8 @@ class BatchAggregatorAgent(RoutedAgent):
     
     @message_handler
     async def handle_batchable_request(
-        self, 
-        request: BatchableRequest, 
+        self,
+        request: BatchableRequest,
         ctx: MessageContext
     ) -> BatchableResponse:
         """处理可批处理的请求"""
@@ -2088,10 +2088,10 @@ class IntelligentCacheAgent(RoutedAgent):
         )
     
     async def _execute_warming_strategy(
-        self, 
-        cache_key: str, 
-        value: Any, 
-        hit_layer: str, 
+        self,
+        cache_key: str,
+        value: Any,
+        hit_layer: str,
         policy: CachePolicy
     ) -> None:
         """执行缓存预热策略"""
@@ -2214,7 +2214,7 @@ class MetricsCollectionAgent(RoutedAgent):
 ```csharp
 /// <summary>
 /// 处理器调用器 - AutoGen消息路由的核心实现
-/// 
+///
 /// 这个类实现了AutoGen中最关键的消息分发机制，通过反射
 /// 自动发现和调用代理的消息处理方法，支持泛型类型擦除
 /// </summary>
@@ -2222,7 +2222,7 @@ public class HandlerInvoker
 {
     /// <summary>
     /// 类型擦除等待方法 - 处理泛型ValueTask的核心技术
-    /// 
+    ///
     /// 这个方法解决了.NET中泛型ValueTask<T>到ValueTask<object?>
     /// 的类型转换问题，是实现统一消息处理接口的关键
     /// </summary>
@@ -2239,13 +2239,13 @@ public class HandlerInvoker
         if (target != null)
         {
             // 实例方法调用 - 绑定到特定对象实例
-            invocation = (object? message, MessageContext messageContext) => 
+            invocation = (object? message, MessageContext messageContext) =>
                 methodInfo.Invoke(target, new object?[] { message, messageContext });
         }
         else if (methodInfo.IsStatic)
         {
             // 静态方法调用 - 无需对象实例
-            invocation = (object? message, MessageContext messageContext) => 
+            invocation = (object? message, MessageContext messageContext) =>
                 methodInfo.Invoke(null, new object?[] { message, messageContext });
         }
         else
@@ -2334,6 +2334,7 @@ class RoutedAgent(BaseAgent):
         智能消息路由实现 - 支持类型匹配和二次路由
         
         这是AutoGen消息路由的核心算法，实现了：
+
         1. 基于类型的一级路由
         2. 基于条件的二级路由  
         3. 错误处理和降级机制
@@ -2360,6 +2361,7 @@ class RoutedAgent(BaseAgent):
         
         # 3. 所有处理器都无法匹配
         raise CantHandleException(f"没有匹配的处理器能够处理消息: {message}")
+
 ```
 
 ### 8.3 实际性能基准测试结果
@@ -2371,7 +2373,7 @@ class RoutedAgent(BaseAgent):
 PRODUCTION_BENCHMARKS = {
     "消息处理性能": {
         "单代理QPS": "15,000 msg/sec",
-        "多代理QPS": "45,000 msg/sec", 
+        "多代理QPS": "45,000 msg/sec",
         "分布式QPS": "150,000 msg/sec",
         "内存占用": "2-5MB per agent",
         "CPU使用": "0.1 core per 1000 msg/sec"
@@ -2379,7 +2381,7 @@ PRODUCTION_BENCHMARKS = {
     
     "响应延迟分布": {
         "P50": "25ms",
-        "P90": "80ms", 
+        "P90": "80ms",
         "P95": "150ms",
         "P99": "400ms",
         "P99.9": "800ms"
@@ -2531,7 +2533,7 @@ class AutoGenBenchmarkSuite:
    runtime = GrpcAgentRuntime()
    gateway = GatewayService()
    workers = [WorkerNode1(), WorkerNode2(), WorkerNode3()]
-   ```
+```
 
 2. **监控驱动的模式选择**
    - 根据QPS决定是否引入批处理模式
@@ -2872,4 +2874,3 @@ classDiagram
 通过掌握这些基于真实代码的高级模式和实现技巧，开发者可以构建出更加健壮、高效、可维护的企业级多代理系统。
 
 ---
-

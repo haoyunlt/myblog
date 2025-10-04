@@ -58,7 +58,7 @@ type AlgoServiceClient struct {
 }
 
 func (c *AlgoServiceClient) QueryWithTimeout(
-    ctx context.Context, 
+    ctx context.Context,
     request *QueryRequest,
 ) (*QueryResponse, error) {
     // 设置超时上下文
@@ -86,8 +86,8 @@ func (eb *EventBus) PublishAsync(event Event) {
         for _, handler := range handlers {
             go func(h EventHandler) {
                 if err := h.Handle(event); err != nil {
-                    log.Error("Event handling failed", 
-                        zap.Error(err), 
+                    log.Error("Event handling failed",
+                        zap.Error(err),
                         zap.String("event_type", event.Type))
                 }
             }(handler)
@@ -179,17 +179,17 @@ class ConversationEventStore:
     async def append_event(self, event: ConversationEvent):
         """追加事件到事件流"""
         await self.db.execute("""
-            INSERT INTO conversation_events 
+            INSERT INTO conversation_events
             (conversation_id, event_type, event_data, timestamp, version)
             VALUES ($1, $2, $3, $4, $5)
-        """, event.conversation_id, event.type, 
+        """, event.conversation_id, event.type,
             json.dumps(event.data), event.timestamp, event.version)
     
     async def replay_events(self, conversation_id: str) -> Conversation:
         """重放事件重构对话状态"""
         events = await self.db.fetch("""
-            SELECT * FROM conversation_events 
-            WHERE conversation_id = $1 
+            SELECT * FROM conversation_events
+            WHERE conversation_id = $1
             ORDER BY version ASC
         """, conversation_id)
         
@@ -208,10 +208,12 @@ class ConversationEventStore:
 
 ```typescript
 /**
+
  * 多层缓存策略实现
  * L1: 内存缓存 (最快，容量小)
  * L2: Redis缓存 (快速，容量中等)
  * L3: 数据库 (慢速，容量大)
+
  */
 class MultiLevelCacheManager {
   private l1Cache = new Map<string, CacheEntry>();
@@ -395,7 +397,7 @@ async def get_conversations_with_messages_optimized(user_id: str):
     conversation_ids = [c.id for c in conversations]
     messages = await db.fetch("""
         SELECT conversation_id, message_id, role, content, created_at
-        FROM messages 
+        FROM messages
         WHERE conversation_id = ANY($1)
         ORDER BY conversation_id, created_at
     """, conversation_ids)
@@ -439,7 +441,7 @@ class MessageDataLoader:
         """批量加载消息"""
         messages = await self.db.fetch("""
             SELECT conversation_id, message_id, role, content, created_at
-            FROM messages 
+            FROM messages
             WHERE conversation_id = ANY($1)
             ORDER BY conversation_id, created_at
         """, conversation_ids)
@@ -455,7 +457,7 @@ class MessageDataLoader:
 # 解决方案3：使用JOIN查询（适合小数据量）
 async def get_conversations_with_recent_message(user_id: str):
     return await db.fetch("""
-        SELECT 
+        SELECT
             c.conversation_id,
             c.title,
             c.created_at as conversation_created_at,
@@ -465,7 +467,7 @@ async def get_conversations_with_recent_message(user_id: str):
         FROM conversations c
         LEFT JOIN LATERAL (
             SELECT message_id, content, created_at
-            FROM messages 
+            FROM messages
             WHERE conversation_id = c.conversation_id
             ORDER BY created_at DESC
             LIMIT 1
@@ -480,7 +482,7 @@ async def get_conversations_with_recent_message(user_id: str):
 ```sql
 -- 1. 复合索引设计
 -- 对话查询优化
-CREATE INDEX CONCURRENTLY idx_conversations_user_status_updated 
+CREATE INDEX CONCURRENTLY idx_conversations_user_status_updated
 ON conversations (user_id, status, updated_at DESC)
 WHERE status IN ('active', 'archived');
 
@@ -716,7 +718,7 @@ class ConcurrencyManager:
             
             # 等待批次完成
             results = await asyncio.gather(
-                *tasks, 
+                *tasks,
                 return_exceptions=True
             )
             
@@ -889,7 +891,7 @@ from enum import Enum
 
 class SecurityLevel(Enum):
     LOW = "low"
-    MEDIUM = "medium" 
+    MEDIUM = "medium"
     HIGH = "high"
     PARANOID = "paranoid"
 
@@ -1335,8 +1337,10 @@ send_email(user.email, "Welcome!")
 
 ```typescript
 /**
+
  * 客服系统集成案例
  * 演示VoiceHelper如何集成到现有客服系统中
+
  */
 
 interface CustomerServiceConfig {
@@ -1658,8 +1662,8 @@ class EducationAssistant:
         self.assessment_engine = AssessmentEngine()
     
     async def handle_student_question(
-        self, 
-        student_id: str, 
+        self,
+        student_id: str,
         question: str,
         context: dict = None
     ) -> EducationResponse:
@@ -1720,6 +1724,7 @@ class EducationAssistant:
         问题: {question}
         
         请从以下类型中选择最合适的：
+
         1. concept_explanation - 概念解释
         2. problem_solving - 解题求助
         3. example_request - 要求示例
@@ -1826,8 +1831,8 @@ class EducationAssistant:
         )
     
     async def generate_practice_questions(
-        self, 
-        topic: str, 
+        self,
+        topic: str,
         difficulty: str
     ) -> List[PracticeQuestion]:
         """生成相关练习题"""
@@ -1992,6 +1997,7 @@ class MathTutoringSystem(EducationAssistant):
         学生年级: {self.grade_level}
         
         请提供:
+
         1. 解题思路和步骤（不要直接给答案）
         2. 相关概念解释
         3. 类似例题

@@ -41,6 +41,7 @@ graph TB
 **文件位置**: `vllm/v1/engine/llm_engine.py`
 
 **核心职责**：
+
 - 统筹整个推理流程
 - 管理请求生命周期
 - 协调各个子模块
@@ -93,7 +94,7 @@ class LLMEngine:
         # 初始化处理器组件
         self.processor = Processor(
             vllm_config=vllm_config,
-            tokenizer=self.tokenizer, 
+            tokenizer=self.tokenizer,
             mm_registry=mm_registry)
             
         # 初始化输出处理器
@@ -134,6 +135,7 @@ class LLMEngine:
             priority: 请求优先级
         
         处理流程:
+
         1. 使用Processor预处理输入
         2. 验证参数合法性
         3. 创建EngineCoreRequest
@@ -180,6 +182,7 @@ class LLMEngine:
             request_outputs.append(request_output)
             
         return request_outputs
+
 ```
 
 ### 1.2 Processor 模块
@@ -187,6 +190,7 @@ class LLMEngine:
 **文件位置**: `vllm/v1/engine/processor.py`
 
 **核心职责**：
+
 - 预处理用户输入
 - Token化处理
 - 多模态数据处理
@@ -256,6 +260,7 @@ class Processor:
             ProcessorInputs: 处理后的输入对象
             
         处理流程:
+
         1. 参数验证
         2. 输入预处理和token化
         3. 多模态数据处理
@@ -268,7 +273,7 @@ class Processor:
         
         # 预处理输入
         preprocessed = self.input_preprocessor.preprocess(
-            prompt, 
+            prompt,
             request_id=request_id,
             lora_request=lora_request)
             
@@ -310,6 +315,7 @@ class Processor:
         if params.logits_processors:
             raise ValueError("vLLM V1 does not support per request "
                            "user provided logits processors.")
+
 ```
 
 ### 1.3 EngineCore 模块
@@ -317,6 +323,7 @@ class Processor:
 **文件位置**: `vllm/v1/engine/core.py`
 
 **核心职责**：
+
 - 请求调度与批处理
 - 模型执行协调
 - KV缓存管理
@@ -389,6 +396,7 @@ class Scheduler:
             SchedulerOutput: 包含可执行请求批次的调度结果
             
         调度策略:
+
         1. 优先处理预填充请求（新请求）
         2. 继续处理解码请求（生成中的请求）
         3. 考虑内存预算约束
@@ -448,12 +456,13 @@ class Scheduler:
         memory_per_token = (
             self.model_config.get_num_layers() *
             self.model_config.get_num_kv_heads() *
-            self.model_config.get_head_size() * 
+            self.model_config.get_head_size() *
             2 *  # K and V
             self._get_dtype_size()
         )
         
         return total_length * memory_per_token
+
 ```
 
 ### 2.2 KV缓存管理器
@@ -490,7 +499,7 @@ class KVCacheManager:
             device="cuda")
             
         self.cpu_block_pool = BlockPool(
-            num_blocks=self.num_cpu_blocks, 
+            num_blocks=self.num_cpu_blocks,
             block_size=self.page_size,
             device="cpu")
             
@@ -512,6 +521,7 @@ class KVCacheManager:
             分配的块ID列表
             
         分配策略:
+
         1. 计算所需块数
         2. 检查前缀缓存可重用性
         3. 从块池分配新块
@@ -552,6 +562,7 @@ class KVCacheManager:
         # 实现前缀匹配逻辑
         # 这里简化为返回空列表
         return []
+
 ```
 
 ## 3. 模型执行器模块 (Model Executor Module)
@@ -628,6 +639,7 @@ class ModelExecutor:
             ModelOutputs: 模型输出，包含logits、hidden_states等
             
         执行流程:
+
         1. 准备输入数据
         2. 分发到各个worker
         3. 并行执行模型前向传播
@@ -646,7 +658,7 @@ class ModelExecutor:
         return aggregated_outputs
 
     def _prepare_distributed_inputs(
-        self, 
+        self,
         model_inputs: ModelInputs
     ) -> dict[int, ModelInputs]:
         """
@@ -669,6 +681,7 @@ class ModelExecutor:
             distributed_inputs[0] = model_inputs
             
         return distributed_inputs
+
 ```
 
 ## 4. Worker 模块
@@ -721,6 +734,7 @@ class WorkerBase(WorkerBaseV0):
         
         Returns:
             KV缓存规格字典，包含：
+
             - 缓存块大小
             - 数据类型
             - 设备位置
@@ -739,6 +753,7 @@ class WorkerBase(WorkerBaseV0):
         4. 性能优化设置
         """
         raise NotImplementedError("Subclasses must implement compile_or_warm_up_model")
+
 ```
 
 ### 4.2 GPU Worker
@@ -780,6 +795,7 @@ class GPUWorker(WorkerBase):
             模型输出结果
             
         执行步骤:
+
         1. 数据传输到GPU
         2. 执行前向传播
         3. 结果收集和同步
@@ -798,6 +814,7 @@ class GPUWorker(WorkerBase):
                 layout="paged"
             )
         }
+
 ```
 
 ## 5. 注意力后端模块 (Attention Backend)
@@ -852,7 +869,7 @@ class FlashAttentionBackend(AttentionBackend):
     def forward(
         self,
         query: torch.Tensor,
-        key: torch.Tensor, 
+        key: torch.Tensor,
         value: torch.Tensor,
         kv_cache: KVCache,
         attn_metadata: AttentionMetadata,
@@ -871,6 +888,7 @@ class FlashAttentionBackend(AttentionBackend):
             注意力输出张量
             
         计算流程:
+
         1. PagedAttention前处理
         2. FlashAttention计算
         3. 结果后处理
@@ -887,7 +905,7 @@ class FlashAttentionBackend(AttentionBackend):
         self,
         query: torch.Tensor,
         key: torch.Tensor,
-        value: torch.Tensor, 
+        value: torch.Tensor,
         kv_cache: KVCache,
         attn_metadata: AttentionMetadata,
     ) -> torch.Tensor:
@@ -914,6 +932,7 @@ class FlashAttentionBackend(AttentionBackend):
             max_seq_len=attn_metadata.max_seq_len)
             
         return output
+
 ```
 
 ## 6. 核心数据流分析
@@ -924,7 +943,7 @@ class FlashAttentionBackend(AttentionBackend):
 sequenceDiagram
     participant User as 用户应用
     participant LLM as LLM类
-    participant Proc as Processor 
+    participant Proc as Processor
     participant Engine as EngineCore
     participant Sched as Scheduler
     participant KVMgr as KVCacheManager
@@ -988,7 +1007,7 @@ graph TB
     K --> L[Common Prefix: Blocks [1,2]]
     
     D --> M[Block 1: Page Data]
-    D --> N[Block 2: Page Data] 
+    D --> N[Block 2: Page Data]
     D --> O[Block N: Page Data]
     
     style A fill:#e8f5e8

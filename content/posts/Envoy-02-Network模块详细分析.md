@@ -34,7 +34,7 @@ Network模块是Envoy的网络抽象层，提供了跨平台的网络I/O能力�
 graph TB
     subgraph "网络抽象层"
         A[Address Abstraction]
-        B[Socket Abstraction] 
+        B[Socket Abstraction]
         C[IoHandle Abstraction]
     end
     
@@ -90,13 +90,16 @@ graph TB
 
 ```cpp
 /**
+
  * Network::Connection 是所有网络连接的基础抽象接口
  * 它提供了连接的通用操作，包括读写数据、状态管理、回调注册等
+
  */
 class Connection : public Event::DeferredDeletable,
                    public FilterManager {
 public:
   /**
+
    * 连接状态枚举
    */
   enum class State {
@@ -212,7 +215,7 @@ public:
    * 获取Unix域套接字对等凭据
    * @return 可选的对等凭据
    */
-  virtual absl::optional<UnixDomainSocketPeerCredentials> 
+  virtual absl::optional<UnixDomainSocketPeerCredentials>
           unixSocketPeerCredentials() const PURE;
 
   /**
@@ -270,7 +273,7 @@ public:
    * @param value 选项值
    * @return 是否设置成功
    */
-  virtual bool setSocketOption(Network::SocketOptionName name, 
+  virtual bool setSocketOption(Network::SocketOptionName name,
                               absl::Span<uint8_t> value) PURE;
 
   /**
@@ -323,6 +326,7 @@ public:
    * @return 检测到的关闭类型
    */
   virtual DetectedCloseType detectedCloseType() const PURE;
+
 };
 ```
 
@@ -332,13 +336,16 @@ public:
 
 ```cpp
 /**
+
  * ConnectionImpl 是 Network::Connection 接口的具体实现
  * 负责管理连接的完整生命周期、I/O操作和事件处理
+
  */
-class ConnectionImpl : public ConnectionImplBase, 
+class ConnectionImpl : public ConnectionImplBase,
                        public TransportSocketCallbacks {
 public:
   /**
+
    * 构造函数
    * @param dispatcher 事件分发器
    * @param socket 连接套接字
@@ -346,9 +353,9 @@ public:
    * @param stream_info 流信息
    * @param connected 是否已连接
    */
-  ConnectionImpl(Event::Dispatcher& dispatcher, 
+  ConnectionImpl(Event::Dispatcher& dispatcher,
                  ConnectionSocketPtr&& socket,
-                 TransportSocketPtr&& transport_socket, 
+                 TransportSocketPtr&& transport_socket,
                  StreamInfo::StreamInfo& stream_info,
                  bool connected);
 
@@ -404,8 +411,8 @@ public:
    * 检查是否启用半关闭
    * @return 是否启用半关闭
    */
-  bool isHalfCloseEnabled() const override { 
-    return enable_half_close_; 
+  bool isHalfCloseEnabled() const override {
+    return enable_half_close_;
   }
   
   /**
@@ -430,8 +437,8 @@ public:
    * 获取下一个协议
    * @return 协议名称
    */
-  std::string nextProtocol() const override { 
-    return transport_socket_->protocol(); 
+  std::string nextProtocol() const override {
+    return transport_socket_->protocol();
   }
   
   /**
@@ -451,8 +458,8 @@ public:
    * 当读取禁用时检测早期关闭
    * @param value 是否检测
    */
-  void detectEarlyCloseWhenReadDisabled(bool value) override { 
-    detect_early_close_ = value; 
+  void detectEarlyCloseWhenReadDisabled(bool value) override {
+    detect_early_close_ = value;
   }
   
   /**
@@ -472,7 +479,7 @@ public:
    * @return 是否正在连接
    */
   bool connecting() const override {
-    ENVOY_CONN_LOG_EVENT(debug, "connection_connecting_state", 
+    ENVOY_CONN_LOG_EVENT(debug, "connection_connecting_state",
                          "current connecting state: {}", *this, connecting_);
     return connecting_;
   }
@@ -494,27 +501,27 @@ public:
    * 获取缓冲区限制
    * @return 限制大小
    */
-  uint32_t bufferLimit() const override { 
-    return read_buffer_limit_; 
+  uint32_t bufferLimit() const override {
+    return read_buffer_limit_;
   }
   
   /**
    * 检查是否超过高水位线
    * @return 是否超过高水位线
    */
-  bool aboveHighWatermark() const override { 
-    return write_buffer_above_high_watermark_; 
+  bool aboveHighWatermark() const override {
+    return write_buffer_above_high_watermark_;
   }
 
   /**
    * 获取流信息
    * @return 流信息引用
    */
-  StreamInfo::StreamInfo& streamInfo() override { 
-    return stream_info_; 
+  StreamInfo::StreamInfo& streamInfo() override {
+    return stream_info_;
   }
-  const StreamInfo::StreamInfo& streamInfo() const override { 
-    return stream_info_; 
+  const StreamInfo::StreamInfo& streamInfo() const override {
+    return stream_info_;
   }
 
   // Network::TransportSocketCallbacks 接口实现
@@ -523,19 +530,19 @@ public:
    * 获取I/O句柄
    * @return I/O句柄引用
    */
-  IoHandle& ioHandle() final { 
-    return socket_->ioHandle(); 
+  IoHandle& ioHandle() final {
+    return socket_->ioHandle();
   }
-  const IoHandle& ioHandle() const override { 
-    return socket_->ioHandle(); 
+  const IoHandle& ioHandle() const override {
+    return socket_->ioHandle();
   }
   
   /**
    * 获取连接引用
    * @return 连接引用
    */
-  Connection& connection() override { 
-    return *this; 
+  Connection& connection() override {
+    return *this;
   }
   
   /**
@@ -549,7 +556,7 @@ public:
    * @return 是否应该排空
    */
   bool shouldDrainReadBuffer() override {
-    return read_buffer_limit_ > 0 && 
+    return read_buffer_limit_ > 0 &&
            read_buffer_->length() >= read_buffer_limit_;
   }
   
@@ -565,6 +572,7 @@ public:
 
 protected:
   /**
+
    * 检查过滤器链是否需要数据
    * @return 是否需要数据
    */
@@ -671,22 +679,25 @@ private:
 
 ```cpp
 /**
+
  * ServerConnectionImpl 服务端连接实现
  * 继承自ConnectionImpl，添加了服务端特有的功能
+
  */
-class ServerConnectionImpl : public ConnectionImpl, 
+class ServerConnectionImpl : public ConnectionImpl,
                              virtual public ServerConnection {
 public:
   /**
+
    * 构造函数
    * @param dispatcher 事件分发器
    * @param socket 连接套接字
    * @param transport_socket 传输套接字  
    * @param stream_info 流信息
    */
-  ServerConnectionImpl(Event::Dispatcher& dispatcher, 
+  ServerConnectionImpl(Event::Dispatcher& dispatcher,
                        ConnectionSocketPtr&& socket,
-                       TransportSocketPtr&& transport_socket, 
+                       TransportSocketPtr&& transport_socket,
                        StreamInfo::StreamInfo& stream_info);
 
   // ServerConnection 接口实现
@@ -713,6 +724,7 @@ public:
 
 private:
   /**
+
    * 传输套接字连接超时回调
    */
   void onTransportSocketConnectTimeout();
@@ -720,6 +732,7 @@ private:
   bool transport_connect_pending_{true};           // 传输连接是否等待中
   Event::TimerPtr transport_socket_connect_timer_; // 传输套接字连接定时器
   Stats::Counter* transport_socket_timeout_stat_;  // 超时统计计数器
+
 };
 ```
 
@@ -727,13 +740,16 @@ private:
 
 ```cpp
 /**
+
  * ClientConnectionImpl 客户端连接实现
  * 继承自ConnectionImpl，添加了客户端特有的功能
+
  */
-class ClientConnectionImpl : public ConnectionImpl, 
+class ClientConnectionImpl : public ConnectionImpl,
                              virtual public ClientConnection {
 public:
   /**
+
    * 构造函数（使用地址创建）
    * @param dispatcher 事件分发器
    * @param remote_address 远程地址
@@ -758,7 +774,7 @@ public:
    * @param options 套接字选项  
    * @param transport_options 传输选项
    */
-  ClientConnectionImpl(Event::Dispatcher& dispatcher, 
+  ClientConnectionImpl(Event::Dispatcher& dispatcher,
                        std::unique_ptr<ConnectionSocket> socket,
                        const Address::InstanceConstSharedPtr& source_address,
                        Network::TransportSocketPtr&& transport_socket,
@@ -774,11 +790,13 @@ public:
 
 private:
   /**
+
    * 连接建立时的回调（重写父类方法）
    */
   void onConnected() override;
 
   StreamInfo::StreamInfoImpl stream_info_;  // 流信息实现
+
 };
 ```
 
@@ -827,22 +845,25 @@ graph TB
 
 ```cpp
 /**
+
  * BaseListenerImpl 基础监听器实现
  * 提供了监听器的通用功能，包括套接字管理、连接接受等
+
  */
-class BaseListenerImpl : public Listener, 
+class BaseListenerImpl : public Listener,
                          protected Logger::Loggable<Logger::Id::connection> {
 public:
   /**
+
    * 构造函数
    * @param socket 监听套接字
    * @param cb 监听器回调
    * @param bind_to_port 是否绑定端口
    * @param backlog_size 监听队列大小
    */
-  BaseListenerImpl(SocketSharedPtr socket, 
+  BaseListenerImpl(SocketSharedPtr socket,
                    ListenerCallbacks& cb,
-                   bool bind_to_port, 
+                   bool bind_to_port,
                    uint32_t backlog_size);
 
   ~BaseListenerImpl() override = default;
@@ -867,19 +888,20 @@ public:
 
 protected:
   /**
+
    * 获取监听器回调
    * @return 监听器回调引用
    */
-  ListenerCallbacks& cb() { 
-    return cb_; 
+  ListenerCallbacks& cb() {
+    return cb_;
   }
   
   /**
    * 获取监听套接字
    * @return 套接字引用
    */
-  Socket& socket() { 
-    return *socket_; 
+  Socket& socket() {
+    return *socket_;
   }
 
   /**
@@ -896,11 +918,12 @@ protected:
    * @param error_code 错误代码
    * @param error_message 错误消息
    */
-  virtual void onError(const std::string& error_code, 
+  virtual void onError(const std::string& error_code,
                       const std::string& error_message) PURE;
 
 private:
   /**
+
    * 文件事件处理
    * @param events 事件类型
    */
@@ -916,6 +939,7 @@ private:
   Event::FileEventPtr file_event_;  // 文件事件
   bool bind_to_port_;              // 是否绑定端口
   uint32_t backlog_size_;          // 监听队列大小
+
 };
 ```
 
@@ -923,12 +947,15 @@ private:
 
 ```cpp
 /**
+
  * TcpListenerImpl TCP监听器实现
  * 专门处理TCP连接的监听和接受
+
  */
 class TcpListenerImpl : public BaseListenerImpl {
 public:
   /**
+
    * 构造函数
    * @param dispatcher 事件分发器
    * @param api API接口
@@ -941,7 +968,7 @@ public:
   TcpListenerImpl(Event::Dispatcher& dispatcher,
                   Api::Api& api,
                   SocketSharedPtr socket,
-                  TcpListenerCallbacks& cb, 
+                  TcpListenerCallbacks& cb,
                   bool bind_to_port,
                   uint32_t backlog_size,
                   bool prefer_exact_match_on_universal_listener = false);
@@ -954,6 +981,7 @@ protected:
   // BaseListenerImpl 虚函数实现
   
   /**
+
    * 处理新TCP连接
    * @param socket 新连接套接字
    */
@@ -964,11 +992,12 @@ protected:
    * @param error_code 错误代码
    * @param error_message 错误消息  
    */
-  void onError(const std::string& error_code, 
+  void onError(const std::string& error_code,
               const std::string& error_message) override;
 
 private:
   /**
+
    * 重新启用监听器
    */
   void doReject();
@@ -985,6 +1014,7 @@ private:
   Event::TimerPtr reject_timer_;      // 拒绝连接定时器
   uint64_t connections_rejected_{};   // 拒绝连接计数
   bool prefer_exact_match_on_universal_listener_; // 是否首选精确匹配
+
 };
 ```
 
@@ -996,7 +1026,7 @@ private:
 graph TB
     subgraph "过滤器接口"
         A[ReadFilter]
-        B[WriteFilter] 
+        B[WriteFilter]
         C[Filter]
     end
     
@@ -1030,14 +1060,17 @@ graph TB
 
 ```cpp
 /**
+
  * ReadFilter 读过滤器接口
  * 用于处理从网络读取的数据
+
  */
 class ReadFilter {
 public:
   virtual ~ReadFilter() = default;
 
   /**
+
    * 过滤器状态枚举
    */
   enum class FilterStatus {
@@ -1064,6 +1097,7 @@ public:
    * @param callbacks 读过滤器回调接口
    */
   virtual void initializeReadFilterCallbacks(ReadFilterCallbacks& callbacks) PURE;
+
 };
 ```
 
@@ -1071,14 +1105,17 @@ public:
 
 ```cpp
 /**
+
  * WriteFilter 写过滤器接口
  * 用于处理向网络写入的数据
+
  */
 class WriteFilter {
 public:
   virtual ~WriteFilter() = default;
 
   /**
+
    * 过滤器状态枚举
    */
   enum class FilterStatus {
@@ -1099,6 +1136,7 @@ public:
    * @param callbacks 写过滤器回调接口
    */
   virtual void initializeWriteFilterCallbacks(WriteFilterCallbacks& callbacks) PURE;
+
 };
 ```
 
@@ -1106,14 +1144,17 @@ public:
 
 ```cpp
 /**
+
  * FilterManager 过滤器管理器接口
  * 管理连接上的过滤器链
+
  */
 class FilterManager {
 public:
   virtual ~FilterManager() = default;
 
   /**
+
    * 添加读过滤器到过滤器链
    * @param filter 读过滤器共享指针
    */
@@ -1142,6 +1183,7 @@ public:
    * @return 是否成功初始化
    */
   virtual bool initializeReadFilters() PURE;
+
 };
 ```
 
@@ -1203,13 +1245,16 @@ Network模块使用水位线机制来管理内存使用和流控：
 
 ```cpp
 /**
+
  * 水位线缓冲区实现
  * 当缓冲区大小超过高水位线时，触发回压机制
  * 当缓冲区大小低于低水位线时，恢复正常流量
+
  */
 class WatermarkBuffer : public Buffer::Instance {
 public:
   /**
+
    * 水位线回调函数类型
    */
   using OverflowCallback = std::function<void()>;
@@ -1250,6 +1295,7 @@ public:
 
 private:
   /**
+
    * 检查水位线
    */
   void checkLowWatermark();
@@ -1261,6 +1307,7 @@ private:
   OverflowCallback overflow_callback_; // 溢出回调
   UnderflowCallback underflow_callback_; // 下溢回调
   bool above_high_watermark_{false};   // 是否超过高水位线
+
 };
 ```
 
@@ -1332,15 +1379,18 @@ classDiagram
 
 ```cpp
 /**
+
  * Address::Instance 网络地址抽象接口
  * 提供统一的地址表示，支持IPv4、IPv6、Unix域套接字等
+
  */
 class Instance {
 public:
   /**
+
    * 地址类型枚举
    */
-  enum class Type { 
+  enum class Type {
     Ip,                    // IP地址（IPv4或IPv6）
     Pipe,                  // Unix域套接字
     EnvoyInternal         // Envoy内部地址
@@ -1349,7 +1399,7 @@ public:
   /**
    * 套接字类型枚举
    */
-  enum class SocketType { 
+  enum class SocketType {
     Stream,               // 流套接字（TCP）
     Datagram             // 数据报套接字（UDP）
   };
@@ -1404,6 +1454,7 @@ public:
    * @return 地址类型
    */
   virtual Type type() const PURE;
+
 };
 ```
 
@@ -1413,12 +1464,15 @@ public:
 
 ```cpp
 /**
+
  * TransportSocket 传输套接字接口
  * 提供传输层的抽象，支持原始套接字、TLS套接字等
+
  */
 class TransportSocket {
 public:
   /**
+
    * I/O结果结构
    */
   struct IoResult {
@@ -1492,6 +1546,7 @@ public:
    */
   virtual void configureInitialCongestionWindow(uint64_t bandwidth_bits_per_sec,
                                                std::chrono::microseconds rtt) PURE;
+
 };
 ```
 
@@ -1499,14 +1554,17 @@ public:
 
 ```cpp
 /**
+
  * RawBufferSocket 原始缓冲区套接字实现
  * 不进行加密或特殊处理的基础传输套接字
+
  */
 class RawBufferSocket : public TransportSocket {
 public:
   // TransportSocket 接口实现
   
   /**
+
    * 设置传输套接字回调
    * @param callbacks 回调接口
    */
@@ -1518,16 +1576,16 @@ public:
    * 获取协议名称
    * @return 空字符串（原始套接字无特定协议）
    */
-  std::string protocol() const override { 
-    return EMPTY_STRING; 
+  std::string protocol() const override {
+    return EMPTY_STRING;
   }
 
   /**
    * 检查是否可以刷新关闭
    * @return 总是返回true
    */
-  bool canFlushClose() override { 
-    return true; 
+  bool canFlushClose() override {
+    return true;
   }
 
   /**
@@ -1605,16 +1663,16 @@ public:
    * 获取SSL连接信息（原始套接字返回nullptr）
    * @return nullptr
    */
-  Ssl::ConnectionInfoConstSharedPtr ssl() const override { 
-    return nullptr; 
+  Ssl::ConnectionInfoConstSharedPtr ssl() const override {
+    return nullptr;
   }
 
   /**
    * 启动安全传输（原始套接字直接返回false）
    * @return false
    */
-  bool startSecureTransport() override { 
-    return false; 
+  bool startSecureTransport() override {
+    return false;
   }
 
   /**
@@ -1642,8 +1700,10 @@ Network模块定义了详细的错误分类体系：
 
 ```cpp
 /**
+
  * NetworkException 网络异常基类
  * 所有网络相关的异常都继承自此类
+
  */
 class NetworkException : public EnvoyException {
 public:
@@ -1651,8 +1711,10 @@ public:
 };
 
 /**
+
  * CreateListenerException 监听器创建异常
  * 当监听器创建失败时抛出
+
  */
 class CreateListenerException : public NetworkException {
 public:
@@ -1660,8 +1722,10 @@ public:
 };
 
 /**
+
  * SocketBindException 套接字绑定异常
  * 当套接字绑定失败时抛出
+
  */
 class SocketBindException : public NetworkException {
 public:
@@ -1675,8 +1739,10 @@ private:
 };
 
 /**
+
  * ConnectionTimeoutException 连接超时异常
  * 当连接建立超时时抛出
+
  */
 class ConnectionTimeoutException : public NetworkException {
 public:
@@ -1716,11 +1782,14 @@ Network模块实现了零拷贝I/O机制，减少数据拷贝开销：
 
 ```cpp
 /**
+
  * Buffer::OwnedImpl 中的零拷贝实现示例
+
  */
 class OwnedImpl : public Instance {
 public:
   /**
+
    * 移动语义实现，避免数据拷贝
    * @param rhs 源缓冲区
    */
@@ -1735,7 +1804,7 @@ public:
    * @param max_length 最大读取长度
    * @return 系统调用结果
    */
-  Api::SysCallIntResult read(Network::IoHandle& io_handle, 
+  Api::SysCallIntResult read(Network::IoHandle& io_handle,
                             uint64_t max_length) override {
     // 直接从socket读取到内部缓冲区，零拷贝
     constexpr uint64_t MaxSlices = 2;
@@ -1769,6 +1838,7 @@ public:
     
     return result;
   }
+
 };
 ```
 
@@ -1786,7 +1856,7 @@ graph TB
     
     subgraph "连接管理"
         D[ActiveConnection]
-        E[PendingConnection] 
+        E[PendingConnection]
         F[IdleConnection]
     end
     
@@ -1812,11 +1882,14 @@ Network模块基于libevent实现高效的事件驱动I/O：
 
 ```cpp
 /**
+
  * Event::FileEventImpl libevent文件事件实现
+
  */
 class FileEventImpl : public FileEvent {
 public:
   /**
+
    * 构造函数
    * @param dispatcher 事件分发器
    * @param fd 文件描述符
@@ -1848,6 +1921,7 @@ public:
 
 private:
   /**
+
    * libevent事件回调
    * @param fd 文件描述符
    * @param events 事件类型
@@ -1867,6 +1941,7 @@ private:
   FileTriggerType trigger_;        // 触发类型
   struct event raw_event_;         // libevent原始事件结构
   uint32_t enabled_events_;        // 已启用的事件
+
 };
 ```
 
@@ -1878,7 +1953,9 @@ Network模块提供了丰富的统计指标用于监控和调试：
 
 ```cpp
 /**
+
  * 连接级别统计指标
+
  */
 #define ALL_CONNECTION_STATS(COUNTER, GAUGE, HISTOGRAM)                                           \
   COUNTER(bytes_received)          /* 接收字节数 */                                               \
@@ -1897,7 +1974,9 @@ Network模块提供了丰富的统计指标用于监控和调试：
   HISTOGRAM(connection_length_ms, Milliseconds) /* 连接持续时间直方图 */
 
 /**
+
  * 监听器级别统计指标  
+
  */
 #define ALL_LISTENER_STATS(COUNTER, GAUGE, HISTOGRAM)                                             \
   COUNTER(connections_accepted)   /* 接受连接数 */                                               \
@@ -1908,7 +1987,9 @@ Network模块提供了丰富的统计指标用于监控和调试：
   GAUGE(connections_handler, NeverImport)    /* 连接处理器数量 */
 
 /**
+
  * 传输套接字级别统计指标
+
  */
 #define ALL_TRANSPORT_SOCKET_STATS(COUNTER, GAUGE, HISTOGRAM)                                     \
   COUNTER(ssl_handshakes)         /* SSL握手次数 */                                              \
@@ -1928,7 +2009,7 @@ Network模块提供了详细的调试日志：
 ```cpp
 // 连接生命周期日志
 ENVOY_CONN_LOG(debug, "new connection", *this);
-ENVOY_CONN_LOG(trace, "connection connecting to {}", *this, 
+ENVOY_CONN_LOG(trace, "connection connecting to {}", *this,
                socket_->connectionInfoProvider().remoteAddress()->asString());
 ENVOY_CONN_LOG(debug, "connected", *this);
 ENVOY_CONN_LOG(debug, "closing connection: {}", *this, details);
@@ -1952,11 +2033,13 @@ ENVOY_CONN_LOG(error, "fatal connection error: {}", *this, error_message);
 ### 1. 连接泄漏
 
 **问题症状**：
+
 - 活跃连接数持续增长不下降
 - 文件描述符耗尽
 - 内存使用持续增长
 
 **排查方法**：
+
 ```bash
 # 查看连接统计
 curl "http://localhost:9901/stats" | grep connection
@@ -1969,6 +2052,7 @@ curl -X POST "http://localhost:9901/logging?connection=debug"
 ```
 
 **解决方案**：
+
 - 检查连接超时配置
 - 验证过滤器是否正确处理连接关闭
 - 确保没有循环引用导致连接对象无法释放
@@ -1976,11 +2060,13 @@ curl -X POST "http://localhost:9901/logging?connection=debug"
 ### 2. 内存泄漏
 
 **问题症状**：
+
 - 缓冲区内存持续增长
 - RSS内存不断上升
 - 出现OOM错误
 
 **排查方法**：
+
 ```bash
 # 启用内存分析
 curl -X POST "http://localhost:9901/heapprofiler?enable=y"
@@ -1993,6 +2079,7 @@ curl "http://localhost:9901/config_dump" | jq '.configs[].dynamic_listeners'
 ```
 
 **解决方案**：
+
 - 调整缓冲区大小和水位线设置
 - 检查过滤器是否及时处理数据
 - 验证流控机制是否正常工作
@@ -2000,11 +2087,13 @@ curl "http://localhost:9901/config_dump" | jq '.configs[].dynamic_listeners'
 ### 3. 性能问题
 
 **问题症状**：
+
 - 连接建立延迟高
 - 吞吐量达不到预期
 - CPU使用率过高
 
 **排查方法**：
+
 ```bash
 # 查看连接和I/O统计
 curl "http://localhost:9901/stats" | grep -E "(connection|read|write)"
@@ -2017,6 +2106,7 @@ curl "http://localhost:9901/stats" | grep dispatcher
 ```
 
 **解决方案**：
+
 - 调整工作线程数量
 - 优化过滤器链配置  
 - 调整缓冲区大小
@@ -2056,9 +2146,11 @@ listener:
 # 启用详细的网络统计
 stats_config:
   stats_tags:
-  - tag_name: "connection_id" 
+
+  - tag_name: "connection_id"
     regex: "^connection\\.([0-9]+)\\."
     fixed_value: "connection"
+
 ```
 
 ### 4. 调试配置

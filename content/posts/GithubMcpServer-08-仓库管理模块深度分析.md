@@ -34,7 +34,7 @@ classDiagram
 
     class BranchTagManagement {
         +ListBranches()
-        +CreateBranch() 
+        +CreateBranch()
         +ListTags()
         +GetTag()
         +ListReleases()
@@ -436,7 +436,7 @@ func SearchCode(getClient GetClientFn, t translations.TranslationHelperFunc) (to
         mcp.WithDescription("Search code using GitHub's powerful code search syntax with advanced filtering"),
         
         // GitHub代码搜索的强大查询语法
-        mcp.WithString("query", mcp.Required(), 
+        mcp.WithString("query", mcp.Required(),
             mcp.Description("Search query using GitHub's powerful code search syntax. Examples: 'content:Skill language:Java org:github', 'NOT is:archived language:Python OR language:go', 'repo:github/github-mcp-server'. Supports exact matching, language filters, path filters, and more.")),
         
         // 排序选项
@@ -933,7 +933,7 @@ func detectContentType(content []byte, filename string) string {
 
 var extensionMimeTypes = map[string]string{
     ".js":   "text/javascript",
-    ".ts":   "text/typescript", 
+    ".ts":   "text/typescript",
     ".py":   "text/x-python",
     ".go":   "text/x-go",
     ".java": "text/x-java",

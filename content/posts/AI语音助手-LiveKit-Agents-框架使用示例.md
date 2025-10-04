@@ -36,6 +36,7 @@ class MyAgent(Agent):
     基础语音代理类
     
     功能说明：
+
     - 继承自Agent基类，提供语音交互能力
     - 支持自定义指令和工具函数
     - 自动处理用户输入和生成响应
@@ -64,10 +65,10 @@ class MyAgent(Agent):
 
     @function_tool
     async def lookup_weather(
-        self, 
-        context: RunContext, 
-        location: str, 
-        latitude: str, 
+        self,
+        context: RunContext,
+        location: str,
+        latitude: str,
         longitude: str
     ):
         """
@@ -96,6 +97,7 @@ async def entrypoint(ctx: JobContext):
     应用程序入口点函数
     
     参数说明：
+
     - ctx: 任务上下文，包含房间连接和配置信息
     
     功能说明：
@@ -167,6 +169,7 @@ class DynamicToolAgent(Agent):
     动态工具创建代理
     
     功能说明：
+
     - 演示三种不同的工具创建方式
     - 支持运行时动态添加和修改工具
     - 展示工具的灵活使用模式
@@ -176,9 +179,9 @@ class DynamicToolAgent(Agent):
         super().__init__(instructions=instructions, tools=tools)
 
     async def llm_node(
-        self, 
-        chat_ctx: ChatContext, 
-        tools: list[FunctionTool], 
+        self,
+        chat_ctx: ChatContext,
+        tools: list[FunctionTool],
         model_settings: ModelSettings
     ):
         """
@@ -216,6 +219,7 @@ async def _get_course_list_from_db() -> list[str]:
     模拟数据库查询函数
     
     返回值：
+
     - list[str]: 课程列表
     
     功能说明：
@@ -223,7 +227,7 @@ async def _get_course_list_from_db() -> list[str]:
     """
     return [
         "应用数学",
-        "数据科学", 
+        "数据科学",
         "机器学习",
         "深度学习",
         "语音代理",
@@ -244,6 +248,7 @@ async def entrypoint(ctx: JobContext):
         课程信息模型
         
         属性说明：
+
         - course: 课程类型，从动态枚举中选择
         - location: 上课方式，在线或面授
         """
@@ -269,7 +274,7 @@ async def entrypoint(ctx: JobContext):
         tools=[
             function_tool(
                 _get_course_info,
-                name="get_course_info", 
+                name="get_course_info",
                 description="获取课程信息",
             )
         ],
@@ -291,8 +296,8 @@ async def entrypoint(ctx: JobContext):
     await agent.update_tools(
         agent.tools + [
             function_tool(
-                _random_number, 
-                name="random_number", 
+                _random_number,
+                name="random_number",
                 description="生成随机数"
             )
         ]
@@ -306,6 +311,7 @@ async def entrypoint(ctx: JobContext):
         tts=openai.TTS(),
     )
     await session.start(agent, room=ctx.room)
+
 ```
 
 ## 3. 实时API集成示例
@@ -321,6 +327,7 @@ class RealtimeAgent(Agent):
     实时API代理
     
     功能说明：
+
     - 使用OpenAI的实时API进行低延迟对话
     - 支持流式音频处理
     - 提供更自然的对话体验
@@ -372,6 +379,7 @@ class IntroAgent(Agent):
     介绍代理 - 收集用户信息
     
     功能说明：
+
     - 作为对话的入口点
     - 收集用户的基本信息
     - 完成后切换到其他专门代理
@@ -425,6 +433,7 @@ class StoryAgent(Agent):
     故事代理 - 讲述个性化故事
     
     功能说明：
+
     - 使用收集的用户信息
     - 讲述个性化故事
     - 可以切换到实时API获得更好的体验
@@ -444,7 +453,7 @@ class StoryAgent(Agent):
         """进入时开始讲故事"""
         await self.session.generate_reply()
 
-@dataclass 
+@dataclass
 class StoryData:
     """用户故事数据结构"""
     name: str | None = None
@@ -484,7 +493,7 @@ from livekit.agents import Agent, function_tool
 class RoomName(str, Enum):
     """房间名称枚举"""
     LIVING_ROOM = "living_room"
-    BEDROOM = "bedroom" 
+    BEDROOM = "bedroom"
     KITCHEN = "kitchen"
     GARAGE = "garage"
 
@@ -507,6 +516,7 @@ class AdvancedToolAgent(Agent):
         智能灯光控制工具
         
         参数说明：
+
         - room: 房间名称，从预定义枚举中选择
         - action: 操作类型，开启/关闭/调暗
         - brightness: 亮度级别，0-100之间的整数
@@ -534,6 +544,7 @@ class AdvancedToolAgent(Agent):
         - LLM可以理解参数的具体含义和约束
         """
         return f"数值是{value}。"
+
 ```
 
 ### 5.2 静默工具调用
@@ -546,6 +557,7 @@ class SilentToolAgent(Agent):
     静默工具调用代理
     
     功能说明：
+
     - 演示如何执行不生成回复的工具函数
     - 控制何时生成语音响应
     - 适用于后台操作和状态更新
@@ -570,7 +582,7 @@ class SilentToolAgent(Agent):
         logger.info("灯已开启")
         # 没有返回值，不会生成语音回复
 
-    @function_tool 
+    @function_tool
     async def turn_off_light(self):
         """
         关灯工具 - 生成回复
@@ -597,6 +609,7 @@ class SilentToolAgent(Agent):
         # 如果需要，可以取消工具回复
         # event.cancel_tool_reply()
         pass
+
 ```
 
 ## 6. 环境配置
@@ -662,6 +675,7 @@ async def entrypoint(ctx: JobContext):
         指标收集事件处理
         
         功能说明：
+
         - 实时记录和显示性能指标
         - 收集使用统计信息
         - 支持自定义监控逻辑
@@ -676,6 +690,7 @@ async def entrypoint(ctx: JobContext):
     
     # 注册关闭回调
     ctx.add_shutdown_callback(log_usage)
+
 ```
 
 ### 7.2 错误处理
@@ -689,6 +704,7 @@ async def risky_operation(param: str):
     可能出错的操作示例
     
     功能说明：
+
     - 演示工具函数中的错误处理
     - 使用专门的异常类型
     """
@@ -703,6 +719,7 @@ async def risky_operation(param: str):
         # 严重错误时停止响应
         logger.error(f"操作失败: {e}")
         raise StopResponse()
+
 ```
 
 这些示例展示了LiveKit Agents框架的核心用法和高级特性。每个示例都包含详细的注释和说明，帮助开发者理解框架的工作原理和最佳实践。

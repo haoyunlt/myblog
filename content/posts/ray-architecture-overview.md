@@ -112,6 +112,7 @@ def compute_pi(n_samples: int) -> float:
         float: π的近似值
         
     功能说明:
+
         1. 生成随机点对(x,y)
         2. 计算落在单位圆内的点数
         3. 使用比例关系估算π值
@@ -156,6 +157,7 @@ class Counter:
     
     功能说明:
         Actor是有状态的远程对象，可以：
+
         1. 维护内部状态
         2. 处理并发方法调用
         3. 在集群中的特定节点上运行
@@ -416,6 +418,7 @@ def init(
     连接到现有Ray集群或启动新集群并连接
     
     核心功能：
+
     1. 集群发现和连接
     2. 资源配置和管理
     3. 运行时环境设置
@@ -438,6 +441,7 @@ def init(
             - ClientContext: 远程集群连接（ray://协议）
             - RayContext: 本地集群连接
     """
+
 ```
 
 **初始化流程分析：**
@@ -489,6 +493,7 @@ def init(address=None, **kwargs):
     else:
         # 本地集群模式
         return _init_local_mode(address, **kwargs)
+
 ```
 
 ### 4.2 @ray.remote - 远程装饰器
@@ -501,6 +506,7 @@ def remote(*args, **kwargs) -> Union[RemoteFunction, ActorClass]:
     定义远程函数或Actor类的装饰器
     
     核心功能：
+
     1. 将普通Python函数/类转换为分布式版本
     2. 配置资源需求和执行策略
     3. 提供.remote()调用接口
@@ -562,6 +568,7 @@ class RemoteFunction:
     远程函数的封装类
     
     核心职责：
+
     1. 函数元信息管理
     2. 任务提交和调度
     3. 序列化和反序列化
@@ -674,6 +681,7 @@ class RemoteFunction:
             self._function_descriptor,
             updated_options,
         )
+
 ```
 
 ---
@@ -983,7 +991,7 @@ classDiagram
         +dict _default_options
         
         +__init__(method_name, actor_handle, method_options)
-        +__call__(*args, **kwargs) 
+        +__call__(*args, **kwargs)
         +remote(*args, **kwargs) ObjectRef
         +options(**options) ActorMethod
     }
@@ -1087,6 +1095,7 @@ Ray分布式计算框架通过三层架构设计，为Python开发者提供了�
 3. **Ray Clusters层**：管理底层的集群资源和服务
 
 核心设计原则包括：
+
 - **简单易用**：通过装饰器和简单API隐藏分布式复杂性
 - **高性能**：零拷贝对象存储和高效任务调度
 - **可扩展**：从单机到大规模集群的无缝扩展

@@ -15,6 +15,7 @@ weight: 1
 ### 1. HTTP/HTTPS 接口
 
 #### 基本用法
+
 ```bash
 # 查询数据
 curl -X POST 'http://localhost:8123/' \
@@ -43,6 +44,7 @@ curl -X POST 'http://localhost:8123/?query=INSERT%20INTO%20test%20FORMAT%20CSV' 
 ### 2. TCP 原生协议
 
 #### 连接建立
+
 ```cpp
 // C++ 客户端示例
 #include <Client/Connection.h>
@@ -60,6 +62,7 @@ connection.connect();
 ### 3. MySQL 协议兼容
 
 #### 连接方式
+
 ```bash
 mysql -h localhost -P 9004 -u default -p
 ```
@@ -76,6 +79,7 @@ mysql -h localhost -P 9004 -u default -p
 ### 4. PostgreSQL 协议兼容
 
 #### 连接方式
+
 ```bash
 psql -h localhost -p 9005 -U default -d default
 ```
@@ -88,6 +92,7 @@ psql -h localhost -p 9005 -U default -d default
 ### 5. gRPC 接口
 
 #### 服务定义
+
 ```protobuf
 service ClickHouse {
     rpc ExecuteQuery(QueryRequest) returns (stream QueryResponse);
@@ -126,6 +131,7 @@ service ClickHouse {
 ## 认证与安全
 
 ### 用户认证
+
 ```sql
 -- 创建用户
 CREATE USER 'username' IDENTIFIED BY 'password';
@@ -144,6 +150,7 @@ CREATE QUOTA 'user_quota' FOR INTERVAL 1 HOUR MAX QUERIES 1000 TO 'username';
 - IP 地址限制
 
 ### SSL/TLS 支持
+
 ```xml
 <!-- config.xml -->
 <https_port>8443</https_port>
@@ -159,6 +166,7 @@ CREATE QUOTA 'user_quota' FOR INTERVAL 1 HOUR MAX QUERIES 1000 TO 'username';
 ## 查询语言特性
 
 ### DDL 操作
+
 ```sql
 -- 创建数据库
 CREATE DATABASE test_db;
@@ -178,18 +186,19 @@ ALTER TABLE test_db.events ADD COLUMN new_field String;
 ```
 
 ### DML 操作
+
 ```sql
 -- 插入数据
-INSERT INTO test_db.events VALUES 
+INSERT INTO test_db.events VALUES
     ('2023-01-01', 1001, 'click', 1.5),
     ('2023-01-01', 1002, 'view', 2.0);
 
 -- 查询数据
-SELECT 
+SELECT
     event_type,
     count() as cnt,
     avg(value) as avg_value
-FROM test_db.events 
+FROM test_db.events
 WHERE date >= '2023-01-01'
 GROUP BY event_type
 ORDER BY cnt DESC;
@@ -202,9 +211,10 @@ ALTER TABLE test_db.events DELETE WHERE date < '2023-01-01';
 ```
 
 ### 高级查询特性
+
 ```sql
 -- 窗口函数
-SELECT 
+SELECT
     user_id,
     event_type,
     value,
@@ -212,14 +222,14 @@ SELECT
 FROM test_db.events;
 
 -- 数组操作
-SELECT 
+SELECT
     groupArray(event_type) as events,
     arrayJoin(events) as event
 FROM test_db.events
 GROUP BY user_id;
 
 -- 近似查询
-SELECT 
+SELECT
     uniq(user_id) as unique_users,
     quantile(0.95)(value) as p95_value
 FROM test_db.events;
@@ -228,6 +238,7 @@ FROM test_db.events;
 ## 存储引擎
 
 ### MergeTree 系列
+
 ```sql
 -- 基础 MergeTree
 CREATE TABLE basic_table (
@@ -258,6 +269,7 @@ ORDER BY (date, key);
 ```
 
 ### 特殊引擎
+
 ```sql
 -- Memory 引擎（内存表）
 CREATE TABLE memory_table (
@@ -277,7 +289,7 @@ CREATE MATERIALIZED VIEW mv_table
 ENGINE = SummingMergeTree()
 PARTITION BY toYYYYMM(date)
 ORDER BY (date, key)
-AS SELECT 
+AS SELECT
     date,
     event_type as key,
     count() as value
@@ -288,6 +300,7 @@ GROUP BY date, event_type;
 ## 集群配置
 
 ### 集群定义
+
 ```xml
 <!-- config.xml -->
 <remote_servers>
@@ -317,6 +330,7 @@ GROUP BY date, event_type;
 ```
 
 ### 分布式查询
+
 ```sql
 -- 查询分布式表
 SELECT * FROM distributed_table WHERE date = '2023-01-01';
@@ -331,6 +345,7 @@ SELECT * FROM clusterAllReplicas('test_cluster', database.table);
 ## 监控与运维
 
 ### 系统表
+
 ```sql
 -- 查看正在运行的查询
 SELECT * FROM system.processes;
@@ -349,6 +364,7 @@ SELECT * FROM system.parts WHERE table = 'events';
 ```
 
 ### 性能监控
+
 ```sql
 -- 查询统计
 SELECT * FROM system.query_log WHERE type = 'QueryFinish' ORDER BY event_time DESC LIMIT 10;
@@ -360,6 +376,7 @@ SELECT * FROM system.asynchronous_metrics;
 ```
 
 ### 配置管理
+
 ```xml
 <!-- config.xml 主要配置项 -->
 <yandex>

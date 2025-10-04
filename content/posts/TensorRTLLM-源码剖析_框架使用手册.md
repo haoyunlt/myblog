@@ -43,11 +43,13 @@ TensorRT-LLM 是 NVIDIA 开源的大语言模型推理优化库，基于 PyTorch
 ### 安装方式
 
 #### 1. 通过 pip 安装（推荐）
+
 ```bash
 pip install tensorrt-llm --extra-index-url https://pypi.nvidia.com
 ```
 
 #### 2. 从源码构建
+
 ```bash
 git clone https://github.com/NVIDIA/TensorRT-LLM.git
 cd TensorRT-LLM
@@ -312,6 +314,7 @@ output = llm.generate(
 TensorRT-LLM 提供了多个命令行工具：
 
 ### 1. trtllm-build - 构建引擎
+
 ```bash
 trtllm-build --model_dir /path/to/model \
              --output_dir /path/to/engine \
@@ -321,6 +324,7 @@ trtllm-build --model_dir /path/to/model \
 ```
 
 ### 2. trtllm-serve - 启动服务
+
 ```bash
 trtllm-serve --model /path/to/model \
              --host 0.0.0.0 \
@@ -329,6 +333,7 @@ trtllm-serve --model /path/to/model \
 ```
 
 ### 3. trtllm-bench - 性能测试
+
 ```bash
 trtllm-bench --model /path/to/model \
              --batch_size 8 \
@@ -337,6 +342,7 @@ trtllm-bench --model /path/to/model \
 ```
 
 ### 4. trtllm-eval - 模型评估
+
 ```bash
 trtllm-eval --model /path/to/model \
             --backend tensorrt \
@@ -366,6 +372,7 @@ trtllm-eval --model /path/to/model \
 ## 并行策略
 
 ### 张量并行（Tensor Parallelism）
+
 ```python
 llm = LLM(
     model="meta-llama/Llama-2-70b-hf",
@@ -374,6 +381,7 @@ llm = LLM(
 ```
 
 ### 流水线并行（Pipeline Parallelism）
+
 ```python
 llm = LLM(
     model="meta-llama/Llama-2-70b-hf",
@@ -383,6 +391,7 @@ llm = LLM(
 ```
 
 ### 专家并行（Expert Parallelism）
+
 ```python
 llm = LLM(
     model="mixtral-8x7b",
@@ -394,6 +403,7 @@ llm = LLM(
 ## 量化支持
 
 ### FP8 量化
+
 ```python
 from tensorrt_llm.quantization import QuantConfig, QuantAlgo
 
@@ -402,12 +412,14 @@ llm = LLM(model="meta-llama/Llama-2-7b-hf", quant_config=quant_config)
 ```
 
 ### INT4 AWQ 量化
+
 ```python
 quant_config = QuantConfig(quant_algo=QuantAlgo.W4A16_AWQ)
 llm = LLM(model="meta-llama/Llama-2-7b-hf", quant_config=quant_config)
 ```
 
 ### FP4 量化（B200 GPU）
+
 ```python
 quant_config = QuantConfig(quant_algo=QuantAlgo.NVFP4)
 llm = LLM(model="meta-llama/Llama-2-7b-hf", quant_config=quant_config)
@@ -416,6 +428,7 @@ llm = LLM(model="meta-llama/Llama-2-7b-hf", quant_config=quant_config)
 ## 高级特性
 
 ### 投机解码（Speculative Decoding）
+
 ```python
 from tensorrt_llm.llmapi import SpeculativeDecodingConfig
 
@@ -431,6 +444,7 @@ llm = LLM(
 ```
 
 ### LoRA 适配器
+
 ```python
 from tensorrt_llm.executor import LoRARequest
 
@@ -446,6 +460,7 @@ outputs = llm.generate(
 ```
 
 ### 多模态支持
+
 ```python
 from tensorrt_llm.llmapi import MultimodalEncoder
 
@@ -483,12 +498,14 @@ llm = LLM(
 ### 常见问题
 
 #### 1. 内存不足
+
 ```bash
 # 解决方案：减少批次大小或序列长度
 trtllm-build --max_batch_size 4 --max_seq_len 1024
 ```
 
 #### 2. 编译失败
+
 ```bash
 # 检查 CUDA 和 TensorRT 版本
 nvidia-smi
@@ -496,12 +513,14 @@ python -c "import tensorrt; print(tensorrt.__version__)"
 ```
 
 #### 3. 性能不佳
+
 ```bash
 # 使用性能分析工具
 trtllm-bench --model /path/to/model --profile
 ```
 
 ### 调试模式
+
 ```python
 import os
 os.environ["TRTLLM_LOG_LEVEL"] = "DEBUG"
@@ -537,6 +556,7 @@ llm = LLM(model="meta-llama/Llama-2-7b-hf")
 ## 版本信息
 
 当前版本：1.1.0rc6
+
 - 支持 Python 3.10-3.12
 - 兼容 CUDA 13.0.0+
 - 需要 TensorRT 10.13.2+

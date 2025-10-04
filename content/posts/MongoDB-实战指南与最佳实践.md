@@ -20,8 +20,10 @@ weight: 1
 
 ```cpp
 /**
+
  * MongoDB C++驱动程序高级使用示例
  * 展示如何正确使用MongoDB的核心API
+
  */
 #include <mongocxx/client.hpp>
 #include <mongocxx/instance.hpp>
@@ -37,6 +39,7 @@ private:
     
 public:
     /**
+
      * 初始化MongoDB连接池
      * 对应源码：src/mongo/client/connection_pool.h
      */
@@ -65,7 +68,7 @@ public:
             // 测试连接
             auto client = _pool->acquire();
             auto ping_result = (*client)["admin"].run_command(
-                bsoncxx::builder::stream::document{} << "ping" << 1 
+                bsoncxx::builder::stream::document{} << "ping" << 1
                 << bsoncxx::builder::stream::finalize);
                 
             return true;
@@ -104,7 +107,7 @@ public:
             // 处理批量写入异常
             std::cerr << "批量插入错误: " << ex.what() << std::endl;
             for (const auto& error : ex.write_errors()) {
-                std::cerr << "错误索引: " << error.index() 
+                std::cerr << "错误索引: " << error.index()
                          << ", 错误码: " << error.code()
                          << ", 消息: " << error.message() << std::endl;
             }
@@ -189,6 +192,7 @@ public:
             return false;
         }
     }
+
 };
 
 // 使用示例
@@ -215,7 +219,7 @@ int main() {
         );
     }
     
-    mongo_mgr.insertDocuments("myapp", "users", 
+    mongo_mgr.insertDocuments("myapp", "users",
         std::vector<bsoncxx::document::view>(documents.begin(), documents.end()));
     
     // 3. 优化查询示例
@@ -231,7 +235,7 @@ int main() {
         << "created_at" << -1
         << bsoncxx::builder::stream::finalize;
     
-    auto results = mongo_mgr.performOptimizedQuery("myapp", "users", 
+    auto results = mongo_mgr.performOptimizedQuery("myapp", "users",
                                                   filter.view(), sort.view(), 50);
     
     std::cout << "查询到 " << results.size() << " 个结果" << std::endl;
@@ -244,8 +248,10 @@ int main() {
 
 ```javascript
 /**
+
  * MongoDB Node.js驱动程序高级使用示例
  * 展示生产环境最佳实践
+
  */
 const { MongoClient, GridFSBucket } = require('mongodb');
 
@@ -256,6 +262,7 @@ class MongoDBService {
     }
     
     /**
+
      * 连接初始化（对应Grid::init）
      */
     async initialize() {
@@ -322,9 +329,9 @@ class MongoDBService {
                     // 复合索引，遵循ESR规则
                     { key: { status: 1, email: 1, createdAt: -1 } },
                     // 部分索引，减少存储开销
-                    { 
-                        key: { phoneNumber: 1 }, 
-                        options: { 
+                    {
+                        key: { phoneNumber: 1 },
+                        options: {
                             sparse: true,
                             partialFilterExpression: { phoneNumber: { $exists: true } }
                         }
@@ -524,6 +531,7 @@ class MongoDBService {
             console.log('MongoDB连接已关闭');
         }
     }
+
 }
 
 // 使用示例
@@ -630,15 +638,16 @@ services:
     image: mongo:7.0
     container_name: mongo-primary
     ports:
+
       - "27017:27017"
     volumes:
       - mongo-primary-data:/data/db
       - ./mongo-keyfile:/data/keyfile:ro
       - ./ssl:/data/ssl:ro
     command: >
-      mongod --replSet rs0 
-             --bind_ip_all 
-             --auth 
+      mongod --replSet rs0
+             --bind_ip_all
+             --auth
              --keyFile /data/keyfile
              --sslMode requireSSL
              --sslPEMKeyFile /data/ssl/mongodb.pem
@@ -660,9 +669,9 @@ services:
       - ./mongo-keyfile:/data/keyfile:ro
       - ./ssl:/data/ssl:ro
     command: >
-      mongod --replSet rs0 
-             --bind_ip_all 
-             --auth 
+      mongod --replSet rs0
+             --bind_ip_all
+             --auth
              --keyFile /data/keyfile
              --sslMode requireSSL
              --sslPEMKeyFile /data/ssl/mongodb.pem
@@ -683,9 +692,9 @@ services:
       - ./mongo-keyfile:/data/keyfile:ro
       - ./ssl:/data/ssl:ro
     command: >
-      mongod --replSet rs0 
-             --bind_ip_all 
-             --auth 
+      mongod --replSet rs0
+             --bind_ip_all
+             --auth
              --keyFile /data/keyfile
              --sslMode requireSSL
              --sslPEMKeyFile /data/ssl/mongodb.pem
@@ -762,6 +771,7 @@ services:
     image: mongo:7.0
     command: mongod --configsvr --replSet configReplSet --port 27017 --dbpath /data/db
     volumes:
+
       - config1:/data/db
     networks:
       - mongo-shard-network
@@ -869,6 +879,7 @@ services:
   mongodb-exporter:
     image: percona/mongodb_exporter:0.40
     ports:
+
       - "9216:9216"
     environment:
       - MONGODB_URI=mongodb://monitor:password@mongo-primary:27017
@@ -940,20 +951,24 @@ global:
   evaluation_interval: 15s
 
 rule_files:
+
   - "mongodb-rules.yml"
 
 alerting:
   alertmanagers:
+
     - static_configs:
         - targets:
           - alertmanager:9093
 
 scrape_configs:
+
   - job_name: 'mongodb'
     static_configs:
       - targets: ['mongodb-exporter:9216']
     scrape_interval: 30s
     metrics_path: /metrics
+
 ```
 
 ## 性能调优实战
@@ -962,7 +977,9 @@ scrape_configs:
 
 ```javascript
 /**
+
  * 索引性能分析和优化工具
+
  */
 class IndexOptimizer {
     constructor(db) {
@@ -970,6 +987,7 @@ class IndexOptimizer {
     }
     
     /**
+
      * 分析集合的索引使用情况
      */
     async analyzeIndexUsage(collectionName) {
@@ -1020,8 +1038,8 @@ class IndexOptimizer {
         for (const pattern of queryPatterns) {
             const explanation = await this.explainQuery(collectionName, pattern);
             
-            if (explanation.executionStats.executionSuccess && 
-                explanation.executionStats.totalDocsExamined > 
+            if (explanation.executionStats.executionSuccess &&
+                explanation.executionStats.totalDocsExamined >
                 explanation.executionStats.totalDocsReturned * 10) {
                 
                 // 如果扫描的文档数远大于返回的文档数，建议添加索引
@@ -1111,6 +1129,7 @@ class IndexOptimizer {
         
         return { ...equality, ...sort, ...range };
     }
+
 }
 
 // 使用示例
@@ -1150,7 +1169,9 @@ async function optimizeIndexes() {
 
 ```javascript
 /**
+
  * 查询性能优化工具类
+
  */
 class QueryOptimizer {
     constructor(db) {
@@ -1159,6 +1180,7 @@ class QueryOptimizer {
     }
     
     /**
+
      * 启用查询性能分析
      */
     async enableProfiling(level = 2, slowms = 100) {
@@ -1252,7 +1274,7 @@ class QueryOptimizer {
                     executionTime: explanation.executionStats.executionTimeMillis,
                     docsExamined: explanation.executionStats.totalDocsExamined,
                     docsReturned: explanation.executionStats.totalDocsReturned,
-                    efficiency: explanation.executionStats.totalDocsReturned / 
+                    efficiency: explanation.executionStats.totalDocsReturned /
                                (explanation.executionStats.totalDocsExamined || 1)
                 });
                 
@@ -1339,6 +1361,7 @@ class QueryOptimizer {
         
         return { data: result, fromCache: false };
     }
+
 }
 
 // 使用示例
@@ -1367,7 +1390,7 @@ async function performQueryOptimization() {
             { status: 1, email: 1, createdAt: -1 }
         ];
         
-        const comparison = await optimizer.compareQueryPlans('users', 
+        const comparison = await optimizer.compareQueryPlans('users',
             { status: 'active', email: /gmail\.com$/ }, testIndexes);
         console.log('索引性能对比:', comparison);
         
@@ -1393,7 +1416,9 @@ async function performQueryOptimization() {
 
 ```javascript
 /**
+
  * MongoDB安全配置最佳实践
+
  */
 class SecurityManager {
     constructor(adminDb) {
@@ -1401,6 +1426,7 @@ class SecurityManager {
     }
     
     /**
+
      * 创建安全的用户角色体系
      */
     async setupSecurityRoles() {
@@ -1463,7 +1489,7 @@ class SecurityManager {
                     roles: ['appReadOnly']
                 },
                 {
-                    user: 'app-write', 
+                    user: 'app-write',
                     pwd: this.generateSecurePassword(),
                     roles: ['appReadWrite']
                 },
@@ -1555,6 +1581,7 @@ class SecurityManager {
         console.log('审计配置:', JSON.stringify(auditConfig, null, 2));
         return auditConfig;
     }
+
 }
 ```
 
@@ -1664,7 +1691,9 @@ auditLog:
 
 ```javascript
 /**
+
  * MongoDB故障诊断工具
+
  */
 class DiagnosticTool {
     constructor(client) {
@@ -1673,6 +1702,7 @@ class DiagnosticTool {
     }
     
     /**
+
      * 系统健康检查
      */
     async performHealthCheck() {
@@ -1729,7 +1759,7 @@ class DiagnosticTool {
                         health: member.health,
                         uptime: member.uptime,
                         optime: member.optime,
-                        lag: member.optimeDate ? 
+                        lag: member.optimeDate ?
                             (new Date() - member.optimeDate) / 1000 : null
                     }))
                 };
@@ -1958,6 +1988,7 @@ class DiagnosticTool {
         
         return actions[issue.message] || '请查阅MongoDB文档获取详细解决方案';
     }
+
 }
 
 // 使用示例
@@ -2167,6 +2198,7 @@ point_in_time_restore() {
 4. **故障处理能力**: 系统化的诊断和恢复策略
 
 通过掌握这些知识，您将能够：
+
 - 更好地设计MongoDB应用架构
 - 优化查询性能和索引策略
 - 构建高可用的MongoDB集群

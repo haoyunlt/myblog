@@ -151,6 +151,7 @@ class Dataset:
     分布式数据集合，Ray Data的核心抽象
     
     核心职责：
+
     1. 数据的逻辑表示和操作
     2. 延迟计算的计划构建
     3. 数据转换操作的API
@@ -188,8 +189,8 @@ class Dataset:
         self._set_uuid(StatsManager.get_dataset_id_from_stats_actor())
     
     def map_batches(
-        self, 
-        fn: Union[CallableClass, Callable], 
+        self,
+        fn: Union[CallableClass, Callable],
         *,
         batch_size: Union[int, Literal["default"]] = "default",
         compute: Union[str, ComputeStrategy] = None,
@@ -222,7 +223,7 @@ class Dataset:
         
         # 构建批处理转换器
         map_transformer = BatchMapTransformer(
-            fn=fn, 
+            fn=fn,
             batch_size=batch_size,
             **kwargs
         )
@@ -271,6 +272,7 @@ class Dataset:
         - 自定义聚合函数
         """
         return GroupedData(self, key)
+
 ```
 
 ### 3.2 数据读取API实现
@@ -290,6 +292,7 @@ def read_parquet(
     读取Parquet文件创建Dataset
     
     核心实现流程：
+
     1. 路径解析和文件发现
     2. 并行度计算和任务分割  
     3. 创建读取任务
@@ -297,7 +300,7 @@ def read_parquet(
     
     优化特性：
     - 列剪枝（Projection Pushdown）
-    - 谓词下推（Predicate Pushdown） 
+    - 谓词下推（Predicate Pushdown）
     - 自动并行度检测
     - 元数据缓存
     """
@@ -322,6 +325,7 @@ def read_datasource(datasource: Datasource, **kwargs) -> Dataset:
     通用数据源读取实现
     
     处理流程：
+
     1. 数据源能力检查
     2. 并行度自动检测
     3. 读取任务生成
@@ -360,6 +364,7 @@ def read_datasource(datasource: Datasource, **kwargs) -> Dataset:
         plan=execution_plan,
         logical_plan=logical_plan
     )
+
 ```
 
 ---
@@ -417,6 +422,7 @@ class StreamingExecutor(Executor, threading.Thread):
     流式数据集执行器
     
     核心特性：
+
     1. 全流式执行策略 - 数据以流的方式在操作符间传递
     2. 资源感知调度 - 根据集群资源动态调整任务
     3. 背压控制机制 - 防止内存溢出
@@ -480,8 +486,8 @@ class StreamingExecutor(Executor, threading.Thread):
         # 1. 初始化进度条
         if not isinstance(dag, InputDataBuffer):
             self._global_info = ProgressBar(
-                "Running", 
-                dag.num_output_rows_total(), 
+                "Running",
+                dag.num_output_rows_total(),
                 unit="row"
             )
         
@@ -579,6 +585,7 @@ class StreamingExecutor(Executor, threading.Thread):
                 
                 # 更新操作符状态
                 op_state.increment_running_tasks()
+
 ```
 
 ---
@@ -643,6 +650,7 @@ class RefBundle:
     数据块引用的集合，操作符间数据传递的基本单位
     
     核心概念：
+
     1. 数据块的逻辑分组 - 通常包含一个或多个Block
     2. 所有权语义 - 支持共享和独占所有权
     3. 元数据管理 - 包含大小、模式等信息
@@ -750,6 +758,7 @@ class RefBundle:
                     ray._private.worker.global_worker.core_worker.remove_object_ref_reference(block_ref)
                 except Exception:
                     pass  # 忽略删除时的异常
+
 ```
 
 ### 5.3 数据分区和重分区策略
@@ -759,10 +768,12 @@ class RefBundle:
 Ray Data数据分区策略详解
 
 数据分区是Ray Data性能优化的关键：
+
 1. 影响并行度和资源利用率
 2. 决定内存使用模式
 3. 影响网络传输开销
 4. 关联数据本地性优化
+
 """
 
 import ray
@@ -774,6 +785,7 @@ def demonstrate_auto_partitioning():
     自动分区演示
     
     Ray Data的智能分区策略：
+
     - 基于目标块大小(target_max_block_size)
     - 考虑集群资源和节点数
     - 平衡并行度和内存使用
@@ -793,6 +805,7 @@ def demonstrate_repartitioning():
     手动重分区策略
     
     重分区时机：
+
     - 数据倾斜严重
     - 块大小不均匀
     - 改变并行度需求
@@ -806,11 +819,11 @@ def demonstrate_repartitioning():
     ds_fewer_partitions = ds.repartition(num_blocks=4)
     
     # 按大小重分区（平衡块大小）
-    ds_balanced = ds.repartition(num_blocks=ds.num_blocks(), 
+    ds_balanced = ds.repartition(num_blocks=ds.num_blocks(),
                                  shuffle=True)  # 随机重新分布
     
     print(f"原始: {ds.num_blocks()} blocks")
-    print(f"增加分区: {ds_more_partitions.num_blocks()} blocks") 
+    print(f"增加分区: {ds_more_partitions.num_blocks()} blocks")
     print(f"减少分区: {ds_fewer_partitions.num_blocks()} blocks")
 
 # 3. 数据本地性优化
@@ -819,6 +832,7 @@ def demonstrate_locality_optimization():
     数据本地性优化
     
     策略：
+
     - 尽量在数据所在节点执行计算
     - 减少网络传输开销
     - 提高缓存命中率
@@ -851,6 +865,7 @@ def demonstrate_memory_efficient_partitioning():
     内存优化的分区策略
     
     原则：
+
     - 控制单个块的大小
     - 避免内存溢出
     - 优化垃圾回收
@@ -893,6 +908,7 @@ def demonstrate_memory_efficient_partitioning():
     )
     
     return processed
+
 ```
 
 ---
@@ -955,6 +971,7 @@ class Datasource:
     自定义数据源的基础接口
     
     核心职责：
+
     1. 定义数据读取的抽象接口
     2. 支持元数据推断和大小估计
     3. 提供读取任务的生成逻辑
@@ -985,8 +1002,8 @@ class Datasource:
         raise NotImplementedError("子类必须实现此方法")
     
     def get_read_tasks(
-        self, 
-        parallelism: int, 
+        self,
+        parallelism: int,
         per_task_row_limit: Optional[int] = None
     ) -> List["ReadTask"]:
         """
@@ -1026,6 +1043,7 @@ class ParquetDatasource(FileBasedDatasource):
     Parquet文件数据源实现
     
     特性：
+
     - 支持列投影和谓词下推
     - 自动模式推断
     - 并行读取优化
@@ -1092,8 +1110,8 @@ class ParquetDatasource(FileBasedDatasource):
             return None  # 无法估算时返回None
     
     def get_read_tasks(
-        self, 
-        parallelism: int, 
+        self,
+        parallelism: int,
         per_task_row_limit: Optional[int] = None
     ) -> List[ReadTask]:
         """
@@ -1154,6 +1172,7 @@ class ParquetDatasource(FileBasedDatasource):
                 read_tasks.append(read_task)
         
         return read_tasks
+
 ```
 
 ---
@@ -1177,6 +1196,7 @@ def ml_data_preprocessing_pipeline():
     机器学习数据预处理流水线
     
     步骤：
+
     1. 读取原始数据
     2. 数据清洗和验证  
     3. 特征工程
@@ -1442,6 +1462,7 @@ def optimize_block_size():
     块大小优化策略
     
     原则：
+
     - CPU密集型任务：较大块（256MB+）
     - I/O密集型任务：较小块（64MB-128MB）
     - GPU任务：考虑GPU内存限制

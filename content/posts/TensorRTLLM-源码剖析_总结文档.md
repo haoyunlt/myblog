@@ -33,6 +33,7 @@ slug: "TensorRTLLM-源码剖析_总结文档"
 - **底层支撑**: CUDA 内核、量化、并行策略
 
 #### 模块化设计
+
 ```
 tensorrt_llm/
 ├── llmapi/          # 高级 API 接口
@@ -47,6 +48,7 @@ tensorrt_llm/
 ### 2. 关键技术实现
 
 #### 2.1 LLM API 设计
+
 ```python
 # 核心接口设计
 class LLM:
@@ -58,11 +60,13 @@ class LLM:
 ```
 
 **设计亮点**:
+
 - 统一的接口抽象，屏蔽底层复杂性
 - 支持多种后端（PyTorch/TensorRT）
 - 自动资源管理和清理
 
 #### 2.2 执行器架构
+
 ```python
 # 抽象执行器设计
 class GenerationExecutor(ABC):
@@ -76,24 +80,29 @@ class GenerationExecutor(ABC):
 ```
 
 **设计亮点**:
+
 - 抽象基类定义统一接口
 - 工厂模式支持多种实现
 - 异步处理提高并发性能
 
 #### 2.3 构建器设计
+
 ```python
 def build(model: PretrainedModel, build_config: BuildConfig) -> Engine:
     """
     构建流程:
+
     1. 配置预处理和验证
     2. 网络构建和前向传播
     3. 图优化和算子融合
     4. 自动并行处理
     5. TensorRT 引擎编译
     """
+
 ```
 
 **设计亮点**:
+
 - 声明式配置，简化使用
 - 多阶段优化流水线
 - 支持自动并行和量化
@@ -123,6 +132,7 @@ def build(model: PretrainedModel, build_config: BuildConfig) -> Engine:
 ### 4. 关键数据结构
 
 #### 4.1 请求响应模型
+
 ```python
 @dataclass
 class GenerationRequest:
@@ -140,6 +150,7 @@ class RequestOutput:
 ```
 
 #### 4.2 配置体系
+
 ```python
 @dataclass
 class BuildConfig:
@@ -152,6 +163,7 @@ class BuildConfig:
 ### 5. 核心算法流程
 
 #### 5.1 推理执行流程
+
 ```mermaid
 graph LR
     A[用户输入] --> B[分词处理]
@@ -163,6 +175,7 @@ graph LR
 ```
 
 #### 5.2 模型构建流程
+
 ```mermaid
 graph TB
     A[模型定义] --> B[网络构建]

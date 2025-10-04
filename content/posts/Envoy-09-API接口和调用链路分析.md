@@ -55,8 +55,10 @@ Envoy的管理API通过HTTP接口提供运行时信息和控制功能：
 
 ```cpp
 /**
+
  * AdminImpl 管理接口实现
  * 提供Envoy运行时的管理和监控功能
+
  */
 class AdminImpl : public Admin,
                   public Network::FilterChainManager,
@@ -75,6 +77,7 @@ public:
 
 private:
   /**
+
    * 核心管理端点实现
    */
   
@@ -223,6 +226,7 @@ private:
   Network::SocketPtr socket_;              // 管理套接字
   std::list<HandlerPtr> handlers_;         // 处理器列表
   mutable Thread::MutexBasicLockable handlers_mutex_; // 处理器互斥锁
+
 };
 ```
 
@@ -273,14 +277,17 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * LdsApiImpl LDS API实现
  * 处理监听器配置的动态更新
+
  */
 class LdsApiImpl : public LdsApi,
                    Config::SubscriptionCallbacks,
                    Logger::Loggable<Logger::Id::upstream> {
 public:
   /**
+
    * 构造函数
    * @param lds_config LDS配置
    * @param cluster_manager 集群管理器
@@ -411,8 +418,10 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * CdsApiImpl CDS API实现
  * 处理集群配置的动态发现和更新
+
  */
 class CdsApiImpl : public CdsApi,
                    Config::SubscriptionCallbacks,
@@ -430,7 +439,7 @@ public:
   // Config::SubscriptionCallbacks 接口实现
   absl::Status onConfigUpdate(const std::vector<Config::DecodedResourceRef>& resources,
                              const std::string& version_info) override {
-    ENVOY_LOG(debug, "CDS配置更新，版本: {}, 集群数量: {}", 
+    ENVOY_LOG(debug, "CDS配置更新，版本: {}, 集群数量: {}",
               version_info, resources.size());
 
     std::vector<std::string> cluster_names;
@@ -539,12 +548,15 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * EdsClusterImpl::LocalityEndpointsManager
  * 管理EDS集群的端点本地性分布
+
  */
 class LocalityEndpointsManager {
 public:
   /**
+
    * 更新端点配置
    * @param locality_lb_endpoints 本地性负载均衡端点列表
    * @param local_cluster_name 本地集群名称
@@ -576,7 +588,7 @@ public:
         Network::Address::InstanceConstSharedPtr address;
         try {
           address = Network::Utility::resolveUrl(
-              fmt::format("tcp://{}:{}", 
+              fmt::format("tcp://{}:{}",
                          endpoint.address().socket_address().address(),
                          endpoint.address().socket_address().port_value()));
         } catch (const EnvoyException& e) {
@@ -586,7 +598,7 @@ public:
         
         // 创建主机实例
         auto host = std::make_shared<HostImpl>(
-            cluster_info_, "", address, nullptr, 
+            cluster_info_, "", address, nullptr,
             lb_endpoint.load_balancing_weight().value(),
             locality_lb_endpoint.locality(),
             lb_endpoint.health_status(),
@@ -614,6 +626,7 @@ public:
 
 private:
   /**
+
    * 优先级状态管理器
    * 管理不同优先级的主机分布
    */
@@ -653,6 +666,7 @@ private:
   ClusterInfoConstSharedPtr cluster_info_;  // 集群信息
   PrioritySetImpl priority_set_;           // 优先级集合
   LocalityEndpointsManager locality_endpoints_manager_; // 本地性端点管理器
+
 };
 ```
 
@@ -717,8 +731,10 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * RouterFilter::decodeHeaders 路由过滤器头部处理实现
  * 这是HTTP请求处理的关键入口点
+
  */
 FilterHeadersStatus Filter::decodeHeaders(RequestHeaderMap& headers, bool end_stream) {
   ENVOY_STREAM_LOG(debug, "路由过滤器处理请求头，end_stream: {}", *callbacks_, end_stream);
@@ -730,7 +746,7 @@ FilterHeadersStatus Filter::decodeHeaders(RequestHeaderMap& headers, bool end_st
   route_ = callbacks_->route();
   if (!route_) {
     ENVOY_STREAM_LOG(debug, "未找到路由配置", *callbacks_);
-    callbacks_->sendLocalReply(Http::Code::NotFound, "404 Not Found\r\n", nullptr, 
+    callbacks_->sendLocalReply(Http::Code::NotFound, "404 Not Found\r\n", nullptr,
                               absl::nullopt, "route_not_found");
     return FilterHeadersStatus::StopIteration;
   }
@@ -749,7 +765,7 @@ FilterHeadersStatus Filter::decodeHeaders(RequestHeaderMap& headers, bool end_st
   cluster_ = callbacks_->clusterInfo();
   if (!cluster_) {
     ENVOY_STREAM_LOG(debug, "集群 {} 不存在", *callbacks_, cluster_name);
-    callbacks_->sendLocalReply(Http::Code::ServiceUnavailable, 
+    callbacks_->sendLocalReply(Http::Code::ServiceUnavailable,
                               "503 Service Unavailable\r\n", nullptr,
                               absl::nullopt, "cluster_not_found");
     return FilterHeadersStatus::StopIteration;
@@ -785,10 +801,12 @@ FilterHeadersStatus Filter::decodeHeaders(RequestHeaderMap& headers, bool end_st
 }
 
 /**
+
  * 启动上游请求的实现
+
  */
 void Filter::startUpstreamRequest() {
-  ENVOY_STREAM_LOG(debug, "启动上游请求到集群: {}", *callbacks_, 
+  ENVOY_STREAM_LOG(debug, "启动上游请求到集群: {}", *callbacks_,
                    route_entry_->clusterName());
 
   // 1. 获取连接池
@@ -819,7 +837,9 @@ void Filter::startUpstreamRequest() {
 }
 
 /**
+
  * UpstreamRequest::startStream 上游请求流启动实现
+
  */
 void UpstreamRequest::startStream() {
   ENVOY_STREAM_LOG(debug, "启动上游流", parent_.callbacks_);
@@ -841,20 +861,22 @@ void UpstreamRequest::startStream() {
   // 3. 设置流状态
   upstream_canary_ = upstream_host_->canary();
   
-  ENVOY_STREAM_LOG(debug, "上游请求已启动，主机: {}", 
+  ENVOY_STREAM_LOG(debug, "上游请求已启动，主机: {}",
                    parent_.callbacks_, upstream_host_->address()->asString());
 }
 
 // ConnectionPool::Callbacks 接口实现
 
 /**
+
  * 连接池准备就绪回调
+
  */
 void UpstreamRequest::onPoolReady(RequestEncoder& request_encoder,
                                  HostDescriptionConstSharedPtr host,
                                  StreamInfo::StreamInfo& info,
                                  absl::optional<Http::Protocol> protocol) {
-  ENVOY_STREAM_LOG(debug, "连接池就绪，主机: {}", parent_.callbacks_, 
+  ENVOY_STREAM_LOG(debug, "连接池就绪，主机: {}", parent_.callbacks_,
                    host->address()->asString());
 
   // 1. 保存上游编码器和主机信息
@@ -866,14 +888,14 @@ void UpstreamRequest::onPoolReady(RequestEncoder& request_encoder,
   
   // 3. 发送请求头
   if (parent_.downstream_headers_) {
-    const bool end_stream = parent_.downstream_end_stream_ && 
+    const bool end_stream = parent_.downstream_end_stream_ &&
                            !parent_.buffered_request_body_;
                            
     request_encoder_->encodeHeaders(*parent_.downstream_headers_, end_stream);
     
     // 4. 发送请求体（如果有）
     if (parent_.buffered_request_body_) {
-      request_encoder_->encodeData(*parent_.buffered_request_body_, 
+      request_encoder_->encodeData(*parent_.buffered_request_body_,
                                   parent_.downstream_end_stream_);
     }
     
@@ -891,12 +913,14 @@ void UpstreamRequest::onPoolReady(RequestEncoder& request_encoder,
 }
 
 /**
+
  * 连接池失败回调
+
  */
 void UpstreamRequest::onPoolFailure(ConnectionPool::PoolFailureReason reason,
                                    absl::string_view transport_failure_reason,
                                    HostDescriptionConstSharedPtr host) {
-  ENVOY_STREAM_LOG(debug, "连接池失败，原因: {}, 主机: {}", 
+  ENVOY_STREAM_LOG(debug, "连接池失败，原因: {}, 主机: {}",
                    parent_.callbacks_, static_cast<int>(reason),
                    host ? host->address()->asString() : "unknown");
 
@@ -928,8 +952,8 @@ void UpstreamRequest::onPoolFailure(ConnectionPool::PoolFailureReason reason,
   
   // 设置响应标志并发送错误响应
   parent_.callbacks_->streamInfo().setResponseFlag(response_flag);
-  parent_.callbacks_->sendLocalReply(response_code, "Service Unavailable\r\n", 
-                                    nullptr, absl::nullopt, 
+  parent_.callbacks_->sendLocalReply(response_code, "Service Unavailable\r\n",
+                                    nullptr, absl::nullopt,
                                     "upstream_connection_failure");
 }
 ```
@@ -963,8 +987,10 @@ void UpstreamRequest::onPoolFailure(ConnectionPool::PoolFailureReason reason,
 
 ```cpp
 /**
+
  * AdminImpl::handlerStats 统计接口实现
  * 提供详细的运行时统计信息
+
  */
 Http::Code AdminImpl::handlerStats(absl::string_view path_and_query,
                                   Http::ResponseHeaderMap& response_headers,
@@ -998,7 +1024,9 @@ Http::Code AdminImpl::handlerStats(absl::string_view path_and_query,
 }
 
 /**
+
  * 输出文本格式统计
+
  */
 Http::Code AdminImpl::outputStatsAsText(const std::string& filter_string,
                                        bool used_only,
@@ -1029,7 +1057,7 @@ Http::Code AdminImpl::outputStatsAsText(const std::string& filter_string,
       continue;
     }
     
-    if (!filter_string.empty() && 
+    if (!filter_string.empty() &&
         !std::regex_search(counter->name(), filter_regex)) {
       continue;
     }
@@ -1049,7 +1077,7 @@ Http::Code AdminImpl::outputStatsAsText(const std::string& filter_string,
       continue;
     }
     
-    if (!filter_string.empty() && 
+    if (!filter_string.empty() &&
         !std::regex_search(gauge->name(), filter_regex)) {
       continue;
     }
@@ -1060,7 +1088,7 @@ Http::Code AdminImpl::outputStatsAsText(const std::string& filter_string,
   // 输出直方图
   std::vector<Stats::ParentHistogramSharedPtr> histograms = stats_store.histograms();
   std::sort(histograms.begin(), histograms.end(),
-           [](const Stats::ParentHistogramSharedPtr& a, 
+           [](const Stats::ParentHistogramSharedPtr& a,
               const Stats::ParentHistogramSharedPtr& b) -> bool {
              return a->name() < b->name();
            });
@@ -1070,7 +1098,7 @@ Http::Code AdminImpl::outputStatsAsText(const std::string& filter_string,
       continue;
     }
     
-    if (!filter_string.empty() && 
+    if (!filter_string.empty() &&
         !std::regex_search(histogram->name(), filter_regex)) {
       continue;
     }
@@ -1079,7 +1107,7 @@ Http::Code AdminImpl::outputStatsAsText(const std::string& filter_string,
     response.add(fmt::format("{}: P0({}),P25({}),P50({}),P75({}),P90({}),P95({}),P99({}),P99.5({}),P99.9({}),P100({})\n",
                             histogram->name(),
                             stats.quantileValue(0.0),
-                            stats.quantileValue(0.25), 
+                            stats.quantileValue(0.25),
                             stats.quantileValue(0.5),
                             stats.quantileValue(0.75),
                             stats.quantileValue(0.9),
@@ -1100,8 +1128,10 @@ Http::Code AdminImpl::outputStatsAsText(const std::string& filter_string,
 
 ```cpp
 /**
+
  * AdminFilter 管理接口安全过滤器
  * 为管理接口提供认证和授权保护
+
  */
 class AdminFilter : public Network::ReadFilter {
 public:

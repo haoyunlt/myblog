@@ -78,6 +78,7 @@ classDiagram
 ### 3.1 MemTable类
 
 #### 类定义和成员变量
+
 ```cpp
 // 文件: db/memtable.h (第20-83行)
 class MemTable {
@@ -116,6 +117,7 @@ class MemTable {
 ```
 
 **成员变量说明**:
+
 - `table_`: 跳表实例，存储实际的键值数据
 - `arena_`: 内存分配器，统一管理MemTable的内存分配
 - `refs_`: 引用计数，用于多线程安全的生命周期管理
@@ -124,6 +126,7 @@ class MemTable {
 #### 核心方法实现分析
 
 ##### Add方法 - 数据写入
+
 ```cpp
 // 文件: db/memtable.cc (大约第80行)
 void MemTable::Add(SequenceNumber s, ValueType type,
@@ -159,6 +162,7 @@ void MemTable::Add(SequenceNumber s, ValueType type,
 ```
 
 **Add方法执行流程**:
+
 ```mermaid
 sequenceDiagram
     participant Client
@@ -181,6 +185,7 @@ sequenceDiagram
 ```
 
 ##### Get方法 - 数据查找
+
 ```cpp
 // 文件: db/memtable.cc (大约第110行)
 bool MemTable::Get(const LookupKey& key, std::string* value, Status* s) {
@@ -241,6 +246,7 @@ graph TD
 ```
 
 #### Node结构实现
+
 ```cpp
 // 文件: db/skiplist.h (第146-179行)
 template <typename Key, class Comparator>
@@ -280,6 +286,7 @@ private:
 #### 核心算法实现
 
 ##### 随机高度生成
+
 ```cpp
 // 文件: db/skiplist.h (第242-252行)
 template <typename Key, class Comparator>
@@ -299,6 +306,7 @@ int SkipList<Key, Comparator>::RandomHeight() {
 ```
 
 **随机高度分布特性**:
+
 - Level 0: 100%的节点
 - Level 1: 25%的节点  
 - Level 2: 6.25%的节点
@@ -306,6 +314,7 @@ int SkipList<Key, Comparator>::RandomHeight() {
 - 依此类推，形成金字塔结构
 
 ##### 查找算法
+
 ```cpp
 // 文件: db/skiplist.h (第262-281行)
 template <typename Key, class Comparator>
@@ -334,6 +343,7 @@ SkipList<Key, Comparator>::FindGreaterOrEqual(const Key& key, Node** prev) const
 ```
 
 **查找算法流程图**:
+
 ```mermaid
 flowchart TD
     A[开始查找key] --> B[从最高层的head开始]
@@ -350,6 +360,7 @@ flowchart TD
 ```
 
 ##### 插入算法
+
 ```cpp
 // 文件: db/skiplist.h (第337-368行)
 template <typename Key, class Comparator>
@@ -388,6 +399,7 @@ void SkipList<Key, Comparator>::Insert(const Key& key) {
 - **线程安全**: 支持并发访问内存使用统计
 
 #### 核心实现
+
 ```cpp
 // 文件: util/arena.h (第55-67行)
 inline char* Arena::Allocate(size_t bytes) {
@@ -428,10 +440,11 @@ char* Arena::AllocateFallback(size_t bytes) {
 ```
 
 #### Arena内存布局
+
 ```mermaid
 graph TB
     subgraph "Arena内存管理"
-        A[Block 1: 4KB] --> B[Block 2: 4KB] 
+        A[Block 1: 4KB] --> B[Block 2: 4KB]
         B --> C[Block 3: 4KB]
         C --> D[Large Object Block]
     end
@@ -450,6 +463,7 @@ graph TB
 ## 4. 模块时序图
 
 ### 4.1 写入操作时序
+
 ```mermaid
 sequenceDiagram
     participant Client
@@ -485,6 +499,7 @@ sequenceDiagram
 ```
 
 ### 4.2 读取操作时序
+
 ```mermaid
 sequenceDiagram
     participant Client
@@ -532,6 +547,7 @@ sequenceDiagram
 - **Arena管理**: 4KB块大小，减少内存碎片
 
 ### 5.3 并发性能
+
 ```cpp
 // 线程安全设计原则
 // 1. 写入需要外部同步（通过DBImpl的mutex_保证）
@@ -570,6 +586,7 @@ Node* Next(int n) {
 ## 7. 常见问题和解决方案
 
 ### 7.1 内存泄漏问题
+
 ```cpp
 // 问题：MemTable未正确释放
 // 解决方案：使用引用计数
@@ -580,6 +597,7 @@ mem->Unref();  // 减少引用，可能触发析构
 ```
 
 ### 7.2 并发访问问题
+
 ```cpp
 // 问题：读写并发可能看到不一致状态
 // 解决方案：使用适当的内存序
@@ -593,6 +611,7 @@ Node* node = next_[level].load(std::memory_order_acquire);
 ```
 
 ### 7.3 性能调优
+
 ```cpp
 // 1. 调整跳表分支因子（默认4，可调整为2-8）
 static const unsigned int kBranching = 4;

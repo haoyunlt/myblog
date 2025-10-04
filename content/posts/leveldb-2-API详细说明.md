@@ -15,6 +15,7 @@ weight: 1
 LevelDB提供的主要API接口都定义在 `include/leveldb/db.h` 中，以抽象类 `DB` 的形式对外暴露，具体实现在 `db/db_impl.h` 和 `db/db_impl.cc` 中的 `DBImpl` 类。
 
 ### API接口层次结构
+
 ```
 leveldb::DB (抽象接口)
     ├── Open()          - 静态工厂方法
@@ -38,6 +39,7 @@ leveldb::DBImpl (具体实现)
 ### 2.1 DB::Open() - 数据库打开
 
 #### 接口定义
+
 ```cpp
 // 文件: include/leveldb/db.h (第53-54行)
 static Status Open(const Options& options, const std::string& name, DB** dbptr);
@@ -45,13 +47,14 @@ static Status Open(const Options& options, const std::string& name, DB** dbptr);
 
 #### 功能说明
 - **作用**: 打开或创建一个LevelDB数据库实例
-- **参数**: 
+- **参数**:
   - `options`: 数据库配置选项
   - `name`: 数据库路径
   - `dbptr`: 输出参数，成功时指向新创建的DB实例
 - **返回值**: Status对象，表示操作结果
 
 #### 实现入口函数
+
 ```cpp
 // 文件: db/db_impl.cc (大约第200行左右)
 Status DB::Open(const Options& options, const std::string& dbname, DB** dbptr) {
@@ -131,12 +134,14 @@ sequenceDiagram
 ### 2.2 DB::Put() - 写入操作
 
 #### 接口定义
+
 ```cpp
 // 文件: include/leveldb/db.h (第66-67行)
 virtual Status Put(const WriteOptions& options, const Slice& key, const Slice& value) = 0;
 ```
 
 #### DBImpl中的实现
+
 ```cpp
 // 文件: db/db_impl.cc (大约第150行)
 Status DBImpl::Put(const WriteOptions& o, const Slice& key, const Slice& val) {
@@ -152,6 +157,7 @@ Status DB::Put(const WriteOptions& opt, const Slice& key, const Slice& value) {
 ```
 
 #### 真正的Write实现
+
 ```cpp
 // 文件: db/db_impl.cc (大约第1100行)
 Status DBImpl::Write(const WriteOptions& options, WriteBatch* updates) {
@@ -269,12 +275,14 @@ sequenceDiagram
 ### 2.3 DB::Get() - 读取操作
 
 #### 接口定义
+
 ```cpp
-// 文件: include/leveldb/db.h (第87-88行) 
+// 文件: include/leveldb/db.h (第87-88行)
 virtual Status Get(const ReadOptions& options, const Slice& key, std::string* value) = 0;
 ```
 
 #### DBImpl中的实现
+
 ```cpp
 // 文件: db/db_impl.cc (大约第300行)
 Status DBImpl::Get(const ReadOptions& options, const Slice& key, std::string* value) {
@@ -384,6 +392,7 @@ sequenceDiagram
 ### 2.4 DB::Delete() - 删除操作
 
 #### 接口定义
+
 ```cpp
 // 文件: include/leveldb/db.h (第73行)
 virtual Status Delete(const WriteOptions& options, const Slice& key) = 0;
@@ -409,19 +418,21 @@ Status DB::Delete(const WriteOptions& opt, const Slice& key) {
 ### 2.5 DB::NewIterator() - 迭代器创建
 
 #### 接口定义
+
 ```cpp
 // 文件: include/leveldb/db.h (第96行)
 virtual Iterator* NewIterator(const ReadOptions& options) = 0;
 ```
 
 #### 实现分析
+
 ```cpp
 // 文件: db/db_impl.cc (大约第400行)
 Iterator* DBImpl::NewIterator(const ReadOptions& options) {
   SequenceNumber latest_snapshot;
   uint32_t seed;
   Iterator* iter = NewInternalIterator(options, &latest_snapshot, &seed);
-  return NewDBIterator(this, user_comparator(), iter, 
+  return NewDBIterator(this, user_comparator(), iter,
                       (options.snapshot != nullptr
                        ? static_cast<const SnapshotImpl*>(options.snapshot)->sequence_number()
                        : latest_snapshot),
@@ -476,7 +487,7 @@ class Status {
   bool IsIOError() const { return code() == kIOError; }
   
  private:
-  enum Code { kOk = 0, kNotFound = 1, kCorruption = 2, kNotSupported = 3, 
+  enum Code { kOk = 0, kNotFound = 1, kCorruption = 2, kNotSupported = 3,
               kInvalidArgument = 4, kIOError = 5 };
   
   const char* state_;  // 错误信息存储
@@ -484,6 +495,7 @@ class Status {
 ```
 
 **功能说明**:
+
 - 使用空指针表示成功状态，节省内存
 - 错误状态通过动态分配的字符数组存储错误码和消息
 - 提供类型安全的错误检查方法
@@ -518,6 +530,7 @@ class Slice {
 ```
 
 **功能说明**:
+
 - 零拷贝的字符串视图，避免不必要的内存分配
 - 支持从各种字符串类型构造
 - 提供高效的比较和操作方法
@@ -551,6 +564,7 @@ class WriteBatch {
 ```
 
 **内部格式** (在write_batch.cc中定义):
+
 ```
 WriteBatch格式:
    sequence(8字节) count(4字节) data

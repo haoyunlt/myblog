@@ -189,6 +189,7 @@ class SearchAlgorithm:
     超参数搜索算法的基础接口
     
     核心职责：
+
     1. 生成新的超参数配置
     2. 根据历史结果优化搜索策略
     3. 管理搜索状态和收敛
@@ -218,8 +219,8 @@ class SearchAlgorithm:
         raise NotImplementedError
     
     def on_trial_complete(
-        self, 
-        trial_id: str, 
+        self,
+        trial_id: str,
         result: Optional[Dict] = None,
         error: bool = False
     ) -> None:
@@ -239,6 +240,7 @@ class BayesianOptimizationSearch(SearchAlgorithm):
     贝叶斯优化搜索算法
     
     原理：
+
     1. 构建目标函数的概率模型（高斯过程）
     2. 使用采集函数平衡探索和利用
     3. 迭代优化找到最优超参数
@@ -355,6 +357,7 @@ class EvolutionarySearch(SearchAlgorithm):
     进化算法搜索
     
     原理：
+
     1. 维护一个超参数配置的种群
     2. 通过选择、交叉、变异操作进化
     3. 保留适应度高的个体
@@ -402,7 +405,7 @@ class EvolutionarySearch(SearchAlgorithm):
         """锦标赛选择"""
         tournament_size = min(3, len(self._population))
         candidates = random.sample(
-            list(zip(self._population, self._fitness_scores)), 
+            list(zip(self._population, self._fitness_scores)),
             tournament_size
         )
         
@@ -439,6 +442,7 @@ class EvolutionarySearch(SearchAlgorithm):
             mutated[param_to_mutate] += random.randint(-2, 2)
         
         return mutated
+
 ```
 
 ---
@@ -452,9 +456,11 @@ class EvolutionarySearch(SearchAlgorithm):
 AsyncHyperBand - 异步超参数调度算法
 
 基于HyperBand算法的异步实现，能够：
+
 1. 早停表现不佳的试验
 2. 动态分配计算资源
 3. 支持并发试验执行
+
 """
 
 from ray.tune.schedulers import AsyncHyperBandScheduler
@@ -464,6 +470,7 @@ class AsyncHyperBandScheduler(TrialScheduler):
     异步HyperBand调度器实现
     
     核心算法：
+
     1. 连续减半策略 - 逐步淘汰表现差的试验
     2. 异步执行 - 不等待所有试验完成
     3. 资源重分配 - 将资源从被停止的试验转移
@@ -572,6 +579,7 @@ class _HyperBandState:
     单个HyperBand bracket的状态管理
     
     功能：
+
     1. 管理连续减半的轮次
     2. 跟踪每轮的预算分配
     3. 执行淘汰决策
@@ -658,6 +666,7 @@ class _HyperBandState:
         else:
             # 被淘汰
             return TrialSchedulerDecision.STOP
+
 ```
 
 ### 4.2 PopulationBasedTraining实现
@@ -670,6 +679,7 @@ class PopulationBasedTraining(FIFOScheduler):
     基于种群的训练（PBT）调度器
     
     核心思想：
+
     1. 并行训练一个模型种群
     2. 周期性地让表现差的模型复制表现好的模型
     3. 对复制的模型进行超参数变异
@@ -825,8 +835,8 @@ class PopulationBasedTraining(FIFOScheduler):
         for param_name, mutation_spec in self._hyperparam_mutations.items():
             if param_name in new_config:
                 new_config[param_name] = self._mutate_parameter(
-                    param_name, 
-                    new_config[param_name], 
+                    param_name,
+                    new_config[param_name],
                     mutation_spec
                 )
         
@@ -896,6 +906,7 @@ class PopulationBasedTraining(FIFOScheduler):
         trial_performances.sort(key=lambda x: x[1], reverse=reverse)
         
         return trial_performances
+
 ```
 
 ---
@@ -909,10 +920,12 @@ class PopulationBasedTraining(FIFOScheduler):
 Ray Tune超参数空间定义API
 
 提供了丰富的搜索空间定义方式：
+
 1. 连续分布：uniform, loguniform, normal
 2. 离散分布：choice, randint, lograndint  
 3. 网格搜索：grid_search
 4. 条件搜索：sample_from
+
 """
 
 import ray.tune as tune
@@ -1020,7 +1033,7 @@ class CustomDistribution:
             # 按权重选择分布
             weights = [w for w, _ in distributions]
             chosen_dist = np.random.choice(
-                [d for _, d in distributions], 
+                [d for _, d in distributions],
                 p=weights / np.sum(weights)
             )
             
@@ -1137,6 +1150,7 @@ def train_mnist(config):
     MNIST分类模型训练函数
     
     超参数：
+
     - learning_rate: 学习率
     - batch_size: 批量大小
     - hidden_size: 隐藏层大小
@@ -1146,7 +1160,7 @@ def train_mnist(config):
     
     # 获取超参数
     lr = config["learning_rate"]
-    batch_size = config["batch_size"] 
+    batch_size = config["batch_size"]
     hidden_size = config["hidden_size"]
     num_layers = config["num_layers"]
     dropout_rate = config["dropout_rate"]
@@ -1267,7 +1281,7 @@ def compare_optimization_algorithms():
             "name": "Optuna (TPE)",
             "search_alg": OptunaSearch(metric="test_accuracy", mode="max"),
             "scheduler": AsyncHyperBandScheduler(
-                metric="test_accuracy", 
+                metric="test_accuracy",
                 mode="max",
                 max_t=10,
                 grace_period=2
@@ -1277,7 +1291,7 @@ def compare_optimization_algorithms():
         {
             "name": "HyperOpt",
             "search_alg": HyperOptSearch(
-                metric="test_accuracy", 
+                metric="test_accuracy",
                 mode="max",
                 points_to_evaluate=[{
                     "learning_rate": 0.01,
@@ -1290,7 +1304,7 @@ def compare_optimization_algorithms():
             ),
             "scheduler": AsyncHyperBandScheduler(
                 metric="test_accuracy",
-                mode="max", 
+                mode="max",
                 max_t=10,
                 grace_period=2
             ),
@@ -1386,7 +1400,7 @@ def advanced_optimization_strategies():
                 if epoch % checkpoint_freq == 0:
                     with tune.checkpoint_dir(epoch) as checkpoint_dir:
                         # 保存模型状态
-                        torch.save(model.state_dict(), 
+                        torch.save(model.state_dict(),
                                  os.path.join(checkpoint_dir, "model.pth"))
                     
                     tune.report(
@@ -1503,7 +1517,7 @@ def distributed_hyperparameter_optimization():
         elif available_gpus >= 4:
             # 中等资源配置
             return {
-                "model_size": "medium", 
+                "model_size": "medium",
                 "batch_size": tune.choice([64, 128, 256]),
                 "num_workers": tune.choice([2, 4]),
             }
@@ -1614,7 +1628,7 @@ def main():
         algorithm_results = compare_optimization_algorithms()
         
         # 分析最佳算法的结果
-        best_algorithm = max(algorithm_results.items(), 
+        best_algorithm = max(algorithm_results.items(),
                            key=lambda x: x[1].get_best_result().metrics['test_accuracy'])
         
         print(f"Best algorithm: {best_algorithm[0]}")

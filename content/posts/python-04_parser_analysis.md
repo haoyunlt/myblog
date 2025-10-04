@@ -592,7 +592,7 @@ typedef struct _memo {
 ```c
 /* Parser/pegen.c - 主要解析函数 */
 mod_ty
-_PyPegen_run_parser_from_string(const char *str, int start_rule, 
+_PyPegen_run_parser_from_string(const char *str, int start_rule,
                                 PyObject *filename, PyCompilerFlags *flags,
                                 PyArena *arena)
 {
@@ -695,7 +695,7 @@ _PyPegen_get_token(Parser *p, int type)
     
     new_token->type = p->tok->type;
     new_token->bytes = PyBytes_FromStringAndSize(
-        new_token->start, 
+        new_token->start,
         new_token->end - new_token->start
     );
     new_token->level = p->tok->level;
@@ -1389,8 +1389,8 @@ sequenceDiagram
 
 """
 在 Grammar/python.gram 中添加规则：
-expression: 
-    | disjunction 'if' disjunction 'else' expression 
+expression:
+    | disjunction 'if' disjunction 'else' expression
     | pipeline
 
 pipeline:
@@ -1487,7 +1487,7 @@ class ASTAnalyzer(ast.NodeVisitor):
         )
         
         # 跟踪嵌套深度
-        if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.For, 
+        if isinstance(node, (ast.FunctionDef, ast.ClassDef, ast.For,
                            ast.While, ast.If, ast.With, ast.Try)):
             self.current_depth += 1
             self.stats['complexity_metrics']['max_nesting'] = max(

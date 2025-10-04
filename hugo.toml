@@ -4,6 +4,12 @@ languageCode = "zh-cn"
 title = "tommie 笔记"
 theme = "PaperMod"
 
+# 超时和限制配置
+timeout = "120s"  # 增加构建超时时间
+
+# 忽略备份目录
+ignoreFiles = ["content/posts_backup/.*"]
+
 # 启用中文支持
 defaultContentLanguage = "zh"
 hasCJKLanguage = true

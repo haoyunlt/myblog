@@ -203,48 +203,48 @@ sequenceDiagram
 // @Success 200 {object} StreamResponse "流式响应"
 // @Router /api/v2/chat/stream [post]
 func (h *V2ChatHandlerSimple) StreamChat(c *gin.Context) {
-	// 1. 解析请求参数
-	var req ChatRequest
-	if err := c.ShouldBindJSON(&req); err != nil {
-		logger.Error("Invalid request format", zap.Error(err))
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
-		return
-	}
+    // 1. 解析请求参数
+    var req ChatRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        logger.Error("Invalid request format", zap.Error(err))
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid request format"})
+        return
+    }
 
-	// 2. 参数验证
-	if req.Message == "" {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Message cannot be empty"})
-		return
-	}
+    // 2. 参数验证
+    if req.Message == "" {
+        c.JSON(http.StatusBadRequest, gin.H{"error": "Message cannot be empty"})
+        return
+    }
 
-	// 3. 设置SSE响应头
-	c.Header("Content-Type", "text/event-stream")
-	c.Header("Cache-Control", "no-cache")  
-	c.Header("Connection", "keep-alive")
-	c.Header("Access-Control-Allow-Origin", "*")
+    // 3. 设置SSE响应头
+    c.Header("Content-Type", "text/event-stream")
+    c.Header("Cache-Control", "no-cache")  
+    c.Header("Connection", "keep-alive")
+    c.Header("Access-Control-Allow-Origin", "*")
 
-	// 4. 构建转发请求到算法服务
-	algoReq := AlgoServiceRequest{
-		Messages: []Message{
-			{Role: "user", Content: req.Message}
-		},
-		ConversationID: req.ConversationID,
-		StreamID: req.StreamID,
-		RequestID: req.RequestID,
-		Model: req.Model,
-		Temperature: req.Temperature,
-		MaxTokens: req.MaxTokens,
-	}
+    // 4. 构建转发请求到算法服务
+    algoReq := AlgoServiceRequest{
+        Messages: []Message{
+            {Role: "user", Content: req.Message}
+        },
+        ConversationID: req.ConversationID,
+        StreamID: req.StreamID,
+        RequestID: req.RequestID,
+        Model: req.Model,
+        Temperature: req.Temperature,
+        MaxTokens: req.MaxTokens,
+    }
 
-	// 5. 发送请求到算法服务并流式转发响应
-	if err := h.forwardToAlgoService(c, algoReq); err != nil {
-		logger.Error("Failed to forward request", zap.Error(err))
-		// 发送错误事件
-		c.SSEvent("error", gin.H{
-			"error": "Internal server error",
-			"code": "ALGO_SERVICE_ERROR"
-		})
-	}
+    // 5. 发送请求到算法服务并流式转发响应
+    if err := h.forwardToAlgoService(c, algoReq); err != nil {
+        logger.Error("Failed to forward request", zap.Error(err))
+        // 发送错误事件
+        c.SSEvent("error", gin.H{
+            "error": "Internal server error",
+            "code": "ALGO_SERVICE_ERROR"
+        })
+    }
 }
 
 // forwardToAlgoService 转发请求到算法服务
@@ -252,60 +252,60 @@ func (h *V2ChatHandlerSimple) StreamChat(c *gin.Context) {
 // @param req 转发的请求体
 // @return error 转发过程中的错误
 func (h *V2ChatHandlerSimple) forwardToAlgoService(c *gin.Context, req AlgoServiceRequest) error {
-	// 1. 序列化请求体
-	reqBody, err := json.Marshal(req)
-	if err != nil {
-		return fmt.Errorf("failed to marshal request: %w", err)
-	}
+    // 1. 序列化请求体
+    reqBody, err := json.Marshal(req)
+    if err != nil {
+        return fmt.Errorf("failed to marshal request: %w", err)
+    }
 
-	// 2. 创建HTTP请求
-	httpReq, err := http.NewRequest("POST", h.algoServiceURL+"/query", bytes.NewBuffer(reqBody))
-	if err != nil {
-		return fmt.Errorf("failed to create request: %w", err)
-	}
+    // 2. 创建HTTP请求
+    httpReq, err := http.NewRequest("POST", h.algoServiceURL+"/query", bytes.NewBuffer(reqBody))
+    if err != nil {
+        return fmt.Errorf("failed to create request: %w", err)
+    }
 
-	// 3. 设置请求头
-	httpReq.Header.Set("Content-Type", "application/json")
-	httpReq.Header.Set("Accept", "application/x-ndjson")
+    // 3. 设置请求头
+    httpReq.Header.Set("Content-Type", "application/json")
+    httpReq.Header.Set("Accept", "application/x-ndjson")
 
-	// 4. 发送请求
-	client := &http.Client{Timeout: 0} // 无超时，支持长连接
-	resp, err := client.Do(httpReq)
-	if err != nil {
-		return fmt.Errorf("failed to send request: %w", err)
-	}
-	defer resp.Body.Close()
+    // 4. 发送请求
+    client := &http.Client{Timeout: 0} // 无超时，支持长连接
+    resp, err := client.Do(httpReq)
+    if err != nil {
+        return fmt.Errorf("failed to send request: %w", err)
+    }
+    defer resp.Body.Close()
 
-	// 5. 检查响应状态
-	if resp.StatusCode != http.StatusOK {
-		return fmt.Errorf("algo service returned status %d", resp.StatusCode)
-	}
+    // 5. 检查响应状态
+    if resp.StatusCode != http.StatusOK {
+        return fmt.Errorf("algo service returned status %d", resp.StatusCode)
+    }
 
-	// 6. 流式读取并转发响应
-	scanner := bufio.NewScanner(resp.Body)
-	for scanner.Scan() {
-		line := scanner.Text()
-		if line == "" {
-			continue
-		}
+    // 6. 流式读取并转发响应
+    scanner := bufio.NewScanner(resp.Body)
+    for scanner.Scan() {
+        line := scanner.Text()
+        if line == "" {
+            continue
+        }
 
-		// 解析NDJSON格式的响应
-		var response map[string]interface{}
-		if err := json.Unmarshal([]byte(line), &response); err != nil {
-			logger.Warn("Failed to parse response line", zap.String("line", line))
-			continue
-		}
+        // 解析NDJSON格式的响应
+        var response map[string]interface{}
+        if err := json.Unmarshal([]byte(line), &response); err != nil {
+            logger.Warn("Failed to parse response line", zap.String("line", line))
+            continue
+        }
 
-		// 转发为SSE事件
-		eventType := "data"
-		if errMsg, exists := response["error"]; exists {
-			eventType = "error"
-		}
-		c.SSEvent(eventType, response)
-		c.Writer.Flush() // 强制刷新缓冲区
-	}
+        // 转发为SSE事件
+        eventType := "data"
+        if errMsg, exists := response["error"]; exists {
+            eventType = "error"
+        }
+        c.SSEvent(eventType, response)
+        c.Writer.Flush() // 强制刷新缓冲区
+    }
 
-	return scanner.Err()
+    return scanner.Err()
 }
 ```
 
@@ -316,25 +316,25 @@ func (h *V2ChatHandlerSimple) forwardToAlgoService(c *gin.Context, req AlgoServi
 ```go
 // V2VoiceHandler 语音处理器v2版本
 type V2VoiceHandler struct {
-	algoServiceURL  string                    // 算法服务URL
-	activeConnections map[string]*VoiceSession // 活跃连接映射
-	mu             sync.RWMutex              // 读写锁保护
-	cleanupTicker  *time.Ticker             // 清理定时器
+    algoServiceURL  string                    // 算法服务URL
+    activeConnections map[string]*VoiceSession // 活跃连接映射
+    mu             sync.RWMutex              // 读写锁保护
+    cleanupTicker  *time.Ticker             // 清理定时器
 }
 
 // VoiceSession 语音会话结构
 type VoiceSession struct {
-	ID             string          `json:"session_id"`      // 会话ID
-	UserID         string          `json:"user_id"`         // 用户ID  
-	ConversationID string          `json:"conversation_id"` // 对话ID
-	Connection     *websocket.Conn `json:"-"`               // WebSocket连接
-	AlgoConn       *websocket.Conn `json:"-"`               // 与算法服务的连接
-	Status         string          `json:"status"`          // 会话状态: active/paused/ended
-	CreatedAt      time.Time       `json:"created_at"`      // 创建时间
-	LastActivity   time.Time       `json:"last_activity"`   // 最后活动时间
-	AudioConfig    AudioConfig     `json:"audio_config"`    // 音频配置
-	Metrics        VoiceMetrics    `json:"metrics"`         // 性能指标
-	CancelFunc     context.CancelFunc `json:"-"`            // 取消函数
+    ID             string          `json:"session_id"`      // 会话ID
+    UserID         string          `json:"user_id"`         // 用户ID  
+    ConversationID string          `json:"conversation_id"` // 对话ID
+    Connection     *websocket.Conn `json:"-"`               // WebSocket连接
+    AlgoConn       *websocket.Conn `json:"-"`               // 与算法服务的连接
+    Status         string          `json:"status"`          // 会话状态: active/paused/ended
+    CreatedAt      time.Time       `json:"created_at"`      // 创建时间
+    LastActivity   time.Time       `json:"last_activity"`   // 最后活动时间
+    AudioConfig    AudioConfig     `json:"audio_config"`    // 音频配置
+    Metrics        VoiceMetrics    `json:"metrics"`         // 性能指标
+    CancelFunc     context.CancelFunc `json:"-"`            // 取消函数
 }
 
 // HandleWebSocket 处理WebSocket语音连接
@@ -346,135 +346,135 @@ type VoiceSession struct {
 // @Success 101 {object} VoiceSession "连接升级成功"
 // @Router /api/v2/voice/stream [get]
 func (h *V2VoiceHandler) HandleWebSocket(c *gin.Context) {
-	// 1. 升级HTTP连接为WebSocket
-	conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
-	if err != nil {
-		logger.Error("WebSocket upgrade failed", zap.Error(err))
-		return
-	}
-	defer conn.Close()
+    // 1. 升级HTTP连接为WebSocket
+    conn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
+    if err != nil {
+        logger.Error("WebSocket upgrade failed", zap.Error(err))
+        return
+    }
+    defer conn.Close()
 
-	// 2. 生成会话ID和提取用户信息
-	sessionID := generateSessionID()
-	userID := extractUserID(c) // 从JWT token或header提取
-	conversationID := c.Query("conversation_id")
+    // 2. 生成会话ID和提取用户信息
+    sessionID := generateSessionID()
+    userID := extractUserID(c) // 从JWT token或header提取
+    conversationID := c.Query("conversation_id")
 
-	// 3. 创建会话上下文
-	ctx, cancel := context.WithCancel(context.Background())
-	defer cancel()
+    // 3. 创建会话上下文
+    ctx, cancel := context.WithCancel(context.Background())
+    defer cancel()
 
-	// 4. 建立与算法服务的WebSocket连接
-	algoConn, err := h.connectToAlgoService(ctx, sessionID)
-	if err != nil {
-		logger.Error("Failed to connect to algo service", zap.Error(err))
-		conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"error","error":"Service unavailable"}`))
-		return
-	}
-	defer algoConn.Close()
+    // 4. 建立与算法服务的WebSocket连接
+    algoConn, err := h.connectToAlgoService(ctx, sessionID)
+    if err != nil {
+        logger.Error("Failed to connect to algo service", zap.Error(err))
+        conn.WriteMessage(websocket.TextMessage, []byte(`{"type":"error","error":"Service unavailable"}`))
+        return
+    }
+    defer algoConn.Close()
 
-	// 5. 创建语音会话
-	session := &VoiceSession{
-		ID:             sessionID,
-		UserID:         userID,
-		ConversationID: conversationID,
-		Connection:     conn,
-		AlgoConn:       algoConn,
-		Status:         "active",
-		CreatedAt:      time.Now(),
-		LastActivity:   time.Now(),
-		AudioConfig:    getDefaultAudioConfig(),
-		CancelFunc:     cancel,
-	}
+    // 5. 创建语音会话
+    session := &VoiceSession{
+        ID:             sessionID,
+        UserID:         userID,
+        ConversationID: conversationID,
+        Connection:     conn,
+        AlgoConn:       algoConn,
+        Status:         "active",
+        CreatedAt:      time.Now(),
+        LastActivity:   time.Now(),
+        AudioConfig:    getDefaultAudioConfig(),
+        CancelFunc:     cancel,
+    }
 
-	// 6. 注册会话
-	h.mu.Lock()
-	h.activeConnections[sessionID] = session
-	h.mu.Unlock()
+    // 6. 注册会话
+    h.mu.Lock()
+    h.activeConnections[sessionID] = session
+    h.mu.Unlock()
 
-	// 7. 发送会话建立确认
-	initMsg := map[string]interface{}{
-		"type":       "session_started",
-		"session_id": sessionID,
-		"config":     session.AudioConfig,
-	}
-	conn.WriteJSON(initMsg)
+    // 7. 发送会话建立确认
+    initMsg := map[string]interface{}{
+        "type":       "session_started",
+        "session_id": sessionID,
+        "config":     session.AudioConfig,
+    }
+    conn.WriteJSON(initMsg)
 
-	// 8. 启动消息处理协程
-	go h.handleAlgoServiceMessages(session)
-	
-	// 9. 处理客户端消息（阻塞主协程）
-	h.handleClientMessages(session)
-	
-	// 10. 清理会话
-	h.cleanup(sessionID)
+    // 8. 启动消息处理协程
+    go h.handleAlgoServiceMessages(session)
+    
+    // 9. 处理客户端消息（阻塞主协程）
+    h.handleClientMessages(session)
+    
+    // 10. 清理会话
+    h.cleanup(sessionID)
 }
 
 // handleClientMessages 处理来自客户端的消息
 // @param session 语音会话对象
 func (h *V2VoiceHandler) handleClientMessages(session *VoiceSession) {
-	defer session.CancelFunc() // 确保上下文取消
+    defer session.CancelFunc() // 确保上下文取消
 
-	for {
-		// 1. 读取WebSocket消息
-		messageType, message, err := session.Connection.ReadMessage()
-		if err != nil {
-			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-				logger.Error("WebSocket error", zap.Error(err))
-			}
-			break
-		}
+    for {
+        // 1. 读取WebSocket消息
+        messageType, message, err := session.Connection.ReadMessage()
+        if err != nil {
+            if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+                logger.Error("WebSocket error", zap.Error(err))
+            }
+            break
+        }
 
-		// 2. 更新活动时间
-		session.LastActivity = time.Now()
+        // 2. 更新活动时间
+        session.LastActivity = time.Now()
 
-		// 3. 根据消息类型处理
-		switch messageType {
-		case websocket.TextMessage:
-			// 处理控制消息（JSON格式）
-			var controlMsg map[string]interface{}
-			if err := json.Unmarshal(message, &controlMsg); err != nil {
-				logger.Warn("Invalid control message", zap.Error(err))
-				continue
-			}
-			h.handleControlMessage(session, controlMsg)
+        // 3. 根据消息类型处理
+        switch messageType {
+        case websocket.TextMessage:
+            // 处理控制消息（JSON格式）
+            var controlMsg map[string]interface{}
+            if err := json.Unmarshal(message, &controlMsg); err != nil {
+                logger.Warn("Invalid control message", zap.Error(err))
+                continue
+            }
+            h.handleControlMessage(session, controlMsg)
 
-		case websocket.BinaryMessage:
-			// 处理音频数据
-			h.handleAudioData(session, message)
+        case websocket.BinaryMessage:
+            // 处理音频数据
+            h.handleAudioData(session, message)
 
-		default:
-			logger.Warn("Unsupported message type", zap.Int("type", messageType))
-		}
-	}
+        default:
+            logger.Warn("Unsupported message type", zap.Int("type", messageType))
+        }
+    }
 }
 
 // handleAudioData 处理音频数据
 // @param session 语音会话
 // @param audioData 音频字节数据
 func (h *V2VoiceHandler) handleAudioData(session *VoiceSession, audioData []byte) {
-	// 1. 构建音频消息
-	audioMsg := map[string]interface{}{
-		"type":            "audio_chunk",
-		"session_id":      session.ID,
-		"conversation_id": session.ConversationID,
-		"audio_chunk":     base64.StdEncoding.EncodeToString(audioData),
-		"timestamp":       time.Now().UnixNano() / 1e6, // 毫秒时间戳
-		"seq":             session.Metrics.AudioPackets,
-	}
+    // 1. 构建音频消息
+    audioMsg := map[string]interface{}{
+        "type":            "audio_chunk",
+        "session_id":      session.ID,
+        "conversation_id": session.ConversationID,
+        "audio_chunk":     base64.StdEncoding.EncodeToString(audioData),
+        "timestamp":       time.Now().UnixNano() / 1e6, // 毫秒时间戳
+        "seq":             session.Metrics.AudioPackets,
+    }
 
-	// 2. 转发到算法服务
-	if err := session.AlgoConn.WriteJSON(audioMsg); err != nil {
-		logger.Error("Failed to forward audio to algo service", zap.Error(err))
-		session.Connection.WriteJSON(map[string]interface{}{
-			"type":  "error", 
-			"error": "Failed to process audio",
-		})
-		return
-	}
+    // 2. 转发到算法服务
+    if err := session.AlgoConn.WriteJSON(audioMsg); err != nil {
+        logger.Error("Failed to forward audio to algo service", zap.Error(err))
+        session.Connection.WriteJSON(map[string]interface{}{
+            "type":  "error",
+            "error": "Failed to process audio",
+        })
+        return
+    }
 
-	// 3. 更新指标
-	session.Metrics.AudioPackets++
-	session.Metrics.AudioBytes += int64(len(audioData))
+    // 3. 更新指标
+    session.Metrics.AudioPackets++
+    session.Metrics.AudioBytes += int64(len(audioData))
 }
 
 // connectToAlgoService 连接到算法服务的WebSocket
@@ -482,26 +482,26 @@ func (h *V2VoiceHandler) handleAudioData(session *VoiceSession, audioData []byte
 // @param sessionID 会话ID
 // @return (*websocket.Conn, error) WebSocket连接和错误
 func (h *V2VoiceHandler) connectToAlgoService(ctx context.Context, sessionID string) (*websocket.Conn, error) {
-	// 1. 构建WebSocket URL
-	wsURL := strings.Replace(h.algoServiceURL, "http", "ws", 1) + "/voice/stream"
-	
-	// 2. 设置连接头
-	header := http.Header{}
-	header.Set("Session-ID", sessionID)
-	
-	// 3. 建立WebSocket连接
-	dialer := websocket.Dialer{
-		HandshakeTimeout: 10 * time.Second,
-		ReadBufferSize:   4096,
-		WriteBufferSize:  4096,
-	}
-	
-	conn, _, err := dialer.DialContext(ctx, wsURL, header)
-	if err != nil {
-		return nil, fmt.Errorf("failed to dial algo service: %w", err)
-	}
-	
-	return conn, nil
+    // 1. 构建WebSocket URL
+    wsURL := strings.Replace(h.algoServiceURL, "http", "ws", 1) + "/voice/stream"
+    
+    // 2. 设置连接头
+    header := http.Header{}
+    header.Set("Session-ID", sessionID)
+    
+    // 3. 建立WebSocket连接
+    dialer := websocket.Dialer{
+        HandshakeTimeout: 10 * time.Second,
+        ReadBufferSize:   4096,
+        WriteBufferSize:  4096,
+    }
+    
+    conn, _, err := dialer.DialContext(ctx, wsURL, header)
+    if err != nil {
+        return nil, fmt.Errorf("failed to dial algo service: %w", err)
+    }
+    
+    return conn, nil
 }
 ```
 
@@ -528,6 +528,7 @@ async def query_documents(request: QueryRequest, http_request: Request):
         VoiceHelperError: 自定义业务异常
         
     流程说明:
+
         1. 参数验证 - 检查消息列表是否为空
         2. 日志记录 - 记录查询开始和相关统计信息  
         3. 委托处理 - 调用RetrieveService的stream_query方法
@@ -568,6 +569,7 @@ async def query_documents(request: QueryRequest, http_request: Request):
             "messages_count": len(request.messages) if request.messages else 0,
         })
         raise VoiceHelperError(ErrorCode.RAG_RETRIEVAL_FAILED, f"查询失败: {str(e)}")
+
 ```
 
 **核心检索服务**: `algo/core/retrieve.py:RetrieveService`
@@ -578,6 +580,7 @@ class RetrieveService:
     检索服务 - 负责文档检索、GraphRAG推理和LLM生成
     
     主要功能:
+
     - 多路召回: BGE向量检索 + BM25文本检索 + GraphRAG图推理
     - 智能重排: 基于多维度相关性的融合排序
     - 流式生成: SSE协议实时返回检索结果和生成内容
@@ -634,7 +637,7 @@ class RetrieveService:
             # 2. 多路召回并行处理
             retrieval_tasks = [
                 self._vector_retrieval(enhanced_query, request.top_k or 10),
-                self._text_retrieval(enhanced_query, request.top_k or 10), 
+                self._text_retrieval(enhanced_query, request.top_k or 10),
                 self._graph_retrieval(enhanced_query, request.top_k or 5)
             ]
             
@@ -645,7 +648,7 @@ class RetrieveService:
             yield self._create_event("retrieval_progress", {
                 "stage": "fusion",
                 "vector_count": len(vector_results),
-                "text_count": len(text_results), 
+                "text_count": len(text_results),
                 "graph_count": len(graph_results)
             })
             
@@ -706,7 +709,7 @@ class RetrieveService:
         
         # FAISS检索
         similar_docs = await self.rag_service.similarity_search(
-            query_embedding, 
+            query_embedding,
             k=top_k,
             threshold=0.7  # 相似度阈值
         )
@@ -759,7 +762,7 @@ class RetrieveService:
                     content=f"实体: {entity} -> 关系: {neighbor['relation']} -> {neighbor['target']}",
                     metadata={
                         "entity": entity,
-                        "relation": neighbor['relation'], 
+                        "relation": neighbor['relation'],
                         "target": neighbor['target'],
                         "reasoning_path": neighbor.get('path', [])
                     },
@@ -771,6 +774,7 @@ class RetrieveService:
                 graph_results.append(result)
         
         return sorted(graph_results, key=lambda x: x.score, reverse=True)[:top_k]
+
 ```
 
 #### 2. 语音处理接口
@@ -787,6 +791,7 @@ async def websocket_voice_stream(websocket: WebSocket):
         websocket (WebSocket): WebSocket连接对象
         
     处理流程:
+
         1. 连接建立 - 接受WebSocket连接并初始化会话
         2. 消息循环 - 持续接收和处理音频数据
         3. 实时ASR - 边收边转录，支持部分结果
@@ -797,7 +802,7 @@ async def websocket_voice_stream(websocket: WebSocket):
     消息格式:
         接收: {"type": "audio_chunk", "audio_chunk": "base64data", "seq": 123}
         发送: {"type": "asr_partial", "text": "部分识别...", "seq": 123}
-             {"type": "asr_final", "text": "完整句子", "seq": 123} 
+             {"type": "asr_final", "text": "完整句子", "seq": 123}
              {"type": "llm_response", "text": "AI回复", "seq": 124}
              {"type": "tts_audio", "audio_data": "base64data", "seq": 124}
     """
@@ -816,6 +821,7 @@ async def websocket_voice_stream(websocket: WebSocket):
             await websocket.close(code=1011, reason="Internal server error")
         except:
             pass  # 连接可能已经关闭
+
 ```
 
 **WebSocket处理器**: `algo/core/websocket_voice.py:WebSocketVoiceHandler`
@@ -826,6 +832,7 @@ class WebSocketVoiceHandler:
     WebSocket语音处理器 - 管理实时语音交互会话
     
     主要功能:
+
     - 会话管理: 创建、维护、清理语音会话
     - 音频处理: 实时ASR、VAD、音频格式转换
     - 智能对话: 结合RAG检索和LLM生成
@@ -966,7 +973,7 @@ class WebSocketVoiceHandler:
             if partial_text:
                 # 发送部分识别结果
                 await session.websocket.send_json({
-                    "type": "asr_partial", 
+                    "type": "asr_partial",
                     "text": partial_text,
                     "timestamp": int(time.time() * 1000)
                 })
@@ -1075,7 +1082,7 @@ class WebSocketVoiceHandler:
         except Exception as e:
             logger.exception(f"Complete sentence processing error: {e}")
             await session.websocket.send_json({
-                "type": "error", 
+                "type": "error",
                 "error": f"Processing failed: {str(e)}"
             })
     
@@ -1143,6 +1150,7 @@ class WebSocketVoiceHandler:
                 "type": "error",
                 "error": f"Speech synthesis failed: {str(e)}"
             })
+
 ```
 
 ---
@@ -1320,7 +1328,7 @@ flowchart TD
     
     I --> J[RAG检索流程]
     J --> K[向量检索]
-    J --> L[图谱推理] 
+    J --> L[图谱推理]
     J --> M[文本检索]
     
     K --> N[结果融合]
@@ -1343,4 +1351,3 @@ flowchart TD
 ```
 
 ---
-

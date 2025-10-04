@@ -86,6 +86,7 @@ graph TB
 class ClientSession {
 public:
     /**
+
      * Feed类型定义 - 输入数据映射
      * 将Output对象映射到具体的输入值
      */
@@ -193,10 +194,12 @@ public:
 
 private:
     /**
+
      * 内部实现类 - PIMPL模式
      */
     class Impl;
     std::unique_ptr<Impl> impl_;
+
 };
 ```
 
@@ -206,8 +209,9 @@ private:
 // 基础使用示例
 void BasicClientSessionExample() {
     /**
+
      * 基础ClientSession使用示例
-     * 
+     *
      * 功能说明:
      * - 创建计算图和会话
      * - 执行简单的数学运算
@@ -248,6 +252,7 @@ void BasicClientSessionExample() {
     } else {
         std::cerr << "执行失败: " << status.message() << std::endl;
     }
+
 }
 ```
 
@@ -260,6 +265,7 @@ void BasicClientSessionExample() {
 class Scope {
 public:
     /**
+
      * 拷贝构造函数
      * @param other 其他Scope对象
      */
@@ -280,7 +286,7 @@ public:
     /**
      * 创建根作用域
      * @return 新的根作用域
-     * 
+     *
      * 功能说明:
      * - 创建新的图对象
      * - 初始化形状推断器
@@ -292,7 +298,7 @@ public:
      * 创建子作用域
      * @param child_scope_name 子作用域名称
      * @return 新的子作用域
-     * 
+     *
      * 功能说明:
      * - 继承父作用域的属性
      * - 添加名称前缀
@@ -304,7 +310,7 @@ public:
      * 设置操作名称
      * @param fragments 名称片段
      * @return 新的作用域，带有指定的操作名称
-     * 
+     *
      * 功能说明:
      * - 支持模板参数，可接受多种类型
      * - 使用StrCat连接名称片段
@@ -319,7 +325,7 @@ public:
      * 设置控制依赖
      * @param control_deps 控制依赖操作列表
      * @return 新的作用域，带有控制依赖
-     * 
+     *
      * 功能说明:
      * - 添加控制依赖约束
      * - 确保操作执行顺序
@@ -331,7 +337,7 @@ public:
      * 设置设备放置
      * @param device 设备名称
      * @return 新的作用域，带有设备约束
-     * 
+     *
      * 功能说明:
      * - 指定操作执行设备
      * - 支持CPU、GPU、TPU等设备
@@ -343,7 +349,7 @@ public:
      * 设置共置约束
      * @param ops 要共置的操作列表
      * @return 新的作用域，带有共置约束
-     * 
+     *
      * 功能说明:
      * - 确保操作在同一设备上执行
      * - 优化数据传输
@@ -367,7 +373,7 @@ public:
      * 转换为图定义
      * @param gdef 输出图定义
      * @return 转换状态
-     * 
+     *
      * 功能说明:
      * - 将作用域中的图转换为GraphDef
      * - 用于序列化和保存
@@ -385,7 +391,7 @@ public:
      * 获取唯一操作名称
      * @param name 基础名称
      * @return 唯一名称
-     * 
+     *
      * 功能说明:
      * - 确保操作名称在图中唯一
      * - 自动添加数字后缀
@@ -395,6 +401,7 @@ public:
 
 private:
     /**
+
      * 内部实现类
      */
     class Impl;
@@ -405,6 +412,7 @@ private:
      * @param impl 实现对象
      */
     explicit Scope(Impl* impl);
+
 };
 ```
 
@@ -414,8 +422,9 @@ private:
 // Scope层次结构使用示例
 void ScopeHierarchyExample() {
     /**
+
      * Scope层次结构示例
-     * 
+     *
      * 功能说明:
      * - 演示作用域的层次结构
      * - 展示名称管理机制
@@ -477,6 +486,7 @@ void ScopeHierarchyExample() {
     if (status.ok()) {
         std::cout << "图构建成功，包含 " << graph_def.node_size() << " 个节点" << std::endl;
     }
+
 }
 ```
 
@@ -536,15 +546,19 @@ classDiagram
 namespace ops {
 
 /**
+
  * 常量操作 - 创建常量张量
  * @param scope 作用域
  * @param value 常量值
  * @return 常量输出
- * 
+
+ *
+
  * 功能说明:
  * - 创建编译时已知的常量张量
  * - 支持多种数据类型
  * - 可以是标量或多维数组
+
  */
 template <typename T>
 Output Const(const Scope& scope, const T& value) {
@@ -552,90 +566,114 @@ Output Const(const Scope& scope, const T& value) {
 }
 
 /**
+
  * 占位符操作 - 创建输入占位符
  * @param scope 作用域
  * @param dtype 数据类型
  * @param attrs 可选属性
  * @return 占位符输出
- * 
+
+ *
+
  * 功能说明:
  * - 为运行时输入创建占位符
  * - 可以指定形状约束
  * - 支持动态形状
+
  */
 Output Placeholder(const Scope& scope, DataType dtype,
                    const Placeholder::Attrs& attrs = Placeholder::Attrs());
 
 /**
+
  * 变量操作 - 创建可训练变量
  * @param scope 作用域
  * @param shape 变量形状
  * @param dtype 数据类型
  * @param attrs 可选属性
  * @return 变量引用输出
- * 
+
+ *
+
  * 功能说明:
  * - 创建可修改的状态变量
  * - 用于模型参数存储
  * - 支持初始化器
+
  */
 Output Variable(const Scope& scope, const TensorShape& shape, DataType dtype,
                 const Variable::Attrs& attrs = Variable::Attrs());
 
 /**
+
  * 加法操作 - 元素级加法
  * @param scope 作用域
  * @param x 第一个操作数
  * @param y 第二个操作数
  * @return 加法结果输出
- * 
+
+ *
+
  * 功能说明:
  * - 执行元素级加法运算
  * - 支持广播机制
  * - 自动类型推断
+
  */
 Output Add(const Scope& scope, Input x, Input y);
 
 /**
+
  * 矩阵乘法操作
  * @param scope 作用域
  * @param a 第一个矩阵
  * @param b 第二个矩阵
  * @param attrs 可选属性（转置等）
  * @return 矩阵乘法结果
- * 
+
+ *
+
  * 功能说明:
  * - 执行矩阵乘法运算
  * - 支持转置选项
  * - 优化的BLAS实现
+
  */
 Output MatMul(const Scope& scope, Input a, Input b,
               const MatMul::Attrs& attrs = MatMul::Attrs());
 
 /**
+
  * ReLU激活函数
  * @param scope 作用域
  * @param features 输入特征
  * @return 激活后的输出
- * 
+
+ *
+
  * 功能说明:
  * - 应用ReLU激活函数
  * - max(0, x)的逐元素计算
  * - 常用于神经网络
+
  */
 Output Relu(const Scope& scope, Input features);
 
 /**
+
  * Softmax操作
  * @param scope 作用域
  * @param logits 输入logits
  * @param attrs 可选属性
  * @return Softmax概率分布
- * 
+
+ *
+
  * 功能说明:
  * - 计算Softmax概率分布
  * - 用于多分类问题
  * - 数值稳定的实现
+
  */
 Output Softmax(const Scope& scope, Input logits,
                const Softmax::Attrs& attrs = Softmax::Attrs());
@@ -650,8 +688,9 @@ Output Softmax(const Scope& scope, Input logits,
 class CustomLinearLayer {
 public:
     /**
+
      * 自定义线性层实现
-     * 
+     *
      * 功能说明:
      * - 封装线性变换逻辑
      * - 提供高级接口
@@ -780,32 +819,38 @@ void UseCustomLayer() {
 namespace ops {
 
 /**
+
  * 梯度函数类型定义
  * @param scope 作用域
  * @param op 原始操作
  * @param grad_inputs 输入梯度
  * @param grad_outputs 输出梯度
  * @return 计算状态
+
  */
 typedef std::function<absl::Status(const Scope& scope, const Operation& op,
                                    const std::vector<Output>& grad_inputs,
                                    std::vector<Output>* grad_outputs)> GradFunc;
 
 /**
+
  * 梯度注册宏
  * @param op_name 操作名称
  * @param grad_fn 梯度函数
+
  */
 #define REGISTER_GRADIENT_OP(op_name, grad_fn) \
     REGISTER_GRADIENT_OP_UNIQ_HELPER(__COUNTER__, op_name, grad_fn)
 
 /**
+
  * 计算梯度
  * @param scope 作用域
  * @param ys 输出张量列表
  * @param xs 输入张量列表
  * @param grad_outputs 输出梯度列表
  * @return 输入梯度列表
+
  */
 absl::Status AddSymbolicGradients(const Scope& scope,
                                   const std::vector<Output>& ys,
@@ -822,17 +867,21 @@ absl::Status AddSymbolicGradients(const Scope& scope,
 namespace ops {
 
 /**
+
  * Softmax梯度实现
  * @param scope 作用域
  * @param op 原始Softmax操作
  * @param grad_inputs 上游梯度
  * @param grad_outputs 输出梯度
  * @return 计算状态
- * 
+
+ *
+
  * 数学原理:
  * 对于Softmax函数 p = softmax(x)
  * 梯度公式: dL/dx = (dL/dy - sum(dL/dy * y)) * y
  * 其中 y 是softmax的输出，dL/dy是上游梯度
+
  */
 absl::Status SoftmaxGrad(const Scope& scope, const Operation& op,
                          const std::vector<Output>& grad_inputs,
@@ -858,16 +907,20 @@ absl::Status SoftmaxGrad(const Scope& scope, const Operation& op,
 REGISTER_GRADIENT_OP("Softmax", SoftmaxGrad);
 
 /**
+
  * ReLU梯度实现
  * @param scope 作用域
  * @param op 原始ReLU操作
  * @param grad_inputs 上游梯度
  * @param grad_outputs 输出梯度
  * @return 计算状态
- * 
+
+ *
+
  * 数学原理:
  * ReLU(x) = max(0, x)
  * 梯度: dReLU/dx = 1 if x > 0, else 0
+
  */
 absl::Status ReluGrad(const Scope& scope, const Operation& op,
                       const std::vector<Output>& grad_inputs,
@@ -885,17 +938,21 @@ absl::Status ReluGrad(const Scope& scope, const Operation& op,
 REGISTER_GRADIENT_OP("Relu", ReluGrad);
 
 /**
+
  * 矩阵乘法梯度实现
  * @param scope 作用域
  * @param op 原始MatMul操作
  * @param grad_inputs 上游梯度
  * @param grad_outputs 输出梯度
  * @return 计算状态
- * 
+
+ *
+
  * 数学原理:
  * 对于 C = A * B
  * dL/dA = dL/dC * B^T
  * dL/dB = A^T * dL/dC
+
  */
 absl::Status MatMulGrad(const Scope& scope, const Operation& op,
                         const std::vector<Output>& grad_inputs,
@@ -923,7 +980,7 @@ absl::Status MatMulGrad(const Scope& scope, const Operation& op,
         grad_a = MatMul(scope, b, grad_inputs[0], MatMul::TransposeB(true));
     } else {
         // dL/dA = B^T * dL/dC^T
-        grad_a = MatMul(scope, b, grad_inputs[0], 
+        grad_a = MatMul(scope, b, grad_inputs[0],
                        MatMul::TransposeA(true).TransposeB(true));
     }
     
@@ -934,7 +991,7 @@ absl::Status MatMulGrad(const Scope& scope, const Operation& op,
         grad_b = MatMul(scope, a, grad_inputs[0], MatMul::TransposeA(true));
     } else if (!transpose_a && transpose_b) {
         // dL/dB = A^T * dL/dC^T
-        grad_b = MatMul(scope, a, grad_inputs[0], 
+        grad_b = MatMul(scope, a, grad_inputs[0],
                        MatMul::TransposeA(true).TransposeB(true));
     } else if (transpose_a && !transpose_b) {
         // dL/dB = A * dL/dC
@@ -959,8 +1016,9 @@ REGISTER_GRADIENT_OP("MatMul", MatMulGrad);
 // 梯度计算使用示例
 void GradientComputationExample() {
     /**
+
      * 梯度计算示例
-     * 
+     *
      * 功能说明:
      * - 构建前向计算图
      * - 计算损失函数
@@ -986,7 +1044,7 @@ void GradientComputationExample() {
     auto y_pred = Softmax(root, logits);
     
     // 计算损失 (交叉熵)
-    auto cross_entropy = Neg(root, Sum(root, 
+    auto cross_entropy = Neg(root, Sum(root,
         Mul(root, y_true, Log(root, y_pred)), {1}));
     auto loss = ReduceMean(root, cross_entropy, {0});
     
@@ -1023,7 +1081,7 @@ void GradientComputationExample() {
     auto init_b2 = Assign(root, b2, Zeros(root, {10}, DT_FLOAT));
     
     std::vector<Tensor> init_outputs;
-    session.Run({}, {}, {init_W1.op, init_b1.op, init_W2.op, init_b2.op}, 
+    session.Run({}, {}, {init_W1.op, init_b1.op, init_W2.op, init_b2.op},
                 &init_outputs);
     
     // 训练循环
@@ -1055,6 +1113,7 @@ void GradientComputationExample() {
             break;
         }
     }
+
 }
 ```
 
@@ -1067,16 +1126,21 @@ void GradientComputationExample() {
 namespace tensorflow {
 
 /**
+
  * SavedModel加载器类
- * 
+
+ *
+
  * 功能说明:
  * - 加载SavedModel格式的模型
  * - 恢复图定义和变量
  * - 提供推理接口
+
  */
 class SavedModelBundle {
 public:
     /**
+
      * 会话对象 - 用于执行推理
      */
     std::unique_ptr<Session> session;
@@ -1092,9 +1156,11 @@ public:
      * @return 签名定义
      */
     const SignatureDef& GetSignature(const string& signature_key = kDefaultServingSignatureDefKey) const;
+
 };
 
 /**
+
  * 加载SavedModel
  * @param session_options 会话选项
  * @param run_options 运行选项
@@ -1102,6 +1168,7 @@ public:
  * @param tags 标签集合
  * @param bundle 输出的模型包
  * @return 加载状态
+
  */
 absl::Status LoadSavedModel(const SessionOptions& session_options,
                             const RunOptions& run_options,
@@ -1110,11 +1177,13 @@ absl::Status LoadSavedModel(const SessionOptions& session_options,
                             SavedModelBundle* bundle);
 
 /**
+
  * 简化的加载接口
  * @param export_dir 模型导出目录
  * @param tags 标签集合
  * @param bundle 输出的模型包
  * @return 加载状态
+
  */
 absl::Status LoadSavedModel(const string& export_dir,
                             const std::unordered_set<string>& tags,
@@ -1129,8 +1198,9 @@ absl::Status LoadSavedModel(const string& export_dir,
 // SavedModel使用示例
 void SavedModelExample() {
     /**
+
      * SavedModel加载和推理示例
-     * 
+     *
      * 功能说明:
      * - 加载预训练的SavedModel
      * - 获取输入输出签名
@@ -1161,7 +1231,7 @@ void SavedModelExample() {
     for (const auto& input_pair : signature.inputs()) {
         const auto& input_name = input_pair.first;
         const auto& input_info = input_pair.second;
-        std::cout << "  " << input_name << ": " << input_info.name() 
+        std::cout << "  " << input_name << ": " << input_info.name()
                   << " (dtype: " << input_info.dtype() << ")" << std::endl;
     }
     
@@ -1169,7 +1239,7 @@ void SavedModelExample() {
     for (const auto& output_pair : signature.outputs()) {
         const auto& output_name = output_pair.first;
         const auto& output_info = output_pair.second;
-        std::cout << "  " << output_name << ": " << output_info.name() 
+        std::cout << "  " << output_name << ": " << output_info.name()
                   << " (dtype: " << output_info.dtype() << ")" << std::endl;
     }
     
@@ -1220,7 +1290,7 @@ void SavedModelExample() {
                         }
                     }
                     
-                    std::cout << "样本 " << batch << " 预测类别: " << max_class 
+                    std::cout << "样本 " << batch << " 预测类别: " << max_class
                               << " (概率: " << max_prob << ")" << std::endl;
                 }
             }
@@ -1228,6 +1298,7 @@ void SavedModelExample() {
     } else {
         std::cerr << "推理失败: " << run_status.message() << std::endl;
     }
+
 }
 ```
 
@@ -1287,8 +1358,9 @@ sequenceDiagram
 class EfficientModel {
 public:
     /**
+
      * 高效模型实现
-     * 
+     *
      * 最佳实践:
      * - 使用作用域管理命名空间
      * - 预分配变量和操作
@@ -1337,7 +1409,7 @@ public:
         
         // Xavier初始化
         float w1_stddev = std::sqrt(2.0f / (input_dim_ + hidden_dim_));
-        auto w1_init = Multiply(init_scope, 
+        auto w1_init = Multiply(init_scope,
                                RandomNormal(init_scope, {input_dim_, hidden_dim_}, DT_FLOAT),
                                w1_stddev);
         w1_initializer_ = Assign(init_scope, W1_, w1_init);
@@ -1362,7 +1434,7 @@ public:
         
         // 损失计算
         auto loss_scope = train_scope.NewSubScope("loss");
-        auto cross_entropy = Neg(loss_scope, 
+        auto cross_entropy = Neg(loss_scope,
                                Sum(loss_scope, Mul(loss_scope, labels_, Log(loss_scope, output_)), {1}));
         loss_ = ReduceMean(loss_scope.WithOpName("mean_loss"), cross_entropy, {0});
         
@@ -1376,18 +1448,18 @@ public:
             auto update_scope = train_scope.NewSubScope("updates");
             learning_rate_ = Placeholder(update_scope.WithOpName("learning_rate"), DT_FLOAT);
             
-            auto w1_update = AssignSub(update_scope, W1_, 
+            auto w1_update = AssignSub(update_scope, W1_,
                                      Mul(update_scope, learning_rate_, gradients[0]));
-            auto b1_update = AssignSub(update_scope, b1_, 
+            auto b1_update = AssignSub(update_scope, b1_,
                                      Mul(update_scope, learning_rate_, gradients[1]));
-            auto w2_update = AssignSub(update_scope, W2_, 
+            auto w2_update = AssignSub(update_scope, W2_,
                                      Mul(update_scope, learning_rate_, gradients[2]));
-            auto b2_update = AssignSub(update_scope, b2_, 
+            auto b2_update = AssignSub(update_scope, b2_,
                                      Mul(update_scope, learning_rate_, gradients[3]));
             
             // 创建训练操作组
             train_op_ = NoOp(update_scope.WithOpName("train_op")
-                           .WithControlDependencies({w1_update.op, b1_update.op, 
+                           .WithControlDependencies({w1_update.op, b1_update.op,
                                                    w2_update.op, b2_update.op}));
         }
     }
@@ -1401,7 +1473,7 @@ public:
     Operation train_op() const { return train_op_.op; }
     
     std::vector<Operation> GetInitOps() const {
-        return {w1_initializer_.op, b1_initializer_.op, 
+        return {w1_initializer_.op, b1_initializer_.op,
                 w2_initializer_.op, b2_initializer_.op};
     }
 
@@ -1427,8 +1499,9 @@ private:
 // 性能优化技巧
 void PerformanceOptimization() {
     /**
+
      * C++ API性能优化技巧
-     * 
+     *
      * 优化策略:
      * - 使用合适的数据类型
      * - 批量处理数据
@@ -1445,7 +1518,7 @@ void PerformanceOptimization() {
     // 2. 批量处理
     // 使用较大的批次大小提高GPU利用率
     int batch_size = 128;  // 根据GPU内存调整
-    auto batched_input = Placeholder(root, DT_FLOAT, 
+    auto batched_input = Placeholder(root, DT_FLOAT,
                                    Placeholder::Shape({batch_size, 784}));
     
     // 3. 设备放置优化
@@ -1489,6 +1562,7 @@ void PerformanceOptimization() {
             }
         }
     }
+
 }
 ```
 
@@ -1503,6 +1577,7 @@ TensorFlow C++ API模块提供了完整的原生C++接口：
 5. **SavedModel支持** - 模型加载和推理能力
 
 通过深入理解C++ API的设计和实现，可以：
+
 - 构建高性能的C++机器学习应用
 - 开发自定义的训练和推理系统
 - 集成TensorFlow到现有的C++项目中

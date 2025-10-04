@@ -65,7 +65,7 @@ sequenceDiagram
     
     loop For each active toolset
         Toolset->>Server: RegisterTools()
-        Toolset->>Server: RegisterResourcesTemplates() 
+        Toolset->>Server: RegisterResourcesTemplates()
         Toolset->>Server: RegisterPrompts()
     end
     
@@ -120,7 +120,7 @@ sequenceDiagram
     Server->>MCP: InitializeResponse
     Note over MCP: {
     Note over MCP:   "result": {
-    Note over MCP:     "protocolVersion": "2024-11-05", 
+    Note over MCP:     "protocolVersion": "2024-11-05",
     Note over MCP:     "serverInfo": {
     Note over MCP:       "name": "github-mcp-server",
     Note over MCP:       "version": "1.0.0"
@@ -175,7 +175,7 @@ sequenceDiagram
     Note over MCP:     "name": "get_issue",
     Note over MCP:     "arguments": {
     Note over MCP:       "owner": "microsoft",
-    Note over MCP:       "repo": "vscode", 
+    Note over MCP:       "repo": "vscode",
     Note over MCP:       "issue_number": 12345
     Note over MCP:     }
     Note over MCP:   }
@@ -271,7 +271,7 @@ sequenceDiagram
     
     par Job 1 Log Processing
         Handler->>Handler: getJobLogData(ctx, client, owner, repo, job1.ID)
-        Handler->>GitHub: GetWorkflowJobLogs(ctx, owner, repo, job1.ID) 
+        Handler->>GitHub: GetWorkflowJobLogs(ctx, owner, repo, job1.ID)
         GitHub-->>Handler: Download URL for job1 logs
         
         Handler->>LogProcessor: downloadLogContent(url, tailLines=500, maxLines=5000)
@@ -311,7 +311,7 @@ sequenceDiagram
     Handler-->>Server:   message: "Retrieved logs for 2 failed jobs",
     Handler-->>Server:   run_id: 123,
     Handler-->>Server:   total_jobs: 5,
-    Handler-->>Server:   failed_jobs: 2, 
+    Handler-->>Server:   failed_jobs: 2,
     Handler-->>Server:   logs: [job1_result, job3_result],
     Handler-->>Server:   return_format: {content: true, urls: false}
     Handler-->>Server: }
@@ -557,14 +557,14 @@ sequenceDiagram
     BatchProcessor->>BatchProcessor: Create goroutine pool for concurrent processing
     
     par Concurrent Job Processing
-        BatchProcessor->>GitHub: GetWorkflowJobLogs(job1.ID) 
+        BatchProcessor->>GitHub: GetWorkflowJobLogs(job1.ID)
         GitHub-->>BatchProcessor: job1 log URL
         BatchProcessor->>Cache: Check if logs already cached
         Cache-->>BatchProcessor: Cache miss
         BatchProcessor->>BatchProcessor: downloadLogContent(job1_url)
         BatchProcessor->>Aggregator: job1 results
         
-    and 
+    and
         BatchProcessor->>GitHub: GetWorkflowJobLogs(job3.ID)
         GitHub-->>BatchProcessor: job3 log URL  
         BatchProcessor->>Cache: Check cache

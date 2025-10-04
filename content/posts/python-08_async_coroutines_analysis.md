@@ -64,6 +64,7 @@ graph TB
 #define _PyGenObject_HEAD(prefix)                                           \
     PyObject_HEAD                                                           \
     /* _PyFrame_GetFirstComplete(gen->gi_iframe.previous) == NULL 意味着     \
+
      * 要么没有父帧，要么有一个正在运行的父帧 */                                   \
     _PyInterpreterFrame gi_iframe;                                          \
     /* 生成器的代码对象和运行状态 */                                             \
@@ -95,6 +96,7 @@ typedef struct _PyAsyncGenObject {
 ```
 
 **数据结构说明**:
+
 - `gi_iframe`: 内嵌的解释器栈帧，保存执行上下文
 - `gi_frame_state`: 帧状态标记，控制协程的生命周期
 - `gi_name/gi_qualname`: 协程的名称信息，用于调试和表示
@@ -193,6 +195,7 @@ make_gen(PyTypeObject *type, PyFunctionObject *func)
 ```
 
 **关键参数说明**:
+
 - `func`: 函数对象，包含了要执行的代码
 - `coro_flags`: 代码对象的标志，决定创建何种类型的对象
 - `origin_depth`: 协程来源追踪深度，用于调试
@@ -368,6 +371,7 @@ case Await_kind:
 ```
 
 **关键字节码指令**:
+
 - `GET_AWAITABLE`: 获取可等待对象
 - `YIELD_FROM`: 委托给子协程执行
 - `RESUME`: 协程恢复执行
@@ -594,6 +598,7 @@ codegen_async_with_inner(compiler *c, stmt_ty s, int pos)
 ```
 
 **async with语义流程**:
+
 1. 求值上下文表达式
 2. 获取`__aenter__`和`__aexit__`方法
 3. await `__aenter__()`的结果

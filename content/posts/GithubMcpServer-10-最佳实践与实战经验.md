@@ -21,6 +21,7 @@ services:
   github-mcp-server:
     image: ghcr.io/github/github-mcp-server:latest
     environment:
+
       - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_PAT}
       - GITHUB_TOOLSETS=repos,issues,pull_requests,actions
       - GITHUB_CONTENT_WINDOW_SIZE=5000
@@ -37,6 +38,7 @@ services:
       interval: 30s
       timeout: 10s
       retries: 3
+
 ```
 
 ### 1.2 安全配置

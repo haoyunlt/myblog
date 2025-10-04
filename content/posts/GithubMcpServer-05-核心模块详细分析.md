@@ -460,7 +460,7 @@ sequenceDiagram
 classDiagram
     class ClientManager {
         +getClient(ctx) (*github.Client, error)
-        +getGQLClient(ctx) (*githubv4.Client, error) 
+        +getGQLClient(ctx) (*githubv4.Client, error)
         +getRawClient(ctx) (*raw.Client, error)
     }
 
@@ -644,7 +644,7 @@ classDiagram
 ### 4.2 用户友好错误映射
 
 ```go
-// 位置: pkg/errors/error.go 
+// 位置: pkg/errors/error.go
 func NewGitHubAPIErrorResponse(ctx context.Context, message string, resp *github.Response, err error) *mcp.CallToolResult {
     // 1. 记录详细错误信息到上下文
     NewGitHubAPIErrorToCtx(ctx, message, resp, err)
@@ -658,7 +658,7 @@ func NewGitHubAPIErrorResponse(ctx context.Context, message string, resp *github
         case 403:
             if strings.Contains(resp.Status, "rate limit") {
                 resetTime := resp.Rate.Reset.Format("15:04:05")
-                return mcp.NewToolResultError(fmt.Sprintf("API速率限制已达上限。请在 %s 之后重试。剩余请求数：%d/%d", 
+                return mcp.NewToolResultError(fmt.Sprintf("API速率限制已达上限。请在 %s 之后重试。剩余请求数：%d/%d",
                     resetTime, resp.Rate.Remaining, resp.Rate.Limit))
             }
             return mcp.NewToolResultError("访问被禁止。请检查仓库权限或令牌scope设置。")

@@ -79,11 +79,14 @@ classDiagram
 
 ```cpp
 /**
+
  * Address::Instance 地址抽象接口的实现分析
+
  */
 class AddressStructure {
 public:
   /**
+
    * IPv4地址实现
    */
   class Ipv4Instance : public IpInstance {
@@ -153,6 +156,7 @@ public:
     std::string friendly_name_; // 友好名称
     mode_t mode_{0};         // 文件权限模式
   };
+
 };
 ```
 
@@ -220,12 +224,15 @@ classDiagram
 
 ```cpp
 /**
+
  * HeaderMapImpl HTTP头部映射的核心实现
  * 使用优化的数据结构存储和访问HTTP头部
+
  */
 class HeaderMapImpl : public HeaderMap {
 public:
   /**
+
    * 构造函数
    * @param max_headers_kb 最大头部KB数
    * @param max_headers_count 最大头部数量
@@ -236,7 +243,7 @@ public:
   // HeaderMap 接口实现
   void addCopy(const LowerCaseString& key, absl::string_view value) override;
   void addReference(const LowerCaseString& key, absl::string_view value) override;
-  void addReferenceKey(const LowerCaseString& key, uint64_t hash, 
+  void addReferenceKey(const LowerCaseString& key, uint64_t hash,
                       absl::string_view value) override;
   void appendCopy(const LowerCaseString& key, absl::string_view value) override;
   void setReference(const LowerCaseString& key, absl::string_view value) override;
@@ -255,11 +262,12 @@ public:
 
 private:
   /**
+
    * 头部条目实现
    */
   struct HeaderEntryImpl : public HeaderEntry, LinkedObject<HeaderEntryImpl> {
     HeaderEntryImpl(const LowerCaseString& key, HeaderMapImpl& parent);
-    HeaderEntryImpl(const LowerCaseString& key, HeaderString&& value, 
+    HeaderEntryImpl(const LowerCaseString& key, HeaderString&& value,
                    HeaderMapImpl& parent);
 
     // HeaderEntry 接口实现
@@ -329,6 +337,7 @@ private:
   const uint32_t max_headers_kb_;         // 最大头部KB数
   const uint32_t max_headers_count_;      // 最大头部数量
   StatefulHeaderKeyFormatterPtr formatter_; // 头部键格式化器
+
 };
 ```
 
@@ -395,8 +404,10 @@ classDiagram
 
 ```cpp
 /**
+
  * OwnedImpl 缓冲区的核心实现
  * 使用分片存储机制实现高效的内存管理
+
  */
 class OwnedImpl : public Instance {
 public:
@@ -427,6 +438,7 @@ public:
 
 private:
   /**
+
    * 缓冲区分片实现
    */
   struct Slice : public RawSlice {
@@ -490,11 +502,14 @@ private:
   
   static constexpr uint64_t DefaultSliceSize = 16384; // 默认分片大小16KB
   static constexpr uint64_t MaxSlices = 1024;         // 最大分片数
+
 };
 
 /**
+
  * WatermarkBuffer 水位线缓冲区实现
  * 支持流量控制的缓冲区包装器
+
  */
 class WatermarkBuffer : public Instance {
 public:
@@ -523,6 +538,7 @@ public:
 
 private:
   /**
+
    * 检查高水位线
    */
   void checkHighWatermark() {
@@ -552,6 +568,7 @@ private:
   OverflowCallback overflow_callback_; // 溢出回调
   UnderflowCallback underflow_callback_; // 下溢回调
   bool above_high_watermark_{false};  // 是否超过高水位线
+
 };
 ```
 
@@ -630,11 +647,14 @@ classDiagram
 
 ```cpp
 /**
+
  * LoadBalancer 负载均衡器的数据结构分析
+
  */
 class LoadBalancerStructures {
 public:
   /**
+
    * 主机选择结果
    */
   struct HostSelectionResponse {
@@ -687,7 +707,7 @@ public:
   class ConsistentHashLoadBalancer : public LoadBalancerBase {
   public:
     ConsistentHashLoadBalancer(const PrioritySet& priority_set,
-                             const PrioritySet* local_priority_set, 
+                             const PrioritySet* local_priority_set,
                              ClusterStats& stats,
                              Runtime::Loader& runtime,
                              Random::RandomGenerator& random)
@@ -784,6 +804,7 @@ public:
 
     std::vector<std::shared_ptr<HashRing>> hash_rings_; // 每个优先级的哈希环
   };
+
 };
 ```
 
@@ -853,8 +874,10 @@ classDiagram
 
 ```cpp
 /**
+
  * RouteEntryImpl 路由条目的实现分析
  * 包含路由匹配逻辑和配置信息
+
  */
 class RouteEntryImpl : public RouteEntry,
                        public Route,
@@ -862,6 +885,7 @@ class RouteEntryImpl : public RouteEntry,
                        Logger::Loggable<Logger::Id::router> {
 public:
   /**
+
    * 路径匹配器实现
    */
   class PathMatcherImpl {
@@ -874,7 +898,7 @@ public:
         path_ = match.path();
         break;
       case PathMatchType::Prefix:
-        path_ = match.prefix(); 
+        path_ = match.prefix();
         break;
       case PathMatchType::Regex:
         regex_ = Regex::Utility::parseStdRegex(match.safe_regex());
@@ -1123,12 +1147,15 @@ classDiagram
 
 ```cpp
 /**
+
  * ThreadLocalStoreImpl 线程本地统计存储实现
  * 提供高性能的统计数据收集和管理
+
  */
 class ThreadLocalStoreImpl : public StoreRoot {
 public:
   /**
+
    * 统计标签实现
    */
   struct TagImpl : public Tag {

@@ -126,6 +126,7 @@ class AgentSession(rtc.EventEmitter[EventTypes], Generic[Userdata_T]):
     AgentSession是语音代理的运行时核心，负责协调所有组件
     
     核心职责：
+
     1. 管理音频/视频/文本I/O流
     2. 协调STT、VAD、TTS、LLM组件
     3. 处理转换检测和端点检测
@@ -147,12 +148,12 @@ class AgentSession(rtc.EventEmitter[EventTypes], Generic[Userdata_T]):
         
         # I/O管理
         self._input = io.AgentInput(                  # 代理输入管理器
-            self._on_video_input_changed, 
+            self._on_video_input_changed,
             self._on_audio_input_changed
         )
         self._output = io.AgentOutput(                # 代理输出管理器
             self._on_video_output_changed,
-            self._on_audio_output_changed, 
+            self._on_audio_output_changed,
             self._on_text_output_changed
         )
         
@@ -181,6 +182,7 @@ class AgentSession(rtc.EventEmitter[EventTypes], Generic[Userdata_T]):
         self._user_speaking_span: trace.Span | None = None
         self._agent_speaking_span: trace.Span | None = None
         self._session_span: trace.Span | None = None
+
 ```
 
 #### 2.2.2 会话启动流程
@@ -200,6 +202,7 @@ class AgentSession:
         启动代理会话的主要流程
         
         启动步骤：
+
         1. 验证和设置代理
         2. 初始化房间I/O
         3. 创建代理活动
@@ -248,6 +251,7 @@ class AgentSession:
         # 6. 处理测试模式
         if capture_run:
             return self._global_run_state or RunResult()
+
 ```
 
 #### 2.2.3 语音处理管道
@@ -259,6 +263,7 @@ class AgentSession:
         音频转发任务 - 处理音频流的核心循环
         
         处理流程：
+
         1. 监听音频输入变化
         2. 连接STT和VAD组件
         3. 处理语音识别结果
@@ -303,7 +308,7 @@ class AgentSession:
                 if isinstance(event, stt.SpeechEvent):
                     if event.type == stt.SpeechEventType.FINAL_TRANSCRIPT:
                         # 发送用户输入转录事件
-                        self.emit("user_input_transcribed", 
+                        self.emit("user_input_transcribed",
                                 UserInputTranscribedEvent(
                                     text=event.alternatives[0].text,
                                     confidence=event.alternatives[0].confidence
@@ -318,6 +323,7 @@ class AgentSession:
             _forward_audio(),
             _handle_transcription()
         )
+
 ```
 
 ### 2.3 AgentActivity - 活动协调器
@@ -330,6 +336,7 @@ class AgentActivity(RecognitionHooks):
     AgentActivity协调单个代理的所有活动
     
     主要职责：
+
     1. 管理代理的生命周期
     2. 协调LLM调用和工具执行
     3. 处理语音合成和播放
@@ -352,6 +359,7 @@ class AgentActivity(RecognitionHooks):
         # 任务管理
         self._reply_task: asyncio.Task | None = None # 回复生成任务
         self._tool_tasks: set[asyncio.Task] = set()  # 工具执行任务集
+
 ```
 
 #### 2.3.2 响应生成流程
@@ -372,6 +380,7 @@ class AgentActivity:
         响应生成管道 - 处理完整的响应生成流程
         
         流程步骤：
+
         1. 准备LLM请求上下文
         2. 调用LLM生成响应
         3. 处理工具调用
@@ -454,7 +463,7 @@ class AgentActivity:
             self._session._update_agent_state("listening")
     
     async def _execute_tools(
-        self, 
+        self,
         tool_calls: list[llm.FunctionCall]
     ) -> list[str]:
         """
@@ -490,8 +499,8 @@ class AgentActivity:
         return results
     
     async def _synthesize_and_play(
-        self, 
-        text: str, 
+        self,
+        text: str,
         speech_handle: SpeechHandle
     ) -> None:
         """
@@ -524,6 +533,7 @@ class AgentActivity:
             raise
         finally:
             self._session._update_agent_state("listening")
+
 ```
 
 ### 2.4 RoomIO - 房间I/O管理
@@ -537,6 +547,7 @@ class RoomInputOptions:
     房间输入配置选项
     
     配置项说明：
+
     - text_enabled: 是否启用文本输入
     - audio_enabled: 是否启用音频输入
     - video_enabled: 是否启用视频输入
@@ -560,12 +571,13 @@ class RoomInputOptions:
     close_on_disconnect: bool = True
     delete_room_on_close: bool = True
 
-@dataclass 
+@dataclass
 class RoomOutputOptions:
     """
     房间输出配置选项
     
     配置项说明：
+
     - transcription_enabled: 是否启用转录输出
     - audio_enabled: 是否启用音频输出
     - audio_sample_rate: 音频采样率
@@ -580,6 +592,7 @@ class RoomOutputOptions:
             source=rtc.TrackSource.SOURCE_MICROPHONE
         )
     )
+
 ```
 
 #### 2.4.2 房间I/O实现
@@ -590,6 +603,7 @@ class RoomIO:
     RoomIO管理与LiveKit房间的音视频I/O连接
     
     主要功能：
+
     1. 管理参与者连接和断开
     2. 处理音频/视频流的订阅和发布
     3. 协调输入输出流的路由
@@ -655,7 +669,7 @@ class RoomIO:
             await self._pre_connect_handler.start()
     
     async def _find_and_link_participant(
-        self, 
+        self,
         options: RoomInputOptions
     ) -> None:
         """
@@ -667,8 +681,8 @@ class RoomIO:
         3. 选择第一个符合条件的参与者
         """
         participant_kinds = (
-            options.participant_kinds 
-            if is_given(options.participant_kinds) 
+            options.participant_kinds
+            if is_given(options.participant_kinds)
             else DEFAULT_PARTICIPANT_KINDS
         )
         
@@ -732,6 +746,7 @@ class RoomIO:
                 room=self._room
             )
             self._session._output.set_text_output(self._text_output)
+
 ```
 
 ## 3. 语音处理时序图
@@ -871,6 +886,7 @@ class AgentActivity:
         预先生成功能实现
         
         优化策略：
+
         1. 在用户说话时就开始LLM推理
         2. 与音频处理并行执行
         3. 减少响应延迟
@@ -892,6 +908,7 @@ class AgentActivity:
                 await self._use_preemptive_result(result)
         except asyncio.CancelledError:
             logger.debug("预先生成被取消")
+
 ```
 
 ### 5.2 错误恢复机制
@@ -907,6 +924,7 @@ class AgentActivity:
         错误恢复处理
         
         恢复策略：
+
         1. 区分可恢复和不可恢复错误
         2. 实现指数退避重试
         3. 错误计数和熔断机制
@@ -930,6 +948,7 @@ class AgentActivity:
             logger.error(f"TTS错误: {error}")
             # TTS错误时可以降级到文本输出
             await self._fallback_to_text_output(speech_handle)
+
 ```
 
 这个核心模块分析文档详细介绍了LiveKit Agents框架中最重要的voice模块的架构和实现。每个组件都包含了详细的代码实现、处理流程和优化策略，帮助开发者深入理解框架的核心工作原理。

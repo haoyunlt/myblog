@@ -28,7 +28,7 @@ graph TB
         
         subgraph "会话管理层 (Session Management)"
             E[Session<br/>会话对象]
-            F[SessionManager<br/>会话管理器] 
+            F[SessionManager<br/>会话管理器]
             G[SessionWorkflow<br/>会话工作流]
             H[SessionId<br/>会话标识符]
         end
@@ -86,17 +86,22 @@ TransportLayer是传输层的核心抽象接口，定义了网络通信的基本
 
 ```cpp
 /**
+
  * TransportLayer - 传输层抽象接口
- * 
+
+ *
+
  * 功能特点:
  * - 提供统一的网络通信接口
  * - 支持多种传输协议（TCP、SSL、GRPC等）
  * - 管理客户端连接生命周期
  * - 支持异步I/O操作
+
  */
 class TransportLayer {
 public:
     /**
+
      * 传输层初始化配置
      */
     struct Options {
@@ -156,18 +161,23 @@ public:
      */
     virtual BSONObj getStats() const = 0;
     
+
 protected:
     TransportLayer() = default;
 };
 
 /**
+
  * TransportLayerASIO - 基于ASIO的传输层实现
- * 
+
+ *
+
  * 功能特点:
  * - 使用Boost.ASIO进行异步I/O操作
  * - 支持TCP和SSL连接
  * - 实现连接池和负载均衡
  * - 提供高性能的网络通信能力
+
  */
 class TransportLayerASIO final : public TransportLayer {
 private:
@@ -194,11 +204,12 @@ private:
     
 public:
     /**
+
      * 构造函数
      * @param options 传输层配置
      * @param sslManager SSL管理器
      */
-    explicit TransportLayerASIO(const Options& options, 
+    explicit TransportLayerASIO(const Options& options,
                                 std::shared_ptr<SSLManagerInterface> sslManager)
         : _options(options), _sslManager(std::move(sslManager)) {
         
@@ -345,8 +356,10 @@ public:
         return _sessionManager->asyncWaitForNewSession();
     }
     
+
 private:
     /**
+
      * 开始异步接受连接
      * @param acceptor 接受器
      */
@@ -374,6 +387,7 @@ private:
             }
         });
     }
+
 };
 ```
 
@@ -383,13 +397,17 @@ Session表示一个客户端连接会话，管理连接的整个生命周期。
 
 ```cpp
 /**
+
  * Session - 客户端连接会话
- * 
+
+ *
+
  * 功能特点:
  * - 管理单个客户端连接的生命周期
  * - 提供异步消息收发接口
  * - 支持连接状态监控和度量
  * - 实现连接超时和错误处理
+
  */
 class Session : public std::enable_shared_from_this<Session>,
                 public Decorable<Session> {
@@ -399,6 +417,7 @@ public:
     static const Status ClosedStatus;  // 连接关闭状态
     
     /**
+
      * 获取会话ID
      * @return 唯一的会话标识符
      */
@@ -458,6 +477,7 @@ public:
      */
     virtual bool isConnected() = 0;
     
+
 protected:
     explicit Session(Id id) : _id(id) {}
     
@@ -466,7 +486,9 @@ private:
 };
 
 /**
+
  * ASIOSession - 基于ASIO的会话实现
+
  */
 class ASIOSession final : public Session {
 private:
@@ -496,12 +518,13 @@ private:
     
 public:
     /**
+
      * 构造函数
      * @param id 会话ID
      * @param socket ASIO套接字
      * @param transportLayer 传输层引用
      */
-    ASIOSession(Id id, 
+    ASIOSession(Id id,
                asio::ip::tcp::socket socket,
                TransportLayerASIO* transportLayer)
         : Session(id)
@@ -536,7 +559,7 @@ public:
         
         asio::async_read(_socket,
                         asio::buffer(*headerBuffer),
-                        [this, promise, headerBuffer](const asio::error_code& ec, 
+                        [this, promise, headerBuffer](const asio::error_code& ec,
                                                      std::size_t bytes_transferred) {
             
             if (ec) {
@@ -671,8 +694,10 @@ public:
         return _state.load() == State::Connected && _socket.is_open();
     }
     
+
 private:
     /**
+
      * 注册异步操作取消器
      * @param canceler 取消函数
      */
@@ -680,6 +705,7 @@ private:
         std::lock_guard<std::mutex> lock(_asyncOpMutex);
         _asyncOpCancelers.push_back(std::move(canceler));
     }
+
 };
 ```
 
@@ -689,19 +715,24 @@ ServiceEntryPoint是从传输层进入数据库核心服务的入口点。
 
 ```cpp
 /**
+
  * ServiceEntryPoint - 服务入口点
- * 
+
+ *
+
  * 功能特点:
  * - 连接传输层和数据库核心服务
  * - 处理请求路由和分发
  * - 管理请求处理生命周期
  * - 提供请求度量和监控
+
  */
 class ServiceEntryPoint {
 public:
     virtual ~ServiceEntryPoint() = default;
     
     /**
+
      * 处理客户端请求
      * @param opCtx 操作上下文
      * @param request 请求消息
@@ -712,12 +743,15 @@ public:
                                            const Message& request,
                                            Date_t started) = 0;
     
+
 protected:
     ServiceEntryPoint() = default;
 };
 
 /**
+
  * ServiceEntryPointMongod - mongod服务入口点实现
+
  */
 class ServiceEntryPointMongod final : public ServiceEntryPoint {
 private:
@@ -728,6 +762,7 @@ public:
         : _serviceContext(serviceContext) {}
     
     /**
+
      * 处理mongod请求
      * @param opCtx 操作上下文
      * @param request 请求消息
@@ -753,8 +788,10 @@ public:
             });
     }
     
+
 private:
     /**
+
      * 执行具体请求
      * @param opCtx 操作上下文
      * @param request 请求消息
@@ -800,6 +837,7 @@ private:
                 DbResponse{ex.toStatus()});
         }
     }
+
 };
 ```
 
@@ -839,7 +877,9 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * MongoDB Wire Protocol 消息格式
+
  */
 struct MsgHeader {
     int32_t messageLength;    // 消息总长度（包含头部）
@@ -849,9 +889,13 @@ struct MsgHeader {
 };
 
 /**
+
  * Message - 消息对象
- * 
+
+ *
+
  * 封装了MongoDB Wire Protocol消息，提供了便捷的访问方法
+
  */
 class Message {
 private:
@@ -859,6 +903,7 @@ private:
     
 public:
     /**
+
      * 构造函数
      * @param buffer 消息数据缓冲区
      */
@@ -968,12 +1013,17 @@ public:
         
         return Status::OK();
     }
+
 };
 
 /**
+
  * MessageCompressor - 消息压缩器
- * 
+
+ *
+
  * 支持多种压缩算法来减少网络传输量
+
  */
 class MessageCompressor {
 public:
@@ -985,12 +1035,13 @@ public:
     };
     
     /**
+
      * 压缩消息
      * @param message 原始消息
      * @param algorithm 压缩算法
      * @return 压缩后的消息
      */
-    static StatusWith<Message> compress(const Message& message, 
+    static StatusWith<Message> compress(const Message& message,
                                        Algorithm algorithm) {
         
         if (algorithm == Algorithm::None) {
@@ -1009,7 +1060,7 @@ public:
                     return Status(ErrorCodes::BadValue, "不支持的压缩算法");
             }
         } catch (const std::exception& ex) {
-            return Status(ErrorCodes::InternalError, 
+            return Status(ErrorCodes::InternalError,
                          str::stream() << "压缩失败: " << ex.what());
         }
     }
@@ -1042,6 +1093,7 @@ public:
         }
     }
     
+
 private:
     static StatusWith<Message> compressSnappy(const Message& message);
     static StatusWith<Message> compressZlib(const Message& message);
@@ -1059,13 +1111,17 @@ MongoDB传输层提供完整的SSL/TLS支持：
 
 ```cpp
 /**
+
  * SSLManager - SSL连接管理器
- * 
+
+ *
+
  * 功能特点:
  * - 管理SSL证书和密钥
  * - 提供SSL握手和加密通信
  * - 支持客户端证书验证
  * - 实现SSL连接池管理
+
  */
 class SSLManager {
 private:
@@ -1087,6 +1143,7 @@ private:
     
 public:
     /**
+
      * 初始化SSL管理器
      * @param options SSL配置选项
      * @return 初始化状态
@@ -1113,7 +1170,7 @@ public:
             
             // 加载私钥
             if (!options.keyFile.empty()) {
-                _context->use_private_key_file(options.keyFile, 
+                _context->use_private_key_file(options.keyFile,
                                              asio::ssl::context::pem);
             }
             
@@ -1123,13 +1180,13 @@ public:
                 
                 if (options.requireClientCert) {
                     _context->set_verify_mode(
-                        asio::ssl::verify_peer | 
+                        asio::ssl::verify_peer |
                         asio::ssl::verify_fail_if_no_peer_cert);
                 }
             }
             
             // 设置密码验证回调
-            _context->set_password_callback([](std::size_t, 
+            _context->set_password_callback([](std::size_t,
                                               asio::ssl::context_base::password_purpose) {
                 return getSSLKeyPassword();
             });
@@ -1165,14 +1222,14 @@ public:
         auto promise = std::make_shared<Promise<void>>();
         auto future = promise->getFuture();
         
-        auto handshakeType = isServer ? 
-            asio::ssl::stream_base::server : 
+        auto handshakeType = isServer ?
+            asio::ssl::stream_base::server :
             asio::ssl::stream_base::client;
         
         stream.async_handshake(handshakeType,
             [promise](const asio::error_code& ec) {
                 if (ec) {
-                    promise->setError(Status(ErrorCodes::SSLHandshakeFailed, 
+                    promise->setError(Status(ErrorCodes::SSLHandshakeFailed,
                                            ec.message()));
                 } else {
                     promise->emplaceValue();
@@ -1216,6 +1273,7 @@ public:
         
         return Status::OK();
     }
+
 };
 ```
 
@@ -1225,13 +1283,17 @@ public:
 
 ```cpp
 /**
+
  * ConnectionPool - 连接池管理
- * 
+
+ *
+
  * 功能特点:
  * - 复用连接减少建立开销
  * - 自动连接健康检查
  * - 支持负载均衡和故障转移
  * - 提供连接度量和监控
+
  */
 class ConnectionPool {
 private:
@@ -1253,6 +1315,7 @@ private:
     
 public:
     /**
+
      * 获取连接
      * @param remote 远程主机
      * @param timeout 获取超时时间
@@ -1297,8 +1360,10 @@ public:
         return builder.obj();
     }
     
+
 private:
     /**
+
      * HostPool - 单个主机的连接池
      */
     class HostPool {
@@ -1372,6 +1437,7 @@ private:
             _condition.notify_one();
         }
     };
+
 };
 ```
 
@@ -1460,7 +1526,9 @@ MongoClient.connect('mongodb://localhost:27017', options)
 
 ```cpp
 /**
+
  * 传输层性能监控器
+
  */
 class TransportLayerMonitor {
 private:
@@ -1478,6 +1546,7 @@ private:
     
 public:
     /**
+
      * 启动监控
      */
     void start() {
@@ -1512,6 +1581,7 @@ public:
         _metrics.bytesSent.fetchAndAdd(bytes);
     }
     
+
 private:
     void reportMetrics() {
         LOGV2_INFO(1002, "传输层统计",

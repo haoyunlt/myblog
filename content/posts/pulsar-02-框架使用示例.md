@@ -67,8 +67,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+
  * 简单消息生产者示例
  * 演示如何创建生产者并发送消息到 Pulsar 主题
+
  */
 public class SimpleProducer {
     private static final Logger log = LoggerFactory.getLogger(SimpleProducer.class);
@@ -129,8 +131,10 @@ import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
 
 /**
+
  * 异步消息生产者示例
  * 演示如何使用异步 API 提高消息发送性能
+
  */
 public class AsyncProducer {
     private static final Logger log = LoggerFactory.getLogger(AsyncProducer.class);
@@ -192,8 +196,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+
  * 简单消息消费者示例
  * 演示如何创建消费者并从 Pulsar 主题接收消息
+
  */
 public class SimpleConsumer {
     private static final Logger log = LoggerFactory.getLogger(SimpleConsumer.class);
@@ -270,8 +276,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 
 /**
+
  * 异步消息消费者示例
  * 演示如何使用消息监听器异步处理消息
+
  */
 public class AsyncConsumer {
     private static final Logger log = LoggerFactory.getLogger(AsyncConsumer.class);
@@ -301,7 +309,7 @@ public class AsyncConsumer {
                                 String content = message.getValue();
                                 messageCount++;
                                 
-                                log.info("异步接收消息 #{}: {} -> MessageId: {}", 
+                                log.info("异步接收消息 #{}: {} -> MessageId: {}",
                                     messageCount, content, message.getMessageId());
                                 
                                 // 模拟消息处理时间
@@ -350,8 +358,10 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
+
  * 批量消息生产者示例
  * 演示如何配置和使用批量发送功能提高性能
+
  */
 public class BatchProducer {
     private static final Logger log = LoggerFactory.getLogger(BatchProducer.class);
@@ -383,7 +393,7 @@ public class BatchProducer {
             
             // 发送大量消息测试批量性能
             for (int i = 0; i < 1000; i++) {
-                String message = String.format("Batch message %d - timestamp: %d", 
+                String message = String.format("Batch message %d - timestamp: %d",
                     i, System.currentTimeMillis());
                 
                 // 异步发送以提高性能
@@ -430,8 +440,10 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
+
  * 批量消息消费者示例
  * 演示如何使用批量接收 API 提高消费性能
+
  */
 public class BatchConsumer {
     private static final Logger log = LoggerFactory.getLogger(BatchConsumer.class);
@@ -521,8 +533,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+
  * 消息路由和分区示例
  * 演示如何使用自定义消息路由策略控制消息分发
+
  */
 public class PartitionedProducer {
     private static final Logger log = LoggerFactory.getLogger(PartitionedProducer.class);
@@ -568,7 +582,7 @@ public class PartitionedProducer {
                         .eventTime(System.currentTimeMillis())  // 设置事件时间
                         .send();
                 
-                log.info("发送消息到分区: key={}, message={}, messageId={}", 
+                log.info("发送消息到分区: key={}, message={}, messageId={}",
                     key, message, messageId);
             }
             
@@ -590,8 +604,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+
  * 消息过滤和选择器示例
  * 演示如何使用消息选择器过滤消息
+
  */
 public class MessageFilterConsumer {
     private static final Logger log = LoggerFactory.getLogger(MessageFilterConsumer.class);
@@ -632,7 +648,7 @@ public class MessageFilterConsumer {
                         .property("priority", userType.equals("premium") ? "high" : "normal")
                         .sendAsync()
                         .thenAccept(messageId -> {
-                            log.info("发送消息: type={}, message={}, messageId={}", 
+                            log.info("发送消息: type={}, message={}, messageId={}",
                                 userType, message, messageId);
                         });
             }
@@ -651,7 +667,7 @@ public class MessageFilterConsumer {
                         String userType = message.getProperty("user-type");
                         String priority = message.getProperty("priority");
                         
-                        log.info("接收到过滤消息: content={}, user-type={}, priority={}", 
+                        log.info("接收到过滤消息: content={}, user-type={}, priority={}",
                             content, userType, priority);
                         
                         consumer.acknowledge(message);
@@ -683,8 +699,10 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
+
  * 死信队列和重试机制示例
  * 演示如何配置死信队列处理消息处理失败的情况
+
  */
 public class DeadLetterQueueExample {
     private static final Logger log = LoggerFactory.getLogger(DeadLetterQueueExample.class);
@@ -714,7 +732,7 @@ public class DeadLetterQueueExample {
                             String content = message.getValue();
                             int redeliveryCount = message.getRedeliveryCount();
                             
-                            log.info("处理消息: content={}, redeliveryCount={}, messageId={}", 
+                            log.info("处理消息: content={}, redeliveryCount={}, messageId={}",
                                 content, redeliveryCount, message.getMessageId());
                             
                             // 模拟处理失败的情况
@@ -765,8 +783,8 @@ public class DeadLetterQueueExample {
                 try {
                     Message<String> dlqMessage = dlqConsumer.receive(5, TimeUnit.SECONDS);
                     if (dlqMessage != null) {
-                        log.info("死信队列消息: content={}, originalMessageId={}, properties={}", 
-                            dlqMessage.getValue(), 
+                        log.info("死信队列消息: content={}, originalMessageId={}, properties={}",
+                            dlqMessage.getValue(),
                             dlqMessage.getProperty("REAL_TOPIC"),
                             dlqMessage.getProperties());
                         dlqConsumer.acknowledge(dlqMessage);
@@ -805,8 +823,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
+
  * Avro Schema 示例
  * 演示如何使用结构化数据模式进行序列化和反序列化
+
  */
 public class AvroSchemaExample {
     private static final Logger log = LoggerFactory.getLogger(AvroSchemaExample.class);
@@ -843,7 +863,7 @@ public class AvroSchemaExample {
         
         @Override
         public String toString() {
-            return String.format("User{name='%s', age=%d, email='%s', timestamp=%d}", 
+            return String.format("User{name='%s', age=%d, email='%s', timestamp=%d}",
                 name, age, email, timestamp);
         }
     }
@@ -903,7 +923,7 @@ public class AvroSchemaExample {
                     User receivedUser = message.getValue();
                     String userId = message.getProperty("user-id");
                     
-                    log.info("接收到用户数据: {} -> 属性: user-id={}, MessageId: {}", 
+                    log.info("接收到用户数据: {} -> 属性: user-id={}, MessageId: {}",
                         receivedUser, userId, message.getMessageId());
                     
                     consumer.acknowledge(message);
@@ -933,8 +953,10 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.TimeUnit;
 
 /**
+
  * 事务消息示例
  * 演示如何使用事务保证消息的原子性操作
+
  */
 public class TransactionExample {
     private static final Logger log = LoggerFactory.getLogger(TransactionExample.class);
@@ -987,9 +1009,10 @@ public class TransactionExample {
     }
     
     /**
+
      * 执行成功的事务
      */
-    private static void executeSuccessfulTransaction(PulsarClient client, Producer<String> producer) 
+    private static void executeSuccessfulTransaction(PulsarClient client, Producer<String> producer)
             throws Exception {
         // 开始事务
         Transaction transaction = client.newTransaction()
@@ -1026,7 +1049,7 @@ public class TransactionExample {
     /**
      * 执行失败的事务（模拟回滚）
      */
-    private static void executeFailedTransaction(PulsarClient client, Producer<String> producer) 
+    private static void executeFailedTransaction(PulsarClient client, Producer<String> producer)
             throws Exception {
         // 开始事务
         Transaction transaction = client.newTransaction()
@@ -1082,7 +1105,7 @@ public class TransactionExample {
                     String transactionId = message.getProperty("transaction-id");
                     String batch = message.getProperty("batch");
                     
-                    log.info("接收到消息: content={}, transaction-id={}, batch={}, messageId={}", 
+                    log.info("接收到消息: content={}, transaction-id={}, batch={}, messageId={}",
                         content, transactionId, batch, message.getMessageId());
                     
                     consumer.acknowledge(message);
@@ -1100,6 +1123,7 @@ public class TransactionExample {
         
         log.info("总共接收到 {} 条消息（只有成功事务的消息会被消费）", messageCount);
     }
+
 }
 ```
 

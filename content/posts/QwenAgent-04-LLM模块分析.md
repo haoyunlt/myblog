@@ -171,6 +171,7 @@ class BaseChatModel(ABC):
     """LLM基础抽象类 - 定义统一的模型交互接口
     
     设计目标:
+
         1. 为所有LLM提供统一的接口抽象
         2. 支持多种输入输出模式（文本、多模态、音频）
         3. 提供完整的缓存和重试机制
@@ -255,6 +256,7 @@ class BaseChatModel(ABC):
                 self.cache = None
         else:
             self.cache = None
+
 ```
 
 ### chat()方法完整实现分析
@@ -271,6 +273,7 @@ def chat(
     """LLM聊天的核心接口 - 统一处理所有LLM交互
     
     处理流程详解:
+
         1. 输入格式统一化 - 将Dict和Message统一为Message类型
         2. 缓存查找 - 检查是否有已缓存的响应
         3. 配置合并 - 合并基础配置和调用配置
@@ -468,6 +471,7 @@ def chat(
                 self.cache.set(cache_key, json_dumps_compact(o))
         
         return self._convert_messages_iterator_to_target_type(_format_and_cache(), _return_message_type)
+
 ```
 
 ## 🔧 BaseFnCallModel函数调用模型
@@ -479,6 +483,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
     """支持函数调用的LLM基类
     
     核心功能:
+
         1. 函数调用提示模板管理
         2. 消息格式转换（函数调用 <-> 普通对话）
         3. 并行函数调用支持
@@ -635,6 +640,7 @@ class BaseFnCallModel(BaseChatModel, ABC):
                 new_messages.append(msg)
         
         return new_messages
+
 ```
 
 ## 🌐 具体模型服务实现
@@ -647,6 +653,7 @@ class QwenChatAtDS(BaseFnCallModel):
     """DashScope服务的Qwen模型实现
     
     特点:
+
         1. 集成阿里云DashScope服务
         2. 支持流式和非流式输出
         3. 支持函数调用和推理内容
@@ -821,6 +828,7 @@ class QwenChatAtDS(BaseFnCallModel):
                     message=chunk.message,
                     extra={'model_service_info': chunk}
                 )
+
 ```
 
 ### 2. TextChatAtOAI - OpenAI兼容实现
@@ -831,6 +839,7 @@ class TextChatAtOAI(BaseFnCallModel):
     """OpenAI兼容的文本聊天模型
     
     特点:
+
         1. 兼容OpenAI API格式
         2. 支持多种OpenAI兼容服务（vLLM、Ollama等）
         3. 自适应OpenAI SDK版本
@@ -996,6 +1005,7 @@ class TextChatAtOAI(BaseFnCallModel):
             
         except OpenAIError as ex:
             raise ModelServiceError(exception=ex)
+
 ```
 
 ## 🔄 LLM模块工作流程
@@ -1094,6 +1104,7 @@ def generate_cache_key(messages, functions, extra_generate_cfg):
     """生成缓存键
     
     缓存策略:
+
         1. 基于完整的输入参数生成唯一键
         2. 使用JSON序列化确保一致性
         3. 排序键名确保相同参数产生相同键
@@ -1120,6 +1131,7 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
     """智能输入截断策略
     
     截断原则:
+
         1. 保留系统消息（最重要）
         2. 保留最新的用户-助手对话轮次
         3. 优先截断函数调用结果（占用空间大）
@@ -1133,6 +1145,7 @@ def _truncate_input_messages_roughly(messages: List[Message], max_tokens: int) -
     """
     # 实现智能截断逻辑
     # 详细实现见base.py中的_truncate_input_messages_roughly函数
+
 ```
 
 ### 3. 流式输出优化
@@ -1146,6 +1159,7 @@ class StreamOptimizer:
         """优化流式输出
         
         优化策略:
+
             1. 批量处理小chunk，减少网络往返
             2. 预测性缓冲，提前准备下一批内容
             3. 自适应延迟，在速度和体验间平衡
@@ -1159,7 +1173,7 @@ class StreamOptimizer:
             buffer_size += len(str(chunk))
             
             # 达到缓冲大小或遇到完整句子时输出
-            if (buffer_size >= max_buffer_size or 
+            if (buffer_size >= max_buffer_size or
                 any('。' in str(c) or '.' in str(c) for c in buffer)):
                 yield buffer
                 buffer = []
@@ -1168,6 +1182,7 @@ class StreamOptimizer:
         # 输出剩余内容
         if buffer:
             yield buffer
+
 ```
 
 ## 🎯 LLM模块总结

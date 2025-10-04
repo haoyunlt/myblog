@@ -112,7 +112,7 @@ VLLM通过`vllm.LLM`类对外提供主要接口，该类位于`vllm/entrypoints/
 ```python
 def generate(
     self,
-    prompts: Union[PromptType, Sequence[PromptType]], 
+    prompts: Union[PromptType, Sequence[PromptType]],
     sampling_params: Optional[Union[SamplingParams, Sequence[SamplingParams]]] = None,
     *,
     use_tqdm: Union[bool, Callable[..., tqdm]] = True,
@@ -122,6 +122,7 @@ def generate(
 ```
 
 **功能说明**：
+
 - 为输入提示生成补全文本
 - 自动批处理提示以优化性能
 - 支持单个或批量提示输入
@@ -129,6 +130,7 @@ def generate(
 - 返回包含生成文本的`RequestOutput`列表
 
 **关键参数**：
+
 - `prompts`: 输入提示，支持字符串或Token ID列表
 - `sampling_params`: 采样参数，控制生成策略
 - `lora_request`: LoRA请求，用于模型适配
@@ -149,6 +151,7 @@ def chat(
 ```
 
 **功能说明**：
+
 - 处理对话格式输入
 - 自动应用聊天模板
 - 支持工具调用
@@ -167,6 +170,7 @@ def encode(
 ```
 
 **功能说明**：
+
 - 对输入文本进行编码，生成向量表示
 - 支持多种池化策略
 - 用于嵌入、分类、奖励建模等任务
@@ -177,13 +181,14 @@ def encode(
 def score(
     self,
     data_1: Union[SingletonPrompt, Sequence[SingletonPrompt], ScoreMultiModalParam],
-    data_2: Union[SingletonPrompt, Sequence[SingletonPrompt], ScoreMultiModalParam], 
+    data_2: Union[SingletonPrompt, Sequence[SingletonPrompt], ScoreMultiModalParam],
     pooling_params: Optional[PoolingParams] = None,
     **kwargs
 ) -> list[ScoringRequestOutput]
 ```
 
 **功能说明**：
+
 - 计算文本对之间的相似度分数
 - 支持1对1、1对N、N对N配对
 - 支持交叉编码和双编码两种模式
@@ -216,7 +221,7 @@ sampling_params = SamplingParams(
 # 输入提示
 prompts = [
     "Hello, my name is",
-    "The president of the United States is", 
+    "The president of the United States is",
     "The capital of France is",
     "The future of AI is",
 ]
@@ -415,11 +420,13 @@ sequenceDiagram
 PagedAttention是VLLM的核心创新，将操作系统的虚拟内存概念引入到Transformer的注意力计算中：
 
 **传统注意力内存问题**：
+
 - KV缓存需要连续内存分配
 - 序列长度未知导致预分配浪费
 - 内存碎片化严重
 
 **PagedAttention解决方案**：
+
 - 将KV缓存分割成固定大小的页面
 - 动态分配页面，按需增长
 - 页面可以不连续，通过页表管理
@@ -428,11 +435,13 @@ PagedAttention是VLLM的核心创新，将操作系统的虚拟内存概念引�
 ### 5.2 连续批处理
 
 **传统静态批处理问题**：
+
 - 等待批次内所有请求完成
 - 短请求等待长请求
 - GPU利用率低
 
 **连续批处理优势**：
+
 - 完成的请求立即返回
 - 新请求可立即加入批次
 - 最大化GPU利用率

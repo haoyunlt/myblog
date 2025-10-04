@@ -33,7 +33,7 @@ graph TB
     
     subgraph "Managed Ledger Layer"
         ML[ManagedLedger]
-        MC[ManagedCursor] 
+        MC[ManagedCursor]
         EC[EntryCache]
         MLF[ManagedLedgerFactory]
     end
@@ -72,18 +72,21 @@ graph TB
 
 ```java
 /**
+
  * ManagedLedger 是对 BookKeeper Ledger 概念的超集
  * 它模拟了一个追加日志的概念，具有以下特性：
  * 1. 具有唯一名称，可以创建/打开/删除
  * 2. 始终可写：即使写入进程崩溃，新的写入者也可以重新打开并继续写入
  * 3. 支持多个持久化消费者（ManagedCursor），每个都有关联的位置
  * 4. 当所有消费者都处理完 BookKeeper ledger 中的所有条目时，该 ledger 将被删除
+
  */
 @InterfaceAudience.LimitedPrivate
 @InterfaceStability.Stable
 public interface ManagedLedger {
     
     /**
+
      * 获取 ManagedLedger 的名称
      * @return ManagedLedger 名称
      */
@@ -122,7 +125,7 @@ public interface ManagedLedger {
      * @param callback 完成回调
      * @param ctx 回调上下文
      */  
-    void asyncOpenCursor(String name, InitialPosition initialPosition, 
+    void asyncOpenCursor(String name, InitialPosition initialPosition,
                         OpenCursorCallback callback, Object ctx);
     
     /**
@@ -186,6 +189,7 @@ public interface ManagedLedger {
      * @return 最后确认的位置
      */
     Position getLastConfirmedEntry();
+
 }
 ```
 
@@ -193,8 +197,10 @@ public interface ManagedLedger {
 
 ```java
 /**
+
  * ManagedLedger 的默认实现
  * 管理多个 BookKeeper Ledger，提供统一的日志视图
+
  */
 public class ManagedLedgerImpl implements ManagedLedger, CreateCallback {
     private static final Logger log = LoggerFactory.getLogger(ManagedLedgerImpl.class);
@@ -224,10 +230,11 @@ public class ManagedLedgerImpl implements ManagedLedger, CreateCallback {
     private final Clock clock;                          // 时钟服务
     
     /**
+
      * 构造函数
      */
-    public ManagedLedgerImpl(ManagedLedgerFactoryImpl factory, BookKeeper bookKeeper, 
-                           MetaStore store, ManagedLedgerConfig config, 
+    public ManagedLedgerImpl(ManagedLedgerFactoryImpl factory, BookKeeper bookKeeper,
+                           MetaStore store, ManagedLedgerConfig config,
                            OrderedScheduler scheduledExecutor, String name) {
         this.factory = factory;
         this.bookKeeper = bookKeeper;
@@ -376,7 +383,7 @@ public class ManagedLedgerImpl implements ManagedLedger, CreateCallback {
         Map<String, byte[]> metadata = LedgerMetadataUtils.buildAdditionalMetadataForLedger(name);
         
         bookKeeper.asyncCreateLedger(
-            config.getEnsembleSize(), 
+            config.getEnsembleSize(),
             config.getWriteQuorumSize(),
             config.getAckQuorumSize(),
             config.getDigestType(),
@@ -474,7 +481,7 @@ public class ManagedLedgerImpl implements ManagedLedger, CreateCallback {
         
         // 添加属性
         if (propertiesMap != null) {
-            propertiesMap.forEach((key, value) -> 
+            propertiesMap.forEach((key, value) ->
                 mlInfoBuilder.addProperties(
                     MLDataFormats.KeyValue.newBuilder().setKey(key).setValue(value).build()));
         }
@@ -523,7 +530,7 @@ public class ManagedLedgerImpl implements ManagedLedger, CreateCallback {
                 .setCurrentLedgerSize(currentLedger != null ? currentLedger.getLength() : 0);
         
         if (includeLedgerMetadata) {
-            ledgers.values().forEach(ledgerInfo -> 
+            ledgers.values().forEach(ledgerInfo ->
                 mlStatsBuilder.addLedgers(
                     ManagedLedgerInternalStats.LedgerInfo.newBuilder()
                         .setLedgerId(ledgerInfo.getLedgerId())
@@ -535,6 +542,7 @@ public class ManagedLedgerImpl implements ManagedLedger, CreateCallback {
         
         return mlStatsBuilder.build();
     }
+
 }
 ```
 
@@ -542,12 +550,15 @@ public class ManagedLedgerImpl implements ManagedLedger, CreateCallback {
 
 ```java
 /**
+
  * ManagedCursor 接口定义了持久化游标的行为
  * 用于跟踪消费者在 ManagedLedger 中的读取位置
+
  */
 public interface ManagedCursor {
     
     /**
+
      * 获取游标名称
      * @return 游标名称
      */
@@ -560,7 +571,7 @@ public interface ManagedCursor {
      * @throws InterruptedException 中断异常
      * @throws ManagedLedgerException ManagedLedger 异常
      */
-    List<Entry> readEntries(int numberOfEntriesToRead) 
+    List<Entry> readEntries(int numberOfEntriesToRead)
             throws InterruptedException, ManagedLedgerException;
     
     /**
@@ -570,7 +581,7 @@ public interface ManagedCursor {
      * @param ctx 回调上下文
      * @param maxPosition 最大读取位置
      */
-    void asyncReadEntries(int numberOfEntriesToRead, ReadEntriesCallback callback, 
+    void asyncReadEntries(int numberOfEntriesToRead, ReadEntriesCallback callback,
                          Object ctx, Position maxPosition);
     
     /**
@@ -630,10 +641,13 @@ public interface ManagedCursor {
      * @return 积压大小（字节）
      */
     long getTotalSize();
+
 }
 
 /**
+
  * ManagedCursor 的默认实现
+
  */
 public class ManagedCursorImpl implements ManagedCursor {
     private static final Logger log = LoggerFactory.getLogger(ManagedCursorImpl.class);
@@ -681,11 +695,12 @@ public class ManagedCursorImpl implements ManagedCursor {
     }
     
     /**
+
      * 初始化游标
      */
     void initializeCursor(InitialPosition initialPosition, VoidCallback callback) {
         // 从元数据存储恢复游标信息
-        ledger.getStore().getCursorInfo(ledger.getName(), name, 
+        ledger.getStore().getCursorInfo(ledger.getName(), name,
             new MetaStoreCallback<ManagedCursorInfo>() {
                 @Override
                 public void operationComplete(ManagedCursorInfo info, Stat stat) {
@@ -717,10 +732,10 @@ public class ManagedCursorImpl implements ManagedCursor {
                         // 恢复个别删除的消息
                         for (MessageRange range : positionInfo.getIndividualDeletedMessagesList()) {
                             Position startPosition = new PositionImpl(
-                                range.getLowerEndpoint().getLedgerId(), 
+                                range.getLowerEndpoint().getLedgerId(),
                                 range.getLowerEndpoint().getEntryId());
                             Position endPosition = new PositionImpl(
-                                range.getUpperEndpoint().getLedgerId(), 
+                                range.getUpperEndpoint().getLedgerId(),
                                 range.getUpperEndpoint().getEntryId());
                             individualDeletedMessages.addOpenClosed(startPosition.getLedgerId(),
                                 startPosition.getEntryId(), endPosition.getLedgerId(), endPosition.getEntryId());
@@ -750,7 +765,7 @@ public class ManagedCursorImpl implements ManagedCursor {
      * 异步读取条目
      */
     @Override
-    public void asyncReadEntries(int numberOfEntriesToRead, ReadEntriesCallback callback, 
+    public void asyncReadEntries(int numberOfEntriesToRead, ReadEntriesCallback callback,
                                Object ctx, Position maxPosition) {
         checkArgument(numberOfEntriesToRead > 0);
         
@@ -772,7 +787,7 @@ public class ManagedCursorImpl implements ManagedCursor {
      * 读取条目（同步版本）
      */
     @Override
-    public List<Entry> readEntries(int numberOfEntriesToRead) 
+    public List<Entry> readEntries(int numberOfEntriesToRead)
             throws InterruptedException, ManagedLedgerException {
         
         final CountDownLatch counter = new CountDownLatch(1);
@@ -826,7 +841,7 @@ public class ManagedCursorImpl implements ManagedCursor {
         
         if (newMarkDeletePosition.compareTo(markDeletePosition) < 0) {
             if (log.isDebugEnabled()) {
-                log.debug("[{}-{}] Failed mark delete due to invalid position {} < {}", 
+                log.debug("[{}-{}] Failed mark delete due to invalid position {} < {}",
                          ledger.getName(), name, newMarkDeletePosition, markDeletePosition);
             }
             callback.markDeleteFailed(new ManagedLedgerException("Invalid mark delete position"), ctx);
@@ -847,7 +862,7 @@ public class ManagedCursorImpl implements ManagedCursor {
     /**
      * 持久化位置到元数据存储
      */
-    private void persistPositionToMetaStore(PositionImpl newMarkDeletePosition, 
+    private void persistPositionToMetaStore(PositionImpl newMarkDeletePosition,
                                           MarkDeleteCallback callback, Object ctx) {
         
         ManagedCursorInfo.Builder cursorInfoBuilder = ManagedCursorInfo.newBuilder();
@@ -966,8 +981,8 @@ public class ManagedCursorImpl implements ManagedCursor {
     public void rewind(boolean readCompacted) {
         lock.writeLock().lock();
         try {
-            Position newReadPosition = readCompacted ? 
-                markDeletePosition.getNext() : 
+            Position newReadPosition = readCompacted ?
+                markDeletePosition.getNext() :
                 ledger.getNextValidPosition(markDeletePosition);
             Position oldReadPosition = readPosition;
             
@@ -1003,6 +1018,7 @@ public class ManagedCursorImpl implements ManagedCursor {
     public long getTotalSize() {
         return ledger.getTotalSize(Range.openClosed(markDeletePosition, ledger.getLastConfirmedEntry()));
     }
+
 }
 ```
 
@@ -1130,12 +1146,15 @@ sequenceDiagram
 
 ```java
 /**
+
  * Entry Cache 用于缓存最近添加和读取的条目
  * 提高读取性能，减少对 BookKeeper 的访问
+
  */
 public interface EntryCache {
     
     /**
+
      * 插入条目到缓存
      * @param entry 要缓存的条目
      */
@@ -1180,16 +1199,19 @@ public interface EntryCache {
      * 关闭缓存
      */
     void close();
+
 }
 
 /**
+
  * Entry Cache 的内存实现
+
  */
 public class EntryCacheImpl implements EntryCache {
     private static final Logger log = LoggerFactory.getLogger(EntryCacheImpl.class);
     
     // 缓存存储：LedgerId -> EntryId -> Entry
-    private final ConcurrentLongHashMap<ConcurrentLongHashMap<EntryImpl>> entries = 
+    private final ConcurrentLongHashMap<ConcurrentLongHashMap<EntryImpl>> entries =
             ConcurrentLongHashMap.<ConcurrentLongHashMap<EntryImpl>>newBuilder().build();
     
     private final ManagedLedgerImpl ml;
@@ -1230,7 +1252,7 @@ public class EntryCacheImpl implements EntryCache {
         int entrySize = entry.getLength();
         
         // 获取或创建 Ledger 级别的映射
-        ConcurrentLongHashMap<EntryImpl> ledgerEntries = entries.computeIfAbsent(ledgerId, 
+        ConcurrentLongHashMap<EntryImpl> ledgerEntries = entries.computeIfAbsent(ledgerId,
             k -> ConcurrentLongHashMap.<EntryImpl>newBuilder().build());
         
         // 插入条目
@@ -1305,6 +1327,7 @@ public class EntryCacheImpl implements EntryCache {
     }
     
     /**
+
      * 触发缓存淘汰
      */
     private void triggerEviction() {
@@ -1315,7 +1338,7 @@ public class EntryCacheImpl implements EntryCache {
             return;
         }
         
-        log.info("[{}] Triggering cache eviction. current-size: {} target-size: {}", 
+        log.info("[{}] Triggering cache eviction. current-size: {} target-size: {}",
                 ml.getName(), currentSize, targetSize);
         
         // 按照 LRU 策略淘汰条目
@@ -1368,6 +1391,7 @@ public class EntryCacheImpl implements EntryCache {
     public int getNumberOfEntries() {
         return (int) entriesCount;
     }
+
 }
 ```
 
@@ -1451,18 +1475,21 @@ message NestedPositionInfo {
 
 ```java
 /**
+
  * 元数据存储抽象接口
+
  */
 public interface MetaStore {
     
     /**
+
      * 获取 ManagedLedger 信息
      * @param name ManagedLedger 名称
      * @param createIfMissing 如果不存在是否创建
      * @param properties 初始属性
      * @param callback 回调函数
      */
-    void getManagedLedgerInfo(String name, boolean createIfMissing, 
+    void getManagedLedgerInfo(String name, boolean createIfMissing,
                              Map<String, String> properties,
                              MetaStoreCallback<ManagedLedgerInfo> callback);
     
@@ -1482,7 +1509,7 @@ public interface MetaStore {
      * @param cursorName 游标名称
      * @param callback 回调函数
      */
-    void getCursorInfo(String ledgerName, String cursorName, 
+    void getCursorInfo(String ledgerName, String cursorName,
                       MetaStoreCallback<ManagedCursorInfo> callback);
     
     /**
@@ -1509,10 +1536,13 @@ public interface MetaStore {
      * @param callback 回调函数
      */
     void removeManagedLedger(String name, MetaStoreCallback<Void> callback);
+
 }
 
 /**
+
  * 基于 MetadataStore 的实现
+
  */
 public class MetaStoreImpl implements MetaStore {
     private static final Logger log = LoggerFactory.getLogger(MetaStoreImpl.class);
@@ -1529,7 +1559,7 @@ public class MetaStoreImpl implements MetaStore {
     }
     
     @Override
-    public void getManagedLedgerInfo(String name, boolean createIfMissing, 
+    public void getManagedLedgerInfo(String name, boolean createIfMissing,
                                    Map<String, String> properties,
                                    MetaStoreCallback<ManagedLedgerInfo> callback) {
         
@@ -1550,7 +1580,7 @@ public class MetaStoreImpl implements MetaStore {
                 
                 // 添加初始属性
                 if (properties != null) {
-                    properties.forEach((key, value) -> 
+                    properties.forEach((key, value) ->
                         builder.addProperties(MLDataFormats.KeyValue.newBuilder()
                             .setKey(key).setValue(value).build()));
                 }
@@ -1595,7 +1625,7 @@ public class MetaStoreImpl implements MetaStore {
     }
     
     @Override
-    public void getCursorInfo(String ledgerName, String cursorName, 
+    public void getCursorInfo(String ledgerName, String cursorName,
                             MetaStoreCallback<ManagedCursorInfo> callback) {
         
         String path = MANAGED_LEDGER_PATH_PREFIX + "/" + ledgerName + CURSOR_PATH_PREFIX + "/" + cursorName;
@@ -1641,7 +1671,9 @@ public class MetaStoreImpl implements MetaStore {
 
 ```java
 /**
+
  * Ledger 滚动策略决定何时创建新的 Ledger
+
  */
 public class LedgerRolloverPolicy {
     
@@ -1654,6 +1686,7 @@ public class LedgerRolloverPolicy {
     }
     
     /**
+
      * 检查是否需要滚动 Ledger
      * @param currentLedger 当前 Ledger
      * @return true 如果需要滚动
@@ -1698,6 +1731,7 @@ public class LedgerRolloverPolicy {
         // 获取最后添加时间（可以从统计信息中获取）
         return System.currentTimeMillis(); // 简化实现
     }
+
 }
 ```
 
@@ -1705,7 +1739,9 @@ public class LedgerRolloverPolicy {
 
 ```java
 /**
+
  * 缓存淘汰策略管理器
+
  */
 public class CacheEvictionPolicy {
     
@@ -1718,6 +1754,7 @@ public class CacheEvictionPolicy {
     }
     
     /**
+
      * 执行缓存淘汰
      * @param bytesToEvict 需要淘汰的字节数
      * @return 实际淘汰的字节数
@@ -1797,6 +1834,7 @@ public class CacheEvictionPolicy {
         
         return evictedSize;
     }
+
 }
 ```
 
@@ -1824,7 +1862,9 @@ public class CacheEvictionPolicy {
 
 ```java
 /**
+
  * ManagedLedger 统计收集器
+
  */
 public class ManagedLedgerStatsCollector {
     
@@ -1864,6 +1904,7 @@ public class ManagedLedgerStatsCollector {
         .register();
     
     /**
+
      * 记录添加条目操作
      */
     public void recordAddEntry(long latencyNanos) {
@@ -1944,6 +1985,7 @@ public class ManagedLedgerStatsCollector {
         public long totalSize;
         public long lastActive;
     }
+
 }
 ```
 
@@ -1953,7 +1995,9 @@ public class ManagedLedgerStatsCollector {
 
 ```java
 /**
+
  * ManagedLedger 故障恢复处理器
+
  */
 public class ManagedLedgerRecoveryHandler {
     
@@ -1962,6 +2006,7 @@ public class ManagedLedgerRecoveryHandler {
     private final BookKeeper bookKeeper;
     
     /**
+
      * 恢复 ManagedLedger 状态
      */
     public CompletableFuture<Void> recoverManagedLedger() {
@@ -2007,7 +2052,7 @@ public class ManagedLedgerRecoveryHandler {
                     
                     try {
                         // 尝试打开 Ledger 验证其存在性
-                        LedgerHandle ledger = bookKeeper.openLedger(ledgerId, 
+                        LedgerHandle ledger = bookKeeper.openLedger(ledgerId,
                             BookKeeper.DigestType.CRC32, new byte[]{});
                         
                         // 更新 Ledger 信息（可能不准确）
@@ -2020,7 +2065,7 @@ public class ManagedLedgerRecoveryHandler {
                         ledger.close();
                         
                     } catch (BKException.BKNoSuchLedgerExistsException e) {
-                        log.warn("[{}] Ledger {} does not exist, removing from metadata", 
+                        log.warn("[{}] Ledger {} does not exist, removing from metadata",
                                 managedLedger.getName(), ledgerId);
                         // 从元数据中移除不存在的 Ledger
                         removeLedgerFromMetadata(ledgerId);
@@ -2054,7 +2099,7 @@ public class ManagedLedgerRecoveryHandler {
             Long previousLedgerId = null;
             for (Long ledgerId : ledgers.keySet()) {
                 if (previousLedgerId != null && ledgerId != previousLedgerId + 1) {
-                    log.warn("[{}] Found gap in ledger sequence: {} -> {}", 
+                    log.warn("[{}] Found gap in ledger sequence: {} -> {}",
                             managedLedger.getName(), previousLedgerId, ledgerId);
                 }
                 previousLedgerId = ledgerId;
@@ -2122,13 +2167,13 @@ public class ManagedLedgerRecoveryHandler {
             Position markDeletePosition = new PositionImpl(positionInfo.getLedgerId(), positionInfo.getEntryId());
             
             if (!isValidPosition(markDeletePosition)) {
-                log.warn("[{}] Cursor {} has invalid mark delete position {}, resetting to earliest", 
+                log.warn("[{}] Cursor {} has invalid mark delete position {}, resetting to earliest",
                         managedLedger.getName(), cursorName, markDeletePosition);
                 markDeletePosition = managedLedger.getFirstPosition();
             }
             
             // 创建并初始化游标
-            ManagedCursorImpl cursor = new ManagedCursorImpl(bookKeeper, 
+            ManagedCursorImpl cursor = new ManagedCursorImpl(bookKeeper,
                 managedLedger.getConfig(), managedLedger, cursorName);
             
             Map<String, Long> properties = extractProperties(cursorInfo);
@@ -2181,7 +2226,7 @@ public class ManagedLedgerRecoveryHandler {
                     ledger.close();
                     
                 } catch (Exception e) {
-                    log.warn("[{}] Ledger {} appears to be corrupted, marking for cleanup", 
+                    log.warn("[{}] Ledger {} appears to be corrupted, marking for cleanup",
                             managedLedger.getName(), ledgerId, e);
                     corruptedLedgers.add(ledgerId);
                 }
@@ -2194,7 +2239,7 @@ public class ManagedLedgerRecoveryHandler {
                     managedLedger.getLedgers().remove(corruptedLedgerId);
                     log.info("[{}] Deleted corrupted ledger {}", managedLedger.getName(), corruptedLedgerId);
                 } catch (Exception e) {
-                    log.error("[{}] Failed to delete corrupted ledger {}", 
+                    log.error("[{}] Failed to delete corrupted ledger {}",
                              managedLedger.getName(), corruptedLedgerId, e);
                 }
             }
@@ -2202,6 +2247,7 @@ public class ManagedLedgerRecoveryHandler {
             return null;
         });
     }
+
 }
 ```
 

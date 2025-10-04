@@ -189,6 +189,7 @@ def deployment(
     部署装饰器 - 将Python类转换为可服务的部署
     
     核心功能：
+
     1. 模型封装和生命周期管理
     2. 副本扩展和负载均衡
     3. 请求路由和处理
@@ -257,6 +258,7 @@ class Deployment:
     部署类 - 管理模型服务的生命周期
     
     核心职责：
+
     1. 副本创建和管理
     2. 配置更新和热重载
     3. 流量路由和负载均衡
@@ -343,6 +345,7 @@ class Deployment:
             version=self._version,
             route_prefix=self._route_prefix,
         )
+
 ```
 
 ### 3.2 ReplicaActor实现分析
@@ -354,6 +357,7 @@ class ReplicaActor:
     副本Actor - 执行实际模型推理的工作单元
     
     核心功能：
+
     1. 用户模型的封装和管理
     2. 请求处理和并发控制
     3. 健康检查和状态报告
@@ -520,6 +524,7 @@ def create_replica_impl(
     创建副本实现的工厂函数
     
     功能：
+
     1. 根据部署类型选择实现
     2. 初始化用户模型实例
     3. 设置请求处理包装器
@@ -546,6 +551,7 @@ class UserCallableWrapper:
     用户模型调用的包装器
     
     功能：
+
     1. 统一不同类型模型的调用接口
     2. 处理批处理聚合
     3. 异常处理和错误传播
@@ -590,6 +596,7 @@ class UserCallableWrapper:
             # 错误处理和传播
             logger.exception(f"User callable error: {e}")
             raise
+
 ```
 
 ---
@@ -605,6 +612,7 @@ class ServeController:
     Serve控制器 - 管理整个服务系统的状态
     
     核心职责：
+
     1. 应用程序和部署的生命周期管理
     2. 副本调度和资源分配
     3. 自动扩缩容决策
@@ -781,6 +789,7 @@ class ServeController:
                 self.deployment_state_manager.update_deployment_target_replicas(
                     deployment_id, target_replicas
                 )
+
 ```
 
 ---
@@ -861,6 +870,7 @@ class AutoScalingModel:
     支持自动扩缩容的模型部署
     
     扩缩容策略：
+
     1. 基于ongoing_requests指标
     2. 考虑请求队列长度
     3. 结合资源使用情况
@@ -971,6 +981,7 @@ class CustomAutoscalingConfig(AutoscalingConfig):
     自定义扩缩容配置
     
     支持更复杂的扩缩容逻辑：
+
     - 基于业务指标
     - 时间段感知
     - 成本优化
@@ -985,7 +996,7 @@ class CustomAutoscalingConfig(AutoscalingConfig):
         self.resource_weight = 0.1
     
     def calculate_target_replicas(
-        self, 
+        self,
         current_replicas: int,
         current_qps: float,
         avg_latency_ms: float,
@@ -1026,7 +1037,7 @@ class CustomAutoscalingConfig(AutoscalingConfig):
         )
         
         # 应用边界约束
-        target_replicas = max(self.min_replicas, 
+        target_replicas = max(self.min_replicas,
                             min(self.max_replicas, target_replicas))
         
         return target_replicas
@@ -1038,6 +1049,7 @@ async def batched_model_deployment(requests: List[Dict]) -> List[Dict]:
     批处理模型部署
     
     批处理优势：
+
     1. 提高GPU利用率
     2. 减少推理开销
     3. 优化内存使用
@@ -1074,6 +1086,7 @@ class EnsembleModel:
     集成模型部署
     
     功能：
+
     1. 多模型组合推理
     2. 模型版本管理
     3. A/B测试支持
@@ -1163,6 +1176,7 @@ class EnsembleModel:
             total_weight += weight
         
         return weighted_sum / total_weight if total_weight > 0 else 0
+
 ```
 
 ---
@@ -1197,6 +1211,7 @@ class SimpleClassifier:
     简单分类器部署示例
     
     特性：
+
     - 固定副本数量
     - 同步推理
     - 基础监控
@@ -1236,6 +1251,7 @@ class GPUAcceleratedModel:
     GPU加速的深度学习模型部署
     
     特性：
+
     - GPU资源管理
     - 批处理优化
     - 异步推理
@@ -1302,6 +1318,7 @@ class BatchOptimizedModel:
     批处理优化的模型部署
     
     优势：
+
     - 提高GPU利用率
     - 减少推理延迟
     - 优化内存使用
@@ -1377,6 +1394,7 @@ class MLPipeline:
     机器学习推理流水线
     
     组合多个服务：
+
     1. 数据预处理
     2. 模型推理
     3. 结果后处理
@@ -1410,6 +1428,7 @@ class ModelVersionManager:
     模型版本管理器
     
     功能：
+
     - A/B测试
     - 金丝雀发布
     - 回滚机制
@@ -1427,7 +1446,7 @@ class ModelVersionManager:
         
         # 新版本模型（10%流量，A/B测试）
         canary_model = SimpleClassifier.options(
-            name="model_v2", 
+            name="model_v2",
             user_config={"version": "2.0", "traffic_weight": 0.1}
         ).bind("model_v2.pkl")
         
@@ -1453,7 +1472,7 @@ class ModelVersionManager:
         
         # 部署所有组件
         serve.run(main_model, name="model_v1")
-        serve.run(canary_model, name="model_v2") 
+        serve.run(canary_model, name="model_v2")
         serve.run(TrafficSplitter.bind(), name="traffic_splitter")
 
 # 6. 监控和可观测性
@@ -1463,6 +1482,7 @@ class MonitoredModel:
     带监控的模型部署
     
     监控维度：
+
     - 请求QPS和延迟
     - 模型准确率
     - 资源使用情况
@@ -1554,7 +1574,7 @@ def deploy_and_manage():
         
         # 2. 部署GPU模型
         gpu_app = GPUAcceleratedModel.bind("resnet50")
-        serve.run(gpu_app, name="gpu_service") 
+        serve.run(gpu_app, name="gpu_service")
         
         # 3. 部署批处理模型
         batch_app = BatchOptimizedModel.bind()
@@ -1791,7 +1811,7 @@ class MonitoredProductionModel:
         return {
             "requests_total": self.metrics["requests_total"],
             "requests_failed": self.metrics["requests_failed"],
-            "success_rate": (self.metrics["requests_total"] - self.metrics["requests_failed"]) / 
+            "success_rate": (self.metrics["requests_total"] - self.metrics["requests_failed"]) /
                            self.metrics["requests_total"] if self.metrics["requests_total"] > 0 else 1.0,
             "avg_latency_ms": avg_latency * 1000,
             "predictions_distribution": self.metrics["predictions_by_class"]

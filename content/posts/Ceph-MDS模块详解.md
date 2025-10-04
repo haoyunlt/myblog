@@ -126,6 +126,7 @@ stateDiagram-v2
     
     note left of Creating
         启动阶段:
+
         - 加载配置
         - 连接Monitor
         - 初始化组件
@@ -145,6 +146,7 @@ stateDiagram-v2
         - 执行负载均衡
         - 维护分布式锁
     end note
+
 ```
 
 ## 2. 核心数据结构详解
@@ -153,21 +155,26 @@ stateDiagram-v2
 
 ```cpp
 /**
+
  * MDCache类 - 元数据缓存管理的核心实现
  * 文件: src/mds/MDCache.h:147-1630
- * 
+
+ *
+
  * MDCache是MDS的核心组件，负责：
  * 1. 管理内存中的元数据缓存（inode、dentry、dir）
  * 2. 处理元数据的加载、存储和淘汰
  * 3. 维护目录树结构和权限层次
  * 4. 协调多MDS间的元数据分布和迁移
  * 5. 实现分布式锁和一致性保证
+
  */
 class MDCache {
 public:
     // ===================== 基本属性 =====================
     
     /**
+
      * MDS引用和基础组件
      */
     MDSRank *mds;                       // MDS排名实例
@@ -300,7 +307,7 @@ public:
             // 快照inode查找
             auto p = snap_inode_map.find(vinodeno_t(ino, snapid));
             if (p != snap_inode_map.end()) {
-                dout(16) << "get_inode " << ino << "." << snapid 
+                dout(16) << "get_inode " << ino << "." << snapid
                          << " -> " << p->second << dendl;
                 return p->second;
             }
@@ -380,6 +387,7 @@ private:
     // ===================== 内部工具方法 =====================
     
     /**
+
      * 创建系统inode
      * @param ino inode号
      * @param mode 文件模式
@@ -401,10 +409,12 @@ private:
      */
     void create_unlinked_system_inode(CInode *in, inodeno_t ino, int mode) const;
     
+
 public:
     // ===================== 构造和初始化 =====================
     
     /**
+
      * MDCache构造函数
      * @param m MDS排名实例
      * @param recovery_queue 恢复队列
@@ -421,6 +431,7 @@ public:
      * @param gather 收集器用于异步操作
      */
     void create_empty_hierarchy(MDSGather *gather);
+
 };
 ```
 
@@ -428,21 +439,26 @@ public:
 
 ```cpp
 /**
+
  * CInode类 - 缓存中的inode表示
  * 文件: src/mds/CInode.h:1279-1600
- * 
+
+ *
+
  * CInode代表内存中缓存的文件或目录的inode，包含：
  * 1. 文件元数据（大小、时间、权限等）
  * 2. 目录结构信息（对于目录类型）
  * 3. 分布式锁状态
  * 4. 客户端能力（capabilities）管理
  * 5. 快照和版本信息
+
  */
 class CInode : public MDSCacheObject, public InodeStoreBase {
 public:
     // ===================== 基本属性 =====================
     
     /**
+
      * Inode基本标识
      */
     inodeno_t ino() const { return inode->ino; }    // inode号
@@ -573,10 +589,12 @@ public:
         _mark_dirty(mask);
     }
     
+
 private:
     // ===================== 内部数据 =====================
     
     /**
+
      * MDCache引用
      */
     MDCache *mdcache;
@@ -628,6 +646,7 @@ public:
     // ===================== 构造和析构 =====================
     
     /**
+
      * CInode构造函数
      * @param c MDCache引用
      * @param auth 是否为权威副本
@@ -685,6 +704,7 @@ public:
         make_path(path);
         return path.get_path();
     }
+
 };
 ```
 
@@ -692,17 +712,22 @@ public:
 
 ```cpp
 /**
+
  * CDir类 - 缓存中的目录片段表示
  * 文件: src/mds/CDir.h
- * 
+
+ *
+
  * CDir代表目录的一个片段（fragment），大目录可能被分成多个片段。
  * 每个CDir包含一定范围内的目录项（CDentry）。
+
  */
 class CDir : public MDSCacheObject {
 public:
     // ===================== 基本属性 =====================
     
     /**
+
      * 目录基本信息
      */
     CInode *inode;                      // 所属inode
@@ -857,6 +882,7 @@ private:
     // ===================== 内部数据 =====================
     
     /**
+
      * 版本信息
      */
     version_t version;                  // 当前版本
@@ -879,6 +905,7 @@ public:
     // ===================== 构造和析构 =====================
     
     /**
+
      * CDir构造函数
      * @param in 所属inode
      * @param f 片段标识
@@ -917,6 +944,7 @@ public:
     MDCache *get_mdcache() const {
         return inode->get_mdcache();
     }
+
 };
 ```
 
@@ -971,16 +999,21 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * Server类 - MDS请求处理的核心实现
  * 文件: src/mds/Server.h:82-400
- * 
+
+ *
+
  * Server负责处理来自客户端的各种文件系统操作请求
+
  */
 class Server {
 public:
     // ===================== 核心处理方法 =====================
     
     /**
+
      * 处理客户端请求的入口函数
      * @param mdr 元数据请求包装
      */
@@ -1076,7 +1109,7 @@ public:
         reply->set_trace(trace);
         
         // 可能发放客户端能力
-        issue_client_caps(ref_inode, mdr->client_caps, mdr->session, 
+        issue_client_caps(ref_inode, mdr->client_caps, mdr->session,
                          req->get_wanted_caps());
         
         // 发送回复
@@ -1162,6 +1195,7 @@ private:
     // ===================== 辅助方法 =====================
     
     /**
+
      * 检查访问权限
      * @param mdr 元数据请求
      * @param in 目标inode
@@ -1218,7 +1252,7 @@ private:
         mdr->session->con->send_message2(reply);
         mdr->mark_disposed();
         
-        dout(8) << "reply_client_request " << result 
+        dout(8) << "reply_client_request " << result
                 << " (" << cpp_strerror(result) << ") " << *req << dendl;
     }
 
@@ -1226,6 +1260,7 @@ public:
     // ===================== 构造函数 =====================
     
     /**
+
      * Server构造函数
      * @param m MDS排名实例
      */
@@ -1233,6 +1268,7 @@ public:
         mdcache = mds->mdcache;
         locker = mds->locker;
     }
+
 };
 ```
 
@@ -1289,16 +1325,21 @@ graph TB
 
 ```cpp
 /**
+
  * Locker类 - 分布式锁管理器
  * 文件: src/mds/Locker.h
- * 
+
+ *
+
  * Locker管理MDS集群中的分布式锁，确保元数据的一致性
+
  */
 class Locker {
 public:
     // ===================== 锁状态枚举 =====================
     
     /**
+
      * 基本锁状态
      */
     static const int LOCK_SYNC = 1;         // 同步状态，多个副本可读
@@ -1430,7 +1471,7 @@ public:
         unsigned issued = cap->issue(max_caps);
         
         if (issued) {
-            dout(7) << "issue_caps client." << client 
+            dout(7) << "issue_caps client." << client
                     << " issued " << ccap_string(issued)
                     << " on " << *in << dendl;
             
@@ -1502,6 +1543,7 @@ private:
     MDCache *mdcache;                   // 元数据缓存
     
     /**
+
      * 发送锁消息给其他MDS
      * @param in inode对象  
      * @param lock 锁对象
@@ -1543,11 +1585,13 @@ public:
     // ===================== 构造函数 =====================
     
     /**
+
      * Locker构造函数
      * @param m MDS排名实例
      * @param c 元数据缓存
      */
     Locker(MDSRank *m, MDCache *c) : mds(m), mdcache(c) {}
+
 };
 ```
 
@@ -1607,16 +1651,21 @@ graph TB
 
 ```cpp
 /**
+
  * MDLog类 - 元数据日志管理器
  * 文件: src/mds/MDLog.h
- * 
+
+ *
+
  * MDLog负责记录所有元数据变更操作，支持崩溃恢复
+
  */
 class MDLog {
 public:
     // ===================== 日志段管理 =====================
     
     /**
+
      * 日志段列表
      */
     std::list<LogSegment*> segments;        // 所有日志段
@@ -1649,7 +1698,7 @@ public:
     void start_entry(LogEvent *le) {
         ceph_assert(le);
         
-        dout(5) << "start_entry " << le->get_type_name() 
+        dout(5) << "start_entry " << le->get_type_name()
                 << " seq " << get_event_seq() << dendl;
         
         le->set_seq(get_event_seq());
@@ -1699,8 +1748,8 @@ public:
             op.write(get_write_pos() - unflushed, unflushed_bl);
             
             // 异步写入
-            mds->objecter->write_full(get_ino(), op, 
-                                     CEPH_NOSNAP, 
+            mds->objecter->write_full(get_ino(), op,
+                                     CEPH_NOSNAP,
                                      new C_MDSFlush(this));
             
             unflushed = 0;
@@ -1724,7 +1773,7 @@ public:
             for (auto& p : seg->events) {
                 LogEvent *le = p.second;
                 
-                dout(10) << "replaying " << le->get_type_name() 
+                dout(10) << "replaying " << le->get_type_name()
                          << " seq " << p.first << dendl;
                 
                 // 执行重放
@@ -1758,7 +1807,7 @@ public:
                 break;
             }
             
-            dout(10) << "trimming segment " << ls->offset 
+            dout(10) << "trimming segment " << ls->offset
                      << " (" << ls->events.size() << " events)" << dendl;
             
             // 从存储中删除
@@ -1779,6 +1828,7 @@ private:
     MDSRank *mds;                           // MDS实例
     
     /**
+
      * 日志写入状态
      */
     uint64_t write_pos = 0;                 // 写入位置
@@ -1829,6 +1879,7 @@ public:
     // ===================== 构造函数 =====================
     
     /**
+
      * MDLog构造函数
      * @param m MDS实例
      */
@@ -1844,6 +1895,7 @@ public:
         }
         segments.clear();
     }
+
 };
 ```
 
@@ -1903,8 +1955,10 @@ graph TB
 
 ```cpp
 /**
+
  * MDS性能监控指标
  * 文件: src/mds/MDCache.h:72-122
+
  */
 enum mds_perf_counters_t {
     l_mdc_first = 3000,

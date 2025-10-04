@@ -99,6 +99,7 @@ class ServiceRegistry:
     """服务注册表 - Home Assistant服务系统的核心管理器
     
     核心职责:
+
         1. 服务的注册和注销管理
         2. 服务调用的路由和分发
         3. 服务权限和安全控制
@@ -365,7 +366,7 @@ class ServiceRegistry:
             应谨慎使用，优先使用has_service进行检查
         """
         return {
-            domain: services.copy() 
+            domain: services.copy()
             for domain, services in self._services.items()
         }
     
@@ -410,6 +411,7 @@ class ServiceRegistry:
         
         _LOGGER.debug("Service %s.%s removed", domain, service)
         return True
+
 ```
 
 ### 2.2 Service服务对象
@@ -419,6 +421,7 @@ class Service:
     """服务对象 - 封装单个服务的完整信息和执行逻辑
     
     核心属性:
+
         - func: 服务处理函数
         - schema: 数据验证模式
         - supports_response: 响应支持类型
@@ -594,6 +597,7 @@ class Service:
                 if self.call_count > 0 else 0
             ),
         }
+
 ```
 
 ### 2.3 实体服务调用系统
@@ -621,6 +625,7 @@ async def entity_service_call(
         实体服务响应数据集合
         
     处理流程:
+
         1. 权限验证和用户身份检查
         2. 目标实体选择和过滤
         3. 功能特性验证
@@ -802,6 +807,7 @@ async def _handle_entity_call(
         单个实体的服务响应
         
     执行流程:
+
         1. 设置实体上下文
         2. 创建或使用现有的HassJob
         3. 执行实体方法
@@ -867,6 +873,7 @@ def _get_permissible_entity_candidates(
         经过权限过滤的实体列表
         
     权限检查:
+
         1. 管理员用户：访问所有实体
         2. 普通用户：检查每个实体的控制权限
         3. 系统调用：跳过权限检查
@@ -912,6 +919,7 @@ def _get_permissible_entity_candidates(
         permissible_entities.append(entity)
     
     return permissible_entities
+
 ```
 
 ## 3. 自动化系统深度解析
@@ -925,6 +933,7 @@ class BaseAutomationEntity(ToggleEntity):
     """自动化实体基类 - 自动化系统的核心抽象
     
     核心职责:
+
         1. 管理自动化的生命周期
         2. 处理触发器的注册和监听
         3. 执行条件检查和动作序列
@@ -1353,6 +1362,7 @@ class BaseAutomationEntity(ToggleEntity):
         await self._async_cleanup_triggers()
         await self._action_script.async_stop()
         await super().async_will_remove_from_hass()
+
 ```
 
 ### 3.2 触发器系统架构
@@ -1361,7 +1371,7 @@ class BaseAutomationEntity(ToggleEntity):
 graph TB
     subgraph "触发器系统架构"
         A[TriggerProtocol 触发器协议] --> B[状态触发器]
-        A --> C[时间触发器] 
+        A --> C[时间触发器]
         A --> D[事件触发器]
         A --> E[设备触发器]
         A --> F[模板触发器]
@@ -1402,6 +1412,7 @@ async def async_state_trigger_setup(
         
     配置示例:
         trigger:
+
           - platform: state
             entity_id: sensor.temperature
             from: "20"
@@ -1436,7 +1447,7 @@ async def async_state_trigger_setup(
         # 处理延迟触发
         if time_delta:
             _handle_delayed_trigger(
-                hass, entity_id, new_state, time_delta, 
+                hass, entity_id, new_state, time_delta,
                 action, trigger_info, state_trackers
             )
         else:
@@ -1460,6 +1471,7 @@ def _state_change_matches(
     """检查状态变化是否匹配触发条件
     
     匹配逻辑:
+
         1. 检查from状态条件
         2. 检查to状态条件  
         3. 处理属性变化（如果指定）
@@ -1527,7 +1539,7 @@ def _handle_delayed_trigger(
 
 def _execute_state_trigger(
     entity_id: str,
-    old_state: State | None, 
+    old_state: State | None,
     new_state: State | None,
     action: TriggerActionType,
     trigger_info: TriggerInfo,
@@ -1565,6 +1577,7 @@ async def async_time_trigger_setup(
     """时间触发器设置 - 基于时间的自动化触发
     
     支持的时间触发类型:
+
         1. 固定时间：每天的特定时间
         2. 时间模式：使用cron表达式
         3. 间隔触发：固定时间间隔
@@ -1627,6 +1640,7 @@ class Script:
     """脚本执行器 - 管理复杂动作序列的执行
     
     核心功能:
+
         1. 顺序执行动作列表
         2. 支持条件分支和循环
         3. 处理并发执行和排队
@@ -1874,6 +1888,7 @@ class ScriptRun:
     """脚本运行实例 - 管理单次脚本执行的完整生命周期
     
     核心职责:
+
         1. 执行动作序列中的每个步骤
         2. 处理变量渲染和上下文管理
         3. 实现错误处理和异常恢复
@@ -2107,7 +2122,7 @@ async def async_setup_services(hass: HomeAssistant) -> None:
     # 注册服务
     hass.services.async_register(
         "my_domain",
-        "my_service", 
+        "my_service",
         async_service_handler,
         schema=SERVICE_SCHEMA,
         supports_response=SupportsResponse.OPTIONAL,
@@ -2246,7 +2261,7 @@ class ModularAutomationManager:
         self.automation_modules: dict[str, dict] = {}
     
     def register_automation_module(
-        self, 
+        self,
         module_name: str,
         triggers: list[dict],
         conditions: list[dict],
@@ -2262,7 +2277,7 @@ class ModularAutomationManager:
         }
     
     async def async_create_composite_automation(
-        self, 
+        self,
         name: str,
         module_sequence: list[str],
         global_conditions: list[dict] | None = None,

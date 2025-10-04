@@ -88,7 +88,7 @@ ConfigUpdate()
     └── s.pushChannel <- req
         └── s.handleUpdates()
             └── pilot/pkg/xds/discovery.go:326
-                └── debounce() 
+                └── debounce()
                     └── s.Push(req)
                         └── pilot/pkg/xds/discovery.go:258
                             ├── s.initPushContext()              # 初始化推送上下文
@@ -404,7 +404,7 @@ func (a *Agent) generateBootstrapConfig() ([]byte, error) {
     // 1. 收集模板数据
     templateData := &BootstrapTemplateData{
         NodeID:           a.proxyConfig.ServiceNode,
-        Cluster:          a.proxyConfig.ServiceCluster, 
+        Cluster:          a.proxyConfig.ServiceCluster,
         Region:           a.region,
         Zone:            a.zone,
         NodeMetadata:     a.nodeMetadata,
@@ -447,11 +447,12 @@ metadata:
     sidecar.istio.io/status: '{"version":"{{.Version}}","initContainers":["istio-init"],"containers":["istio-proxy"]}'
 spec:
   initContainers:
+
   - name: istio-init
     image: {{.Values.global.hub}}/proxyv2:{{.Values.global.tag}}
     command: ["/usr/local/bin/istio-iptables"]
     args:
-    - "-p" 
+    - "-p"
     - "15001"
     - "-z"
     - "15006"
@@ -488,6 +489,7 @@ spec:
       value: {{.Values.global.pilotCertProvider}}
     - name: CA_ADDR
       value: {{.Values.global.caAddress}}
+
 `
 
 // 注入逻辑实现
@@ -672,4 +674,3 @@ git push origin feature/my-enhancement
 - **关键文件快速定位**: 根据功能快速找到相关源码
 - **调试技巧分享**: 实用的开发和调试方法
 - **最佳实践指导**: 基于社区经验的开发建议
-

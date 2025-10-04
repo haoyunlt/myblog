@@ -23,6 +23,7 @@ def tensor_creation_examples():
     """张量创建示例
     
     功能说明:
+
     - 演示各种张量创建方法
     - 展示数据类型和形状控制
     - 介绍设备放置策略
@@ -72,6 +73,7 @@ def tensor_operations_examples():
     """张量运算示例
     
     功能说明:
+
     - 演示基础数学运算
     - 展示广播机制
     - 介绍形状操作
@@ -116,6 +118,7 @@ def tensor_operations_examples():
         'sum_all': sum_all,
         'mean_val': mean_val
     }
+
 ```
 
 ### 2. 构建神经网络模型
@@ -126,6 +129,7 @@ def build_sequential_model():
     """构建序列模型示例
     
     功能说明:
+
     - 演示Sequential API的使用
     - 展示不同类型的层
     - 介绍模型编译和训练
@@ -177,6 +181,7 @@ def build_functional_model():
     """构建函数式模型示例
     
     功能说明:
+
     - 演示Functional API的灵活性
     - 展示多输入多输出模型
     - 介绍模型的复杂连接
@@ -230,6 +235,7 @@ class CustomDenseLayer(tf.keras.layers.Layer):
     """自定义全连接层示例
     
     功能说明:
+
     - 演示如何创建自定义层
     - 展示权重初始化和管理
     - 介绍前向传播的实现
@@ -296,6 +302,7 @@ class CustomDenseLayer(tf.keras.layers.Layer):
             'activation': tf.keras.activations.serialize(self.activation)
         })
         return config
+
 ```
 
 ### 3. 模型训练和评估
@@ -305,6 +312,7 @@ def complete_training_example():
     """完整的模型训练示例
     
     功能说明:
+
     - 演示数据准备和预处理
     - 展示训练循环的实现
     - 介绍模型评估和保存
@@ -409,6 +417,7 @@ def complete_training_example():
     plt.show()
     
     return model, history
+
 ```
 
 ## 核心API详解
@@ -422,6 +431,7 @@ def basic_function_example(x, y):
     """tf.function基础示例
     
     功能说明:
+
     - 将Python函数转换为TensorFlow图
     - 提供更好的性能和可移植性
     - 支持自动微分和优化
@@ -438,6 +448,7 @@ def function_with_signature(x, w):
     """带输入签名的tf.function
     
     功能说明:
+
     - 明确指定输入的形状和类型
     - 避免不必要的重新跟踪
     - 提高函数调用效率
@@ -450,6 +461,7 @@ def conditional_function(x, training=True):
     """条件控制流示例
     
     功能说明:
+
     - 在图中使用条件语句
     - 支持动态控制流
     - 处理训练和推理的不同逻辑
@@ -470,6 +482,7 @@ def loop_function(x, n_iterations):
     """循环控制流示例
     
     功能说明:
+
     - 在图中使用循环
     - 支持动态循环次数
     - 优化循环性能
@@ -486,6 +499,7 @@ def while_loop_function(x):
     """while循环示例
     
     功能说明:
+
     - 使用tf.while_loop进行条件循环
     - 支持复杂的循环逻辑
     - 提供更好的性能优化
@@ -503,6 +517,7 @@ def while_loop_function(x):
     )
     
     return final_x
+
 ```
 
 ### 2. 自动微分和梯度计算
@@ -512,6 +527,7 @@ def gradient_computation_examples():
     """梯度计算示例
     
     功能说明:
+
     - 演示tf.GradientTape的使用
     - 展示高阶梯度计算
     - 介绍梯度的应用场景
@@ -595,6 +611,7 @@ def gradient_computation_examples():
     multi_variable_gradient()
     higher_order_gradient()
     neural_network_gradient()
+
 ```
 
 ## 性能优化实践
@@ -606,6 +623,7 @@ def optimized_data_pipeline():
     """优化的数据管道示例
     
     功能说明:
+
     - 演示高效的数据加载和预处理
     - 展示并行化技术
     - 介绍缓存和预取策略
@@ -656,7 +674,7 @@ def optimized_data_pipeline():
     # 进一步优化：使用tf.data.experimental
     advanced_dataset = (dataset
         .shuffle(buffer_size=1000)
-        .map(preprocess_image, 
+        .map(preprocess_image,
              num_parallel_calls=tf.data.AUTOTUNE)
         .batch(32)
         .prefetch(tf.data.AUTOTUNE)
@@ -670,6 +688,7 @@ def data_loading_best_practices():
     """数据加载最佳实践
     
     功能说明:
+
     - 展示不同数据源的处理方法
     - 介绍内存和性能优化技巧
     - 提供错误处理策略
@@ -687,7 +706,7 @@ def data_loading_best_practices():
             image = tf.image.resize(image, [224, 224])
             return image
         
-        dataset = file_paths.map(parse_image, 
+        dataset = file_paths.map(parse_image,
                                 num_parallel_calls=tf.data.AUTOTUNE)
         return dataset
     
@@ -737,6 +756,7 @@ def data_loading_best_practices():
         )
         
         return robust_dataset
+
 ```
 
 ### 2. 模型优化技术
@@ -746,6 +766,7 @@ def model_optimization_techniques():
     """模型优化技术示例
     
     功能说明:
+
     - 演示混合精度训练
     - 展示模型量化技术
     - 介绍图优化方法
@@ -873,6 +894,7 @@ def model_optimization_techniques():
                 return self.output_layer(x)
         
         return MemoryEfficientModel()
+
 ```
 
 ## 自定义操作开发
@@ -884,6 +906,7 @@ def custom_python_operations():
     """Python自定义操作示例
     
     功能说明:
+
     - 演示如何创建自定义Python操作
     - 展示tf.py_function的使用
     - 介绍梯度定义方法
@@ -995,6 +1018,7 @@ def custom_python_operations():
     
     test_custom_operations()
     return use_custom_operation()
+
 ```
 
 ### 2. C++自定义操作
@@ -1123,6 +1147,7 @@ def load_custom_ops():
     """加载自定义C++操作
     
     功能说明:
+
     - 编译和加载自定义操作库
     - 提供Python接口
     - 处理错误和异常
@@ -1168,6 +1193,7 @@ def load_custom_ops():
     
     test_custom_matmul()
     return custom_matmul
+
 ```
 
 ## 总结
@@ -1181,6 +1207,7 @@ def load_custom_ops():
 5. **最佳实践** - 基于实际经验的优化建议
 
 通过这些示例和实践，开发者可以：
+
 - 快速上手TensorFlow开发
 - 构建高效的机器学习模型
 - 优化训练和推理性能

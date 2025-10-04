@@ -121,7 +121,7 @@ func (h *V2ChatHandlerSimple) StreamChat(c *gin.Context) {
     // 1.1 解析JSON请求体
     var req ChatRequest
     if err := c.ShouldBindJSON(&req); err != nil {
-        logger.Error("Failed to bind JSON request", 
+        logger.Error("Failed to bind JSON request",
             zap.Error(err),
             zap.String("method", c.Request.Method),
             zap.String("path", c.Request.URL.Path))
@@ -201,7 +201,7 @@ func (h *V2ChatHandlerSimple) StreamChat(c *gin.Context) {
     // 3.2 序列化请求体
     reqBody, err := json.Marshal(algoRequest)
     if err != nil {
-        logger.Error("Failed to marshal algo request", 
+        logger.Error("Failed to marshal algo request",
             zap.Error(err),
             zap.String("request_id", req.RequestID))
         
@@ -216,7 +216,7 @@ func (h *V2ChatHandlerSimple) StreamChat(c *gin.Context) {
         h.algoServiceURL+"/query",
         bytes.NewBuffer(reqBody))
     if err != nil {
-        logger.Error("Failed to create HTTP request", 
+        logger.Error("Failed to create HTTP request",
             zap.Error(err),
             zap.String("algo_url", h.algoServiceURL))
         
@@ -250,7 +250,7 @@ func (h *V2ChatHandlerSimple) StreamChat(c *gin.Context) {
             zap.Int("status_code", resp.StatusCode),
             zap.String("request_id", req.RequestID))
         
-        h.sendSSEError(c, "ALGO_SERVICE_ERROR", 
+        h.sendSSEError(c, "ALGO_SERVICE_ERROR",
             fmt.Sprintf("Service returned status %d", resp.StatusCode))
         return
     }
@@ -271,9 +271,9 @@ func (h *V2ChatHandlerSimple) StreamChat(c *gin.Context) {
 // @param requestID 请求ID，用于日志追踪
 // @return error 处理过程中的错误
 func (h *V2ChatHandlerSimple) streamResponse(
-    ctx context.Context, 
-    c *gin.Context, 
-    responseBody io.ReadCloser, 
+    ctx context.Context,
+    c *gin.Context,
+    responseBody io.ReadCloser,
     requestID string,
 ) error {
     scanner := bufio.NewScanner(responseBody)
@@ -786,8 +786,8 @@ func (h *V2VoiceHandler) handleClientMessages(session *VoiceSession) {
             // 读取WebSocket消息
             messageType, message, err := session.Connection.ReadMessage()
             if err != nil {
-                if websocket.IsUnexpectedCloseError(err, 
-                    websocket.CloseGoingAway, 
+                if websocket.IsUnexpectedCloseError(err,
+                    websocket.CloseGoingAway,
                     websocket.CloseAbnormalClosure,
                     websocket.CloseNormalClosure) {
                     
@@ -1311,10 +1311,10 @@ func (m *RBACMiddleware) RequirePermission(permission string) gin.HandlerFunc {
 // @param c Gin上下文，用于获取额外信息
 // @return (bool, error) 是否有权限和错误
 func (m *RBACMiddleware) checkPermission(
-    userID string, 
-    roles []string, 
-    resource string, 
-    action string, 
+    userID string,
+    roles []string,
+    resource string,
+    action string,
     c *gin.Context,
 ) (bool, error) {
     
@@ -1585,6 +1585,7 @@ flowchart TD
 ### 1. 性能优化实践
 
 #### HTTP服务优化
+
 ```go
 // 连接池配置优化
 func configureHTTPClient() *http.Client {
@@ -1619,6 +1620,7 @@ func configureWebSocketUpgrader() websocket.Upgrader {
 ```
 
 #### 缓存策略
+
 ```go
 // 多级缓存实现
 type MultiLevelCache struct {
@@ -1657,6 +1659,7 @@ func (c *MultiLevelCache) Get(key string) (interface{}, error) {
 ### 2. 错误处理实践
 
 #### 统一错误处理
+
 ```go
 // 业务错误定义
 type BusinessError struct {
@@ -1708,6 +1711,7 @@ func ErrorHandlerMiddleware() gin.HandlerFunc {
 ### 3. 监控告警实践
 
 #### 关键指标监控
+
 ```go
 // 自定义指标定义
 var (

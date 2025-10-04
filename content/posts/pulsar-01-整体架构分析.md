@@ -246,8 +246,10 @@ graph LR
 
 ```java
 /**
+
  * 消息元数据结构
  * 包含消息的所有元信息，如消息ID、生产时间、属性等
+
  */
 public class MessageMetadata {
     // 生产者名称
@@ -267,8 +269,10 @@ public class MessageMetadata {
 }
 
 /**
+
  * 消息ID结构
  * 用于唯一标识一条消息的位置
+
  */
 public class MessageIdImpl implements MessageId {
     // Ledger ID
@@ -286,8 +290,10 @@ public class MessageIdImpl implements MessageId {
 
 ```java
 /**
+
  * 管理账本配置
  * 定义了 ManagedLedger 的行为和性能参数
+
  */
 public class ManagedLedgerConfig {
     // 最大 Entry 大小
@@ -303,8 +309,10 @@ public class ManagedLedgerConfig {
 }
 
 /**
+
  * 位置信息
  * 表示消息在存储中的具体位置
+
  */
 public class PositionImpl implements Position {
     // Ledger ID
@@ -327,8 +335,10 @@ public class PositionImpl implements Position {
 
 ```java
 /**
+
  * 管理游标配置
  * 控制消费者的行为和性能
+
  */
 public class ManagedCursorConfig {
     // 游标持久化间隔
@@ -342,8 +352,10 @@ public class ManagedCursorConfig {
 }
 
 /**
+
  * 游标信息
  * 维护消费者的消费位置和状态
+
  */
 public class ManagedCursorInfo {
     // 当前游标位置
@@ -429,7 +441,7 @@ graph TB
     
     subgraph "Pulsar Proxy Cluster"
         P1[Proxy 1]
-        P2[Proxy 2] 
+        P2[Proxy 2]
         P3[Proxy 3]
     end
     
@@ -444,7 +456,7 @@ graph TB
     
     subgraph "BookKeeper Cluster"
         BK1[Bookie 1]
-        BK2[Bookie 2] 
+        BK2[Bookie 2]
         BK3[Bookie 3]
         BK4[Bookie 4]
         BK5[Bookie 5]

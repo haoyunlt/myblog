@@ -121,6 +121,7 @@ def __init__(self,
         description: Agent描述，用于Agent选择
     
     初始化流程:
+
         1. LLM实例化或配置
         2. 工具注册和映射
         3. 基本属性设置
@@ -142,6 +143,7 @@ def __init__(self,
     self.system_message = system_message
     self.name = name
     self.description = description
+
 ```
 
 **初始化时序图**:
@@ -188,6 +190,7 @@ def run(self, messages: List[Union[Dict, Message]], **kwargs) -> Union[Iterator[
     """Agent运行的主入口，实现了完整的消息处理pipeline
     
     处理流程:
+
         1. 输入统一化 - 将Dict和Message统一为Message类型
         2. 类型追踪 - 记录返回类型以保持输入输出一致性
         3. 语言检测 - 自动检测消息语言（中文/英文）
@@ -254,6 +257,7 @@ def run(self, messages: List[Union[Dict, Message]], **kwargs) -> Union[Iterator[
             yield [Message(**x) if isinstance(x, dict) else x for x in rsp]
         else:
             yield [x.model_dump() if not isinstance(x, dict) else x for x in rsp]
+
 ```
 
 ### Agent._call_llm() LLM调用接口
@@ -269,6 +273,7 @@ def _call_llm(
     """Agent调用LLM的统一接口
     
     功能职责:
+
         1. 为Agent提供统一的LLM调用方式
         2. 合并Agent级别和调用级别的生成配置
         3. 支持函数调用和流式输出
@@ -294,6 +299,7 @@ def _call_llm(
             new_generate_cfg=extra_generate_cfg,          # 调用时配置
         )
     )
+
 ```
 
 ### Agent._call_tool() 工具调用接口
@@ -303,6 +309,7 @@ def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwarg
     """Agent调用工具的统一接口
     
     功能职责:
+
         1. 工具存在性验证
         2. 统一异常处理和错误消息格式化
         3. 支持多模态工具返回结果
@@ -349,6 +356,7 @@ def _call_tool(self, tool_name: str, tool_args: Union[str, dict] = '{}', **kwarg
         return tool_result  # 多模态工具结果
     else:
         return json.dumps(tool_result, ensure_ascii=False, indent=4)
+
 ```
 
 ## 🔧 具体Agent实现分析
@@ -360,6 +368,7 @@ class BasicAgent(Agent):
     """最基础的Agent实现，仅提供LLM对话功能
     
     特点:
+
         - 无工具调用能力
         - 无记忆管理
         - 直接调用LLM进行对话
@@ -387,6 +396,7 @@ class BasicAgent(Agent):
             extra_generate_cfg['seed'] = kwargs['seed']
         
         return self._call_llm(messages, extra_generate_cfg=extra_generate_cfg)
+
 ```
 
 **BasicAgent处理流程**:
@@ -416,6 +426,7 @@ class FnCallAgent(Agent):
     """支持函数调用的Agent基类
     
     核心功能:
+
         1. 工具调用循环处理
         2. Memory系统集成
         3. 多轮工具调用支持
@@ -428,7 +439,7 @@ class FnCallAgent(Agent):
         - 支持并行工具调用
     """
     
-    def __init__(self, function_list=None, llm=None, system_message=None, 
+    def __init__(self, function_list=None, llm=None, system_message=None,
                  name=None, description=None, files=None, **kwargs):
         """FnCallAgent初始化
         
@@ -437,7 +448,7 @@ class FnCallAgent(Agent):
             - 文件预加载
             - RAG配置设置
         """
-        super().__init__(function_list=function_list, llm=llm, 
+        super().__init__(function_list=function_list, llm=llm,
                         system_message=system_message, name=name, description=description)
         
         if not hasattr(self, 'mem'):
@@ -535,6 +546,7 @@ class FnCallAgent(Agent):
         new_files = extract_files_from_messages(messages)
         if new_files and hasattr(self, 'mem'):
             self.mem.extend_files(new_files)
+
 ```
 
 **FnCallAgent工具调用流程图**:
@@ -575,6 +587,7 @@ class Assistant(FnCallAgent):
     """集成RAG功能的通用助手Agent
     
     核心特性:
+
         1. 继承FnCallAgent的所有功能
         2. 集成知识检索(RAG)
         3. 文档理解和问答
@@ -613,9 +626,9 @@ class Assistant(FnCallAgent):
         """
         # 1. 知识前置处理
         new_messages = self._prepend_knowledge_prompt(
-            messages=messages, 
-            lang=lang, 
-            knowledge=knowledge, 
+            messages=messages,
+            lang=lang,
+            knowledge=knowledge,
             **kwargs
         )
         
@@ -657,7 +670,7 @@ class Assistant(FnCallAgent):
         snippets = []
         for k in knowledge:
             snippets.append(KNOWLEDGE_SNIPPET[lang].format(
-                source=k['source'], 
+                source=k['source'],
                 content=k['content']
             ))
         
@@ -683,6 +696,7 @@ class Assistant(FnCallAgent):
                 messages = [Message(role=SYSTEM, content=knowledge_prompt)] + messages
         
         return messages
+
 ```
 
 **Assistant知识检索时序图**:
@@ -741,6 +755,7 @@ class Message:
         extra: 额外信息字典
     
     支持特性:
+
         - 多模态内容（文本、图片、音频、视频、文件）
         - 函数调用信息
         - 推理过程记录
@@ -758,6 +773,7 @@ class ContentItem:
     """多模态内容项
     
     支持类型:
+
         - text: 纯文本内容
         - image: 图片（URL或base64）
         - audio: 音频文件
@@ -807,7 +823,7 @@ graph TB
         C --> D[系统消息添加]
     end
     
-    subgraph "Agent处理" 
+    subgraph "Agent处理"
         D --> E[_run方法调用]
         E --> F{Agent类型}
         
@@ -851,6 +867,7 @@ def _detect_tool(self, message: Message) -> Tuple[bool, str, str, str]:
         支持function_call格式的工具调用
     
     返回值:
+
         - bool: 是否需要调用工具
         - str: 工具名称
         - str: 工具参数（JSON字符串）
@@ -878,6 +895,7 @@ def _detect_tool(self, message: Message) -> Tuple[bool, str, str, str]:
     
     # 3. 返回检测结果
     return (func_name is not None), func_name, func_args, text
+
 ```
 
 ## 📊 Agent性能优化策略

@@ -58,7 +58,9 @@ graph TB
 
 ```java
 /**
+
  * TableEnvironment 是 Table API 和 SQL 的统一入口点
+
  */
 @PublicEvolving
 public abstract class TableEnvironment {
@@ -67,6 +69,7 @@ public abstract class TableEnvironment {
     public static final String DEFAULT_CATALOG = "default_catalog";
     
     /**
+
      * 创建流表环境
      */
     public static StreamTableEnvironment create(StreamExecutionEnvironment executionEnvironment) {
@@ -97,6 +100,7 @@ public abstract class TableEnvironment {
      * 注册函数
      */
     public abstract void registerFunction(String name, ScalarFunction function);
+
 }
 ```
 
@@ -104,12 +108,15 @@ public abstract class TableEnvironment {
 
 ```java
 /**
+
  * StreamTableEnvironment 是流处理的表环境实现
+
  */
 @PublicEvolving
 public abstract class StreamTableEnvironment extends TableEnvironment {
     
     /**
+
      * 从 DataStream 创建表
      */
     public abstract <T> Table fromDataStream(DataStream<T> dataStream);
@@ -138,6 +145,7 @@ public abstract class StreamTableEnvironment extends TableEnvironment {
      * 获取执行环境
      */
     public abstract StreamExecutionEnvironment getExecutionEnvironment();
+
 }
 ```
 
@@ -147,12 +155,15 @@ public abstract class StreamTableEnvironment extends TableEnvironment {
 
 ```java
 /**
+
  * Table 是 Table API 的核心抽象
+
  */
 @PublicEvolving
 public interface Table {
     
     /**
+
      * 获取表的 Schema
      */
     TableSchema getSchema();
@@ -221,6 +232,7 @@ public interface Table {
      * 解释执行计划
      */
     String explain();
+
 }
 ```
 
@@ -230,12 +242,15 @@ public interface Table {
 
 ```java
 /**
+
  * 标量函数基类
+
  */
 @PublicEvolving
 public abstract class ScalarFunction extends UserDefinedFunction {
     
     /**
+
      * 执行函数的方法
      * 子类必须实现一个或多个名为 eval 的方法
      */
@@ -248,6 +263,7 @@ public abstract class ScalarFunction extends UserDefinedFunction {
     public TypeInformation<?> getResultType(Class<?>[] signature) {
         return null; // 由类型推断确定
     }
+
 }
 ```
 
@@ -255,11 +271,14 @@ public abstract class ScalarFunction extends UserDefinedFunction {
 
 ```java
 /**
+
  * 自定义标量函数示例 - 字符串长度函数
+
  */
 public class StringLengthFunction extends ScalarFunction {
     
     /**
+
      * 计算字符串长度
      */
     public Integer eval(String str) {
@@ -272,10 +291,13 @@ public class StringLengthFunction extends ScalarFunction {
     public Integer eval(byte[] bytes) {
         return bytes == null ? null : bytes.length;
     }
+
 }
 
 /**
+
  * 复杂标量函数示例 - JSON 解析函数
+
  */
 public class JsonExtractFunction extends ScalarFunction {
     
@@ -288,6 +310,7 @@ public class JsonExtractFunction extends ScalarFunction {
     }
     
     /**
+
      * 从 JSON 字符串中提取字段值
      */
     public String eval(String jsonStr, String path) {
@@ -308,6 +331,7 @@ public class JsonExtractFunction extends ScalarFunction {
             return null;
         }
     }
+
 }
 ```
 

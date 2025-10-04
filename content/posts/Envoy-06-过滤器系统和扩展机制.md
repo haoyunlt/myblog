@@ -52,14 +52,17 @@ graph TB
 
 ```cpp
 /**
+
  * ReadFilter 网络读过滤器接口
  * 处理从网络读取的原始字节流
+
  */
 class ReadFilter {
 public:
   virtual ~ReadFilter() = default;
 
   /**
+
    * 过滤器状态枚举
    */
   enum class FilterStatus {
@@ -86,17 +89,21 @@ public:
    * @param callbacks 过滤器回调接口
    */
   virtual void initializeReadFilterCallbacks(ReadFilterCallbacks& callbacks) PURE;
+
 };
 
 /**
+
  * WriteFilter 网络写过滤器接口  
  * 处理向网络写入的原始字节流
+
  */
 class WriteFilter {
 public:
   virtual ~WriteFilter() = default;
 
   /**
+
    * 过滤器状态枚举
    */
   enum class FilterStatus {
@@ -117,6 +124,7 @@ public:
    * @param callbacks 过滤器回调接口
    */
   virtual void initializeWriteFilterCallbacks(WriteFilterCallbacks& callbacks) PURE;
+
 };
 ```
 
@@ -124,23 +132,26 @@ public:
 
 ```cpp
 /**
+
  * FilterManagerImpl 网络过滤器管理器实现
  * 管理网络级过滤器链的执行
+
  */
 class FilterManagerImpl : public FilterManager {
 public:
-  FilterManagerImpl(Network::Connection& connection, 
+  FilterManagerImpl(Network::Connection& connection,
                    Network::ConnectionSocket& socket)
       : connection_(connection), socket_(socket) {}
 
   // FilterManager 接口实现
   void addReadFilter(ReadFilterSharedPtr filter) override;
-  void addWriteFilter(WriteFilterSharedPtr filter) override; 
+  void addWriteFilter(WriteFilterSharedPtr filter) override;
   void addFilter(FilterSharedPtr filter) override;
   void removeReadFilter(ReadFilterSharedPtr filter) override;
   bool initializeReadFilters() override;
 
   /**
+
    * 处理读取数据的过滤器链
    * @param data 数据缓冲区
    * @param end_stream 是否流结束
@@ -156,6 +167,7 @@ public:
 
 private:
   /**
+
    * 活跃读过滤器结构
    */
   struct ActiveReadFilter : public ReadFilterCallbacks {
@@ -181,6 +193,7 @@ private:
   std::list<ActiveWriteFilter> write_filters_; // 写过滤器链
   std::list<ActiveReadFilter>::iterator current_read_filter_; // 当前读过滤器
   std::list<ActiveWriteFilter>::iterator current_write_filter_; // 当前写过滤器
+
 };
 ```
 
@@ -215,7 +228,7 @@ classDiagram
     class StreamDecoderFilter {
         <<interface>>
         +decodeHeaders() FilterHeadersStatus
-        +decodeData() FilterDataStatus 
+        +decodeData() FilterDataStatus
         +decodeTrailers() FilterTrailersStatus
         +setDecoderFilterCallbacks() void
     }
@@ -239,14 +252,17 @@ classDiagram
 
 ```cpp
 /**
+
  * StreamDecoderFilter HTTP解码器过滤器接口
  * 处理HTTP请求（下游到上游）
+
  */
 class StreamDecoderFilter {
 public:
   virtual ~StreamDecoderFilter() = default;
 
   /**
+
    * 过滤器状态枚举
    */
   enum class FilterHeadersStatus {
@@ -275,7 +291,7 @@ public:
    * @param end_stream 是否流结束
    * @return 过滤器状态
    */
-  virtual FilterHeadersStatus decodeHeaders(RequestHeaderMap& headers, 
+  virtual FilterHeadersStatus decodeHeaders(RequestHeaderMap& headers,
                                            bool end_stream) PURE;
 
   /**
@@ -298,17 +314,21 @@ public:
    * @param callbacks 回调接口
    */
   virtual void setDecoderFilterCallbacks(StreamDecoderFilterCallbacks& callbacks) PURE;
+
 };
 
 /**
+
  * StreamEncoderFilter HTTP编码器过滤器接口
  * 处理HTTP响应（上游到下游）
+
  */
 class StreamEncoderFilter {
 public:
   virtual ~StreamEncoderFilter() = default;
 
   /**
+
    * 处理1xx响应头
    * @param headers 响应头映射
    * @return 过滤器状态
@@ -321,7 +341,7 @@ public:
    * @param end_stream 是否流结束
    * @return 过滤器状态
    */
-  virtual FilterHeadersStatus encodeHeaders(ResponseHeaderMap& headers, 
+  virtual FilterHeadersStatus encodeHeaders(ResponseHeaderMap& headers,
                                            bool end_stream) PURE;
 
   /**
@@ -344,6 +364,7 @@ public:
    * @param callbacks 回调接口
    */
   virtual void setEncoderFilterCallbacks(StreamEncoderFilterCallbacks& callbacks) PURE;
+
 };
 ```
 
@@ -351,8 +372,10 @@ public:
 
 ```cpp
 /**
+
  * FilterManager HTTP过滤器管理器
  * 管理HTTP级过滤器链的执行和状态
+
  */
 class FilterManager : Logger::Loggable<Logger::Id::http> {
 public:
@@ -363,6 +386,7 @@ public:
                 Buffer::BufferMemoryAccountSharedPtr account);
 
   /**
+
    * 添加解码器过滤器
    * @param filter 解码器过滤器
    */
@@ -410,11 +434,12 @@ public:
 
 private:
   /**
+
    * 活跃解码器过滤器
    */
   struct ActiveStreamDecoderFilter : public StreamDecoderFilterCallbacks,
                                      public DownstreamWatermarkCallbacks {
-    ActiveStreamDecoderFilter(FilterManager& parent, 
+    ActiveStreamDecoderFilter(FilterManager& parent,
                              StreamDecoderFilterSharedPtr filter,
                              bool dual_filter);
 
@@ -479,6 +504,7 @@ private:
     bool destroyed_ : 1;             // 已销毁
   };
   State state_{};
+
 };
 ```
 
@@ -488,8 +514,10 @@ private:
 
 ```cpp
 /**
+
  * Router::Filter 路由过滤器实现
  * 负责将请求路由到上游集群
+
  */
 namespace Router {
 class Filter : public StreamDecoderFilter,
@@ -515,6 +543,7 @@ public:
 
 private:
   /**
+
    * 上游请求封装
    */
   struct UpstreamRequest : public Http::StreamDecoder,
@@ -524,11 +553,11 @@ private:
 
     // StreamDecoder 接口实现
     void decodeHeaders(ResponseHeaderMapSharedPtr&& headers, bool end_stream) override;
-    void decodeData(Buffer::Instance& data, bool end_stream) override; 
+    void decodeData(Buffer::Instance& data, bool end_stream) override;
     void decodeTrailers(ResponseTrailerMapPtr&& trailers) override;
 
     // StreamCallbacks 接口实现
-    void onResetStream(StreamResetReason reason, 
+    void onResetStream(StreamResetReason reason,
                       absl::string_view transport_failure_reason) override;
     void onAboveWriteBufferHighWatermark() override;
     void onBelowWriteBufferLowWatermark() override;
@@ -566,6 +595,7 @@ private:
   
   bool do_shadowing_ : 1;                        // 是否进行影子流量
   bool is_retry_ : 1;                           // 是否重试
+
 };
 } // namespace Router
 ```
@@ -574,11 +604,13 @@ private:
 
 ```cpp
 /**
+
  * Cors::Filter CORS过滤器实现
  * 处理跨域资源共享请求
+
  */
 namespace Cors {
-class Filter : public Http::StreamDecoderFilter, 
+class Filter : public Http::StreamDecoderFilter,
                public Http::StreamEncoderFilter {
 public:
   Filter(const FilterConfigSharedPtr config) : config_(config) {}
@@ -626,6 +658,7 @@ public:
 
 private:
   /**
+
    * 处理CORS预检请求
    */
   FilterHeadersStatus handlePreflightRequest(RequestHeaderMap& headers);
@@ -643,6 +676,7 @@ private:
   FilterConfigSharedPtr config_;     // 过滤器配置
   absl::string_view origin_;        // 请求Origin
   bool is_cors_request_{false};     // 是否CORS请求
+
 };
 } // namespace Cors
 ```
@@ -653,20 +687,23 @@ private:
 
 ```cpp
 /**
+
  * NamedHttpFilterConfigFactory 命名HTTP过滤器配置工厂
  * 过滤器插件的统一注册接口
+
  */
 class NamedHttpFilterConfigFactory : public Config::TypedFactory {
 public:
   virtual ~NamedHttpFilterConfigFactory() = default;
 
   /**
+
    * 创建过滤器工厂回调
    * @param config 过滤器配置
    * @param factory_context 工厂上下文
    * @return 过滤器工厂回调函数
    */
-  virtual Http::FilterFactoryCb 
+  virtual Http::FilterFactoryCb
   createFilterFactoryFromProto(const Protobuf::Message& config,
                               const std::string& stats_prefix,
                               Server::Configuration::FactoryContext& factory_context) PURE;
@@ -693,11 +730,14 @@ public:
    * @return 过滤器名称
    */
   std::string name() const override PURE;
+
 };
 
 /**
+
  * 过滤器注册宏
  * 简化过滤器插件的注册过程
+
  */
 #define REGISTER_FACTORY(FACTORY, TYPE)                                                           \
   static Registry::RegisterFactory<FACTORY, TYPE> registered_##FACTORY
@@ -705,7 +745,7 @@ public:
 // 使用示例
 class MyFilterConfigFactory : public NamedHttpFilterConfigFactory {
 public:
-  Http::FilterFactoryCb 
+  Http::FilterFactoryCb
   createFilterFactoryFromProto(const Protobuf::Message& proto_config,
                               const std::string& stats_prefix,
                               Server::Configuration::FactoryContext& context) override {
@@ -785,16 +825,19 @@ http_filters:
 - name: envoy.filters.http.router
   typed_config:
     "@type": type.googleapis.com/envoy.extensions.filters.http.router.v3.Router
+
 ```
 
 ### 动态配置和条件过滤器
 
 ```cpp
 /**
+
  * ConditionalFilter 条件过滤器包装器
  * 根据条件决定是否执行过滤器逻辑
+
  */
-class ConditionalFilter : public StreamDecoderFilter, 
+class ConditionalFilter : public StreamDecoderFilter,
                           public StreamEncoderFilter {
 public:
   ConditionalFilter(StreamFilterSharedPtr wrapped_filter,
@@ -856,7 +899,7 @@ sequenceDiagram
     AF1-->>FM: Continue
     deactivate AF1
     
-    FM->>AF2: decodeHeaders() 
+    FM->>AF2: decodeHeaders()
     activate AF2
     AF2-->>FM: Continue
     deactivate AF2
@@ -906,14 +949,16 @@ sequenceDiagram
 
 ```cpp
 /**
+
  * CustomFilter 自定义过滤器实现示例
  * 演示如何开发一个完整的HTTP过滤器
+
  */
 class CustomFilter : public Http::StreamDecoderFilter,
                      public Http::StreamEncoderFilter,
                      Logger::Loggable<Logger::Id::filter> {
 public:
-  CustomFilter(CustomFilterConfigSharedPtr config, 
+  CustomFilter(CustomFilterConfigSharedPtr config,
                Server::Configuration::FactoryContext& context)
       : config_(config), context_(context),
         stats_(generateStats(config_->statsPrefix(), context_.scope())) {}
@@ -936,6 +981,7 @@ public:
 
 private:
   /**
+
    * 过滤器统计指标
    */
   struct CustomFilterStats {
@@ -952,7 +998,7 @@ private:
     const std::string final_prefix = prefix + "custom_filter.";
     return {
       scope.counterFromString(final_prefix + "requests_total"),
-      scope.counterFromString(final_prefix + "requests_allowed"), 
+      scope.counterFromString(final_prefix + "requests_allowed"),
       scope.counterFromString(final_prefix + "requests_denied"),
       scope.histogramFromString(final_prefix + "processing_time", Stats::Histogram::Unit::Milliseconds)
     };
@@ -975,23 +1021,26 @@ private:
   CustomFilterStats stats_;                    // 统计指标
   TimeSource& time_source_{context_.timeSource()}; // 时间源
   MonotonicTime start_time_;                   // 处理开始时间
+
 };
 
 /**
+
  * 自定义过滤器工厂实现
+
  */
 class CustomFilterFactory : public Server::Configuration::NamedHttpFilterConfigFactory {
 public:
-  Http::FilterFactoryCb 
+  Http::FilterFactoryCb
   createFilterFactoryFromProto(const Protobuf::Message& proto_config,
                               const std::string& stats_prefix,
                               Server::Configuration::FactoryContext& context) override {
     
     const auto& typed_config = MessageUtil::downcastAndValidate<
-        const custom_filter::v3::CustomFilter&>(proto_config, 
+        const custom_filter::v3::CustomFilter&>(proto_config,
                                                 context.messageValidationVisitor());
 
-    CustomFilterConfigSharedPtr config = 
+    CustomFilterConfigSharedPtr config =
         std::make_shared<CustomFilterConfig>(typed_config, stats_prefix, context);
 
     return [config, &context](Http::FilterChainFactoryCallbacks& callbacks) -> void {
@@ -1004,8 +1053,8 @@ public:
     return std::make_unique<custom_filter::v3::CustomFilter>();
   }
 
-  std::string name() const override { 
-    return "envoy.filters.http.custom_filter"; 
+  std::string name() const override {
+    return "envoy.filters.http.custom_filter";
   }
 };
 
@@ -1019,12 +1068,15 @@ REGISTER_FACTORY(CustomFilterFactory, Server::Configuration::NamedHttpFilterConf
 
 ```cpp
 /**
+
  * FilterDebugUtils 过滤器调试工具
  * 提供过滤器执行的调试和监控功能
+
  */
 class FilterDebugUtils {
 public:
   /**
+
    * 记录过滤器执行轨迹
    */
   static void traceFilterExecution(const std::string& filter_name,
@@ -1069,6 +1121,7 @@ public:
     Stats::Histogram& execution_time_;
     std::chrono::high_resolution_clock::time_point start_time_;
   };
+
 };
 ```
 
@@ -1086,6 +1139,7 @@ public:
 ```yaml
 # 推荐的过滤器链顺序
 http_filters:
+
 - name: envoy.filters.http.health_check      # 1. 健康检查
 - name: envoy.filters.http.fault            # 2. 故障注入（测试环境）
 - name: envoy.filters.http.cors             # 3. CORS处理
@@ -1095,13 +1149,16 @@ http_filters:
 - name: envoy.filters.http.buffer           # 7. 请求缓冲
 - name: envoy.filters.http.gzip             # 8. 压缩处理
 - name: envoy.filters.http.router          # 9. 路由（必须最后）
+
 ```
 
 ### 3. 配置管理
 
 ```cpp
 /**
+
  * 过滤器配置验证
+
  */
 class FilterConfigValidator {
 public:

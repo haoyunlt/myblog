@@ -118,8 +118,10 @@ flink-core/
 
 ```java
 /**
+
  * TypeInformation 是 Flink 类型系统的核心类
  * 用于生成序列化器和比较器，执行语义检查
+
  */
 @Public
 public abstract class TypeInformation<T> implements Serializable {
@@ -127,6 +129,7 @@ public abstract class TypeInformation<T> implements Serializable {
     private static final long serialVersionUID = -7742311969684489493L;
 
     /**
+
      * 检查此类型是否为基本类型
      * 基本类型是不可分割的原子类型（如 int, long, String）
      */
@@ -176,7 +179,7 @@ public abstract class TypeInformation<T> implements Serializable {
 
     /**
      * 为此类型创建序列化器
-     * 
+     *
      * @param config 执行配置，包含序列化相关设置
      * @return 此类型的序列化器
      */
@@ -184,7 +187,7 @@ public abstract class TypeInformation<T> implements Serializable {
 
     /**
      * 为此类型创建比较器
-     * 
+     *
      * @param sortOrderAscending 是否升序排序
      * @param config 执行配置
      * @return 此类型的比较器
@@ -237,6 +240,7 @@ public abstract class TypeInformation<T> implements Serializable {
      */
     @Override
     public abstract String toString();
+
 }
 ```
 
@@ -244,8 +248,10 @@ public abstract class TypeInformation<T> implements Serializable {
 
 ```java
 /**
+
  * 基本类型的类型信息实现
  * 包括 String, Boolean, Byte, Short, Integer, Long, Float, Double, Character
+
  */
 @Public
 public class BasicTypeInfo<T> extends TypeInformation<T> implements AtomicType<T> {
@@ -291,6 +297,7 @@ public class BasicTypeInfo<T> extends TypeInformation<T> implements AtomicType<T
     private final Class<? extends TypeComparator<T>> comparatorClass;
 
     /**
+
      * 构造函数
      */
     protected BasicTypeInfo(Class<T> clazz, Class<?>[] possibleCastTargets, TypeSerializer<T> serializer, Class<? extends TypeComparator<T>> comparatorClass) {
@@ -377,6 +384,7 @@ public class BasicTypeInfo<T> extends TypeInformation<T> implements AtomicType<T
     public String toString() {
         return clazz.getSimpleName();
     }
+
 }
 ```
 
@@ -384,8 +392,10 @@ public class BasicTypeInfo<T> extends TypeInformation<T> implements AtomicType<T
 
 ```java
 /**
+
  * 元组类型的类型信息实现
  * 支持 Flink 的 Tuple1 到 Tuple25
+
  */
 @Public
 public class TupleTypeInfo<T extends Tuple> extends TupleTypeInfoBase<T> {
@@ -427,6 +437,7 @@ public class TupleTypeInfo<T extends Tuple> extends TupleTypeInfoBase<T> {
     }
 
     /**
+
      * 元组类型比较器构建器
      */
     private class TupleTypeComparatorBuilder implements TypeComparatorBuilder<T> {
@@ -477,11 +488,12 @@ public class TupleTypeInfo<T extends Tuple> extends TupleTypeInfoBase<T> {
 
     @Override
     public String toString() {
-        return "Tuple" + getArity() + "<" + 
+        return "Tuple" + getArity() + "<" +
                Arrays.stream(types)
                      .map(TypeInformation::toString)
                      .collect(Collectors.joining(", ")) + ">";
     }
+
 }
 ```
 
@@ -491,8 +503,10 @@ public class TupleTypeInfo<T extends Tuple> extends TupleTypeInfoBase<T> {
 
 ```java
 /**
+
  * TypeSerializer 描述了数据类型被 Flink 运行时处理所需的方法
  * 包含序列化和复制方法
+
  */
 @PublicEvolving
 public abstract class TypeSerializer<T> implements Serializable {
@@ -504,6 +518,7 @@ public abstract class TypeSerializer<T> implements Serializable {
     // ------------------------------------------------------------------------
 
     /**
+
      * 获取类型是否为不可变类型
      */
     public abstract boolean isImmutableType();
@@ -539,7 +554,7 @@ public abstract class TypeSerializer<T> implements Serializable {
 
     /**
      * 获取数据类型的长度（如果是固定长度数据类型）
-     * 
+     *
      * @return 数据类型的长度，或 -1 表示可变长度数据类型
      */
     public abstract int getLength();
@@ -589,6 +604,7 @@ public abstract class TypeSerializer<T> implements Serializable {
      */
     @Override
     public abstract int hashCode();
+
 }
 ```
 
@@ -596,7 +612,9 @@ public abstract class TypeSerializer<T> implements Serializable {
 
 ```java
 /**
+
  * String 类型的序列化器
+
  */
 public final class StringSerializer extends TypeSerializerSingleton<String> {
 
@@ -658,6 +676,7 @@ public final class StringSerializer extends TypeSerializerSingleton<String> {
     }
 
     /**
+
      * String 序列化器快照
      */
     public static final class StringSerializerSnapshot extends SimpleTypeSerializerSnapshot<String> {
@@ -666,12 +685,15 @@ public final class StringSerializer extends TypeSerializerSingleton<String> {
             super(() -> INSTANCE);
         }
     }
+
 }
 ```
 
 ```java
 /**
+
  * 整数类型的序列化器
+
  */
 public final class IntSerializer extends TypeSerializerSingleton<Integer> {
 
@@ -733,6 +755,7 @@ public final class IntSerializer extends TypeSerializerSingleton<Integer> {
     }
 
     /**
+
      * 整数序列化器快照
      */
     public static final class IntSerializerSnapshot extends SimpleTypeSerializerSnapshot<Integer> {
@@ -741,6 +764,7 @@ public final class IntSerializer extends TypeSerializerSingleton<Integer> {
             super(() -> INSTANCE);
         }
     }
+
 }
 ```
 
@@ -748,8 +772,10 @@ public final class IntSerializer extends TypeSerializerSingleton<Integer> {
 
 ```java
 /**
+
  * 元组序列化器
  * 处理 Flink 元组类型的序列化
+
  */
 public final class TupleSerializer<T extends Tuple> extends TypeSerializer<T> {
 
@@ -760,6 +786,7 @@ public final class TupleSerializer<T extends Tuple> extends TypeSerializer<T> {
     private final int arity;
 
     /**
+
      * 构造函数
      */
     @SuppressWarnings("unchecked")
@@ -922,6 +949,7 @@ public final class TupleSerializer<T extends Tuple> extends TypeSerializer<T> {
     public boolean canEqual(Object obj) {
         return obj instanceof TupleSerializer;
     }
+
 }
 ```
 
@@ -931,8 +959,10 @@ public final class TupleSerializer<T extends Tuple> extends TypeSerializer<T> {
 
 ```java
 /**
+
  * Configuration 类是 Flink 的配置管理核心
  * 提供类型安全的配置访问和序列化支持
+
  */
 @Public
 public class Configuration implements IOReadableWritable, Serializable, Cloneable {
@@ -943,6 +973,7 @@ public class Configuration implements IOReadableWritable, Serializable, Cloneabl
     protected final HashMap<String, Object> confData;
 
     /**
+
      * 默认构造函数
      */
     public Configuration() {
@@ -1303,6 +1334,7 @@ public class Configuration implements IOReadableWritable, Serializable, Cloneabl
     public String toString() {
         return this.confData.toString();
     }
+
 }
 ```
 
@@ -1310,8 +1342,10 @@ public class Configuration implements IOReadableWritable, Serializable, Cloneabl
 
 ```java
 /**
+
  * ConfigOption 表示一个配置选项
  * 提供类型安全的配置访问
+
  */
 @PublicEvolving
 public class ConfigOption<T> {
@@ -1334,6 +1368,7 @@ public class ConfigOption<T> {
     private final FallbackKey[] fallbackKeys;
 
     /**
+
      * 构造函数
      */
     ConfigOption(
@@ -1477,6 +1512,7 @@ public class ConfigOption<T> {
     public String toString() {
         return String.format("Key: '%s' , default: %s (%s)", key, defaultValue, clazz.getSimpleName());
     }
+
 }
 ```
 
@@ -1486,8 +1522,10 @@ public class ConfigOption<T> {
 
 ```java
 /**
+
  * FileSystem 是 Flink 使用的所有文件系统的抽象基类
  * 可以扩展以实现分布式文件系统或本地文件系统
+
  */
 @Public
 public abstract class FileSystem {
@@ -1514,6 +1552,7 @@ public abstract class FileSystem {
     // ------------------------------------------------------------------------
 
     /**
+
      * 获取文件系统的 URI 方案
      */
     public abstract String getScheme();
@@ -1785,6 +1824,7 @@ public abstract class FileSystem {
             return hashCode;
         }
     }
+
 }
 ```
 
@@ -1794,8 +1834,10 @@ public abstract class FileSystem {
 
 ```java
 /**
+
  * Transformation 表示创建 DataStream 的操作
  * 每个 DataStream 都有一个底层的 Transformation，它是该 DataStream 的来源
+
  */
 @Internal
 public abstract class Transformation<T> {
@@ -1832,6 +1874,7 @@ public abstract class Transformation<T> {
     protected long bufferTimeout = -1;
 
     /**
+
      * 构造函数
      */
     public Transformation(String name, TypeInformation<T> outputType, int parallelism) {
@@ -2013,6 +2056,7 @@ public abstract class Transformation<T> {
                ", parallelism=" + parallelism +
                '}';
     }
+
 }
 ```
 

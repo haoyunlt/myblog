@@ -206,6 +206,7 @@ func main() {
 ```
 
 **核心功能**：
+
 - **日志系统初始化**：集成Kubernetes的klog与Cobra CLI框架
 - **命令构建**：构造包含discovery子命令的完整CLI结构
 - **错误处理**：统一的错误处理和退出机制
@@ -254,7 +255,7 @@ func NewRootCommand() *cobra.Command {
 
 ## 2.3 Discovery服务启动流程
 
-```go 
+```go
 func newDiscoveryCommand() *cobra.Command {
     return &cobra.Command{
         Use:   "discovery",
@@ -495,7 +496,7 @@ type DiscoveryServer struct {
 ## 3.2 XDS服务器启动流程
 
 ```go
-// pilot/pkg/xds/discovery.go 
+// pilot/pkg/xds/discovery.go
 func (s *DiscoveryServer) Start(stopCh <-chan struct{}) {
     // 1. 启动工作负载入口控制器 - 管理动态工作负载注册
     go s.WorkloadEntryController.Run(stopCh)
@@ -906,6 +907,7 @@ func (s *DiscoveryServer) handleRequest(con *Connection, req *discovery.Discover
 ```
 
 要点：
+
 - 使用`nonce`实现幂等与重试去重；
 - NACK仅作为诊断与回退信号，不应形成无限重推；
 - 结合`Delta XDS`可降低资源冗余（仅推送订阅差异）。
@@ -1417,7 +1419,7 @@ sequenceDiagram
     XDS->>XDS: 7. 合并多个更新请求
     
     Note over XDS: 配置生成和推送
-    XDS->>XDS: 8. initPushContext() 
+    XDS->>XDS: 8. initPushContext()
     XDS->>XDS: 9. 为每个代理计算配置
     
     loop 对每个连接的代理
@@ -1532,6 +1534,7 @@ kubectl -n istio-system logs deploy/istiod -f | rg -i "PUSH|NACK|ACK|xds|nonce"
 - **证书/信任域不匹配（SDS/MTLS）**：核对 `trustDomain` 与根证书包
 
 **定位技巧**：
+
 - 看到 NACK 时，第一时间比对 `TypeUrl`、`ResourceNames` 与生成侧日志；
 - 使用 `-o json` 检查资源尺寸与关键字段（如 cluster type、filter chain）；
 - 若 listener/route 数量异常暴涨，核查命名空间是否缺少 `Sidecar` 剪裁与 `ServiceEntry` 范围。
@@ -1570,6 +1573,7 @@ kubectl -n istio-system edit configmap istio
 ## 10.1 配置推送优化策略
 
 1. **去抖动机制优化**：
+
    ```go
    type DebounceOptions struct {
        // 去抖动延迟 - 最后一次更新后等待时间
@@ -1578,7 +1582,7 @@ kubectl -n istio-system edit configmap istio
        // 最大延迟 - 接收到更新后的最大等待时间
        debounceMax time.Duration
    }
-   ```
+```
 
 2. **缓存策略优化**：
    - 配置生成结果缓存
@@ -1593,6 +1597,7 @@ kubectl -n istio-system edit configmap istio
 ## 10.2 内存管理优化
 
 1. **对象池化**：
+
    ```go
    // 重用配置对象避免频繁GC
    var configPool = sync.Pool{
@@ -1600,9 +1605,10 @@ kubectl -n istio-system edit configmap istio
            return &model.Config{}
        },
    }
-   ```
+```
 
 2. **智能缓存清理**：
+
    ```go
    func (s *DiscoveryServer) dropCacheForRequest(req *model.PushRequest) {
        if req.Forced {
@@ -1611,7 +1617,7 @@ kubectl -n istio-system edit configmap istio
            s.Cache.Clear(req.ConfigsUpdated)
        }
    }
-   ```
+```
 
 ## 10.3 规模化最佳实践
 
@@ -1633,6 +1639,7 @@ Pilot控制平面作为Istio服务网格的大脑，通过精巧的架构设计�
 * **可扩展性**：插件化的生成器和处理器机制
 
 **关键技术特点**：
+
 - **统一配置模型**：抽象化的配置接口支持多种数据源
 - **智能推送策略**：增量更新和缓存机制最小化开销
 - **强一致性保证**：确保配置的最终一致性
@@ -1710,4 +1717,3 @@ classDiagram
     DiscoveryServer ..> RdsGenerator
     DiscoveryServer ..> EdsGenerator
 ```
-

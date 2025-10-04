@@ -61,8 +61,11 @@ typedef struct {
 } PyListObject;
 
 /*
+
  * List内存布局示意：
+
  *
+
  * PyListObject:
  * +-------------------+
  * | PyVarObject       | <- 对象头(引用计数、类型、大小)
@@ -74,6 +77,7 @@ typedef struct {
  *                            | NULL     | <- 未使用槽位
  *                            | NULL     |
  *                            +----------+
+
  */
 
 /* List创建函数 */
@@ -143,6 +147,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     }
 
     /*
+
      * 动态扩展策略：
      * 新分配大小 = newsize + (newsize >> 3) + (newsize < 9 ? 3 : 6)
      *
@@ -180,6 +185,7 @@ list_resize(PyListObject *self, Py_ssize_t newsize)
     Py_SET_SIZE(self, newsize);
     self->allocated = new_allocated;
     return 0;
+
 }
 
 /* List插入操作实现 */
@@ -540,12 +546,16 @@ if __name__ == "__main__":
 /* Objects/dictobject.c - PyDictObject结构定义 */
 
 /*
+
  * Python字典采用开放寻址的哈希表实现
+
  *
+
  * 核心思想：
  * 1. 分离索引表和条目表，提高缓存局部性
  * 2. 使用Perturb算法减少聚集
  * 3. 保持插入顺序（从Python 3.7开始）
+
  */
 
 typedef struct {
@@ -575,11 +585,13 @@ typedef struct {
     Py_ssize_t dk_nentries;     /* 已使用条目数 */
 
     /*
+
      * 内存布局：
      * dk_indices[dk_size]      <- 索引表
      * dk_entries[dk_usable]    <- 条目表
      */
     char dk_indices[];          /* 可变大小的索引+条目数据 */
+
 } PyDictKeysObject;
 
 /* Unicode字符串优化的条目结构 */
@@ -666,6 +678,7 @@ static Py_ssize_t
 unicodekeys_lookup_unicode(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
 {
     /*
+
      * Unicode字典的优化查找：
      * 1. 跳过哈希值比较（已知为Unicode）
      * 2. 使用更简单的字符串比较
@@ -711,6 +724,7 @@ unicodekeys_lookup_unicode(PyDictKeysObject* dk, PyObject *key, Py_hash_t hash)
         perturb >>= PERTURB_SHIFT;
         i = (i*5 + 1 + perturb) & mask;
     }
+
 }
 
 /* 字典插入/更新操作 */
@@ -788,6 +802,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
     }
 
     /*
+
      * 字典扩容策略：
      * 1. 小字典(< 50000): 4倍增长
      * 2. 大字典: 2倍增长
@@ -819,6 +834,7 @@ dictresize(PyDictObject *mp, uint8_t log2_newsize, int unicode)
     }
 
     return 0;
+
 }
 ```
 
@@ -1124,8 +1140,10 @@ if __name__ == "__main__":
 /* Objects/setobject.c - PySetObject结构定义 */
 
 /*
+
  * Set实现基于开放寻址的哈希表
  * 与dict类似，但只存储键，不存储值
+
  */
 
 typedef struct {
@@ -1294,6 +1312,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     assert(minused >= 0);
 
     /*
+
      * Set扩容策略：
      * - 找到能容纳minused个元素的最小2的幂
      * - 负载因子保持在2/3以下
@@ -1352,6 +1371,7 @@ set_table_resize(PySetObject *so, Py_ssize_t minused)
     }
 
     return 0;
+
 }
 
 /* Set删除元素 */
@@ -1392,6 +1412,7 @@ frozenset_hash(PyObject *self)
     }
 
     /*
+
      * frozenset哈希算法：
      * 1. 对所有元素的哈希值进行XOR
      * 2. 使用乘法和位移混合
@@ -1412,6 +1433,7 @@ frozenset_hash(PyObject *self)
     /* 缓存哈希值 */
     so->hash = (Py_hash_t)hash;
     return (Py_hash_t)hash;
+
 }
 ```
 

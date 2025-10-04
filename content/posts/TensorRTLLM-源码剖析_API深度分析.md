@@ -51,6 +51,7 @@ class LLM(_TorchLLM):
 **核心方法分析**:
 
 #### generate() 方法
+
 ```python
 def generate(
     self,
@@ -67,6 +68,7 @@ def generate(
     同步生成文本的核心方法
 
     功能说明:
+
     1. 输入预处理和验证
     2. 创建生成请求
     3. 提交到执行器
@@ -76,9 +78,11 @@ def generate(
     调用链路:
     generate() -> _generate_non_streaming() -> _submit_requests() -> executor.submit()
     """
+
 ```
 
 **实现细节**:
+
 ```python
 # 位置: tensorrt_llm/llmapi/llm.py:280-350
 def _generate_non_streaming(self, requests: List[GenerationRequest]) -> List[RequestOutput]:
@@ -152,6 +156,7 @@ class BaseLLM:
 **关键功能分析**:
 
 #### 分词器管理
+
 ```python
 @property
 def tokenizer(self) -> Optional[TokenizerBase]:
@@ -223,6 +228,7 @@ class GenerationExecutor(ABC):
 **核心方法实现**:
 
 #### generate_async() 方法
+
 ```python
 def generate_async(
     self,
@@ -244,6 +250,7 @@ def generate_async(
     异步生成方法的核心实现
 
     功能流程:
+
     1. 创建生成请求对象
     2. 分配客户端 ID
     3. 提交请求到执行器
@@ -264,6 +271,7 @@ def generate_async(
     result = self.submit(request)
 
     return result
+
 ```
 
 ### 2.2 GenerationExecutorWorker 实现类
@@ -297,6 +305,7 @@ class GenerationExecutorWorker(BaseWorker):
 **核心功能实现**:
 
 #### submit() 方法
+
 ```python
 def submit(self, request: GenerationRequest) -> GenerationResult:
     """提交请求到底层推理引擎"""
@@ -327,6 +336,7 @@ def submit(self, request: GenerationRequest) -> GenerationResult:
 ```
 
 #### await_response_task() 后台任务
+
 ```python
 def await_response_task(self):
     """等待推理结果的后台任务"""
@@ -432,6 +442,7 @@ class Builder:
 **关键方法分析**:
 
 #### _add_optimization_profile() 方法
+
 ```python
 def _add_optimization_profile(self, network: Network, builder_config: BuilderConfig):
     """添加优化配置文件"""
@@ -897,6 +908,7 @@ def generate(
     同步生成文本的主入口方法
 
     功能说明:
+
     1. 输入格式检查和标准化
     2. 批量请求处理
     3. 异步请求提交
@@ -944,6 +956,7 @@ def generate(
         futures = futures[0]  # 单个输入返回单个结果
 
     return futures
+
 ```
 
 #### 6.2.2 generate_async() 异步处理方法
@@ -962,6 +975,7 @@ def generate_async(
     异步生成方法，处理单个请求
 
     功能说明:
+
     1. 参数验证和默认值设置
     2. 输入预处理
     3. 创建生成请求
@@ -992,6 +1006,7 @@ def generate_async(
         prompt=inputs.text if hasattr(inputs, 'text') else None,
         tokenizer=self.tokenizer
     )
+
 ```
 
 ### 6.3 执行器层调用链路
@@ -1007,6 +1022,7 @@ def create(**kwargs) -> Union["GenerationExecutorProxy", "GenerationExecutorWork
     工厂方法创建执行器实例
 
     功能说明:
+
     1. 根据配置选择执行器类型
     2. 支持单进程和多进程模式
     3. 自动处理 MPI 通信
@@ -1027,6 +1043,7 @@ def create(**kwargs) -> Union["GenerationExecutorProxy", "GenerationExecutorWork
         # 单进程模式：使用工作执行器
         logger.info("Creating GenerationExecutorWorker for single process")
         return GenerationExecutorWorker(**kwargs)
+
 ```
 
 ### 6.4 模型构建调用链
@@ -1056,6 +1073,7 @@ graph LR
 ## 7. 关键数据结构
 
 ### 7.1 GenerationRequest
+
 ```python
 @dataclass
 class GenerationRequest:
@@ -1069,6 +1087,7 @@ class GenerationRequest:
 ```
 
 ### 7.2 RequestOutput
+
 ```python
 @dataclass
 class RequestOutput:
@@ -1081,6 +1100,7 @@ class RequestOutput:
 ```
 
 ### 7.3 SamplingParams
+
 ```python
 @dataclass
 class SamplingParams:

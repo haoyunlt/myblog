@@ -451,27 +451,27 @@ class MessageContext:
 
 **装饰器处理完整调用链**：
 
-```text
-@message_handler装饰器 → 
-  get_type_hints(func) → 
-    get_types(type_hints["message"]) → 
-      create_wrapper_function() → 
-        add_handler_metadata() → 
-          wrapper.target_types = [MessageType] → 
-            RoutedAgent._discover_handlers() → 
+```
+@message_handler装饰器 →
+  get_type_hints(func) →
+    get_types(type_hints["message"]) →
+      create_wrapper_function() →
+        add_handler_metadata() →
+          wrapper.target_types = [MessageType] →
+            RoutedAgent._discover_handlers() →
               _handlers[MessageType].append(handler)
 
 运行时路由调用链：
-RoutedAgent.on_message_impl() → 
-  _handlers.get(type(message)) → 
-    handler.router(message, ctx) → 
-      handler(self, message, ctx) → 
+RoutedAgent.on_message_impl() →
+  _handlers.get(type(message)) →
+    handler.router(message, ctx) →
+      handler(self, message, ctx) →
         func(self, message, ctx)
 ```
 
 **@rpc vs @event 路由差异**：
 
-```text
+```
 @rpc装饰器路由：
 handler.router = lambda msg, ctx: ctx.is_rpc and match(msg, ctx)
 
@@ -590,16 +590,16 @@ class Subscription(Protocol):
 
 **订阅匹配完整调用链**：
 
-```text
-SubscriptionManager.get_subscribed_recipients() → 
-  subscription.is_match(topic_id) → 
-    TypeSubscription.is_match() → [topic_id.type == self.topic_type] → 
-      subscription.map_to_agent(topic_id) → 
+```
+SubscriptionManager.get_subscribed_recipients() →
+  subscription.is_match(topic_id) →
+    TypeSubscription.is_match() → [topic_id.type == self.topic_type] →
+      subscription.map_to_agent(topic_id) →
         AgentId(self.agent_type, "default")
 
-TypePrefixSubscription.is_match() → [topic_id.type.startswith(prefix)] → 
-  subscription.map_to_agent(topic_id) → 
-    parse_agent_source(topic_id.source) → 
+TypePrefixSubscription.is_match() → [topic_id.type.startswith(prefix)] →
+  subscription.map_to_agent(topic_id) →
+    parse_agent_source(topic_id.source) →
       AgentId(self.agent_type, parsed_key)
 ```
 
@@ -627,7 +627,7 @@ class TypeSubscription:
 # 使用示例
 chat_subscription = TypeSubscription(
     id="chat-subscription-001",
-    topic_type="com.example.chat.message", 
+    topic_type="com.example.chat.message",
     agent_type="ChatAgent"
 )
 ```
@@ -666,7 +666,7 @@ class TypePrefixSubscription:
 system_subscription = TypePrefixSubscription(
     id="system-subscription-001",
     topic_type_prefix="com.microsoft.autogen.system.",
-    agent_type="SystemAgent" 
+    agent_type="SystemAgent"
 )
 ```
 
@@ -679,6 +679,7 @@ class SingleThreadedAgentRuntime(AgentRuntime):
     """单线程代理运行时 - 基于实际源码实现
     
     特点：
+
     - 使用单个asyncio队列处理所有消息
     - 消息按接收顺序处理，每个消息在独立的asyncio任务中并发处理
     - 支持点对点消息和发布订阅两种通信模式
@@ -723,50 +724,51 @@ class SingleThreadedAgentRuntime(AgentRuntime):
         
         # 代理类型验证
         self._agent_instance_types: Dict[str, Type[Agent]] = {}
+
 ```
 
 #### 核心调用路径
 
 **消息发送完整调用链**：
 
-```text
-BaseAgent.send_message() → 
-  AgentRuntime.send_message() → 
-    MessageQueue.put(SendMessageEnvelope) → 
-      _process_next() → 
-        _process_send() → 
-          _get_agent() → 
-            Agent.on_message() → 
-              RoutedAgent.on_message_impl() → 
-                handlers.get(type(message)) → 
-                  handler.router(message, ctx) → 
+```
+BaseAgent.send_message() →
+  AgentRuntime.send_message() →
+    MessageQueue.put(SendMessageEnvelope) →
+      _process_next() →
+        _process_send() →
+          _get_agent() →
+            Agent.on_message() →
+              RoutedAgent.on_message_impl() →
+                handlers.get(type(message)) →
+                  handler.router(message, ctx) →
                     handler(self, message, ctx)
 ```
 
 **发布订阅调用链**：
 
-```text
-BaseAgent.publish_message() → 
-  AgentRuntime.publish_message() → 
-    MessageQueue.put(PublishMessageEnvelope) → 
-      _process_next() → 
-        _process_publish() → 
-          get_subscribed_recipients() → 
-            subscription.is_match(topic_id) → 
-              subscription.map_to_agent(topic_id) → 
+```
+BaseAgent.publish_message() →
+  AgentRuntime.publish_message() →
+    MessageQueue.put(PublishMessageEnvelope) →
+      _process_next() →
+        _process_publish() →
+          get_subscribed_recipients() →
+            subscription.is_match(topic_id) →
+              subscription.map_to_agent(topic_id) →
                 Agent.on_message() → [并行处理多个订阅者]
 ```
 
 **代理创建调用链**：
 
-```text
-AgentRuntime._get_agent() → 
-  _agent_factories.get(agent_type) → 
-    AgentInstantiationContext.populate_context() → 
-      factory_func() → 
-        Agent.__init__() → 
-          AgentInstantiationContext.current_runtime() → 
-            bind_id_and_runtime() → 
+```
+AgentRuntime._get_agent() →
+  _agent_factories.get(agent_type) →
+    AgentInstantiationContext.populate_context() →
+      factory_func() →
+        Agent.__init__() →
+          AgentInstantiationContext.current_runtime() →
+            bind_id_and_runtime() →
               _instantiated_agents[agent_id] = agent
 ```
 
@@ -828,8 +830,8 @@ async def _handle_send_message_with_intervention(self, message_envelope: SendMes
                 
                 # 调用干预处理器
                 processed_message = await handler.on_send(
-                    message_envelope.message, 
-                    message_context=message_context, 
+                    message_envelope.message,
+                    message_context=message_context,
                     recipient=message_envelope.recipient
                 )
                 
@@ -1102,6 +1104,7 @@ async def ensure_agent_async(self, agent_id: AgentId) -> IHostableAgent:
 #### 消息路由机制时序图 (基于RoutedAgent源码)
 
 ```mermaid
+
 sequenceDiagram
     participant Runtime as AgentRuntime
     participant Agent as RoutedAgent
@@ -1151,52 +1154,60 @@ sequenceDiagram
         Agent->>Runtime: 抛出CantHandleException
         deactivate Agent
     end
+
 ```
 
 #### 状态管理调用路径
 
 **状态保存完整调用链**：
 ```
-AgentRuntime.save_state() → 
-  [for agent_id in _instantiated_agents] → 
-    _get_agent(agent_id) → 
-      agent.save_state() → 
-        [BaseAgent默认] warnings.warn("save_state not implemented") → 
-        [自定义实现] serialize_agent_state() → 
-          return state_dict → 
+
+AgentRuntime.save_state() →
+  [for agent_id in _instantiated_agents] →
+    _get_agent(agent_id) →
+      agent.save_state() →
+        [BaseAgent默认] warnings.warn("save_state not implemented") →
+        [自定义实现] serialize_agent_state() →
+          return state_dict →
             runtime_state[str(agent_id)] = agent_state
+
 ```
 
 **状态加载完整调用链**：
 ```
-AgentRuntime.load_state() → 
-  [for agent_id_str in state] → 
-    AgentId.from_str(agent_id_str) → 
-      _get_agent(agent_id) → 
-        agent.load_state(state[agent_id_str]) → 
-          [BaseAgent默认] warnings.warn("load_state not implemented") → 
-          [自定义实现] deserialize_and_restore_state() → 
+
+AgentRuntime.load_state() →
+  [for agent_id_str in state] →
+    AgentId.from_str(agent_id_str) →
+      _get_agent(agent_id) →
+        agent.load_state(state[agent_id_str]) →
+          [BaseAgent默认] warnings.warn("load_state not implemented") →
+          [自定义实现] deserialize_and_restore_state() →
             update_agent_internal_state()
+
 ```
 
 #### 序列化注册调用路径
 
 **序列化器注册完整调用链**：
 ```
-BaseAgent.register() → 
-  cls._handles_types() → 
-    cls._discover_handlers() → 
-      [for handler in handlers] → 
-        handler.target_types → 
-          try_get_known_serializers_for_type(type) → 
-            SerializationRegistry.get_serializers() → 
-              runtime.add_message_serializer(serializer) → 
+
+BaseAgent.register() →
+  cls._handles_types() →
+    cls._discover_handlers() →
+      [for handler in handlers] →
+        handler.target_types →
+          try_get_known_serializers_for_type(type) →
+            SerializationRegistry.get_serializers() →
+              runtime.add_message_serializer(serializer) →
                 _serialization_registry.register(type, serializer)
+
 ```
 
 #### 代理注册完整流程时序图
 
 ```mermaid
+
 sequenceDiagram
     participant App as 应用程序
     participant RT as AgentRuntime
@@ -1255,11 +1266,13 @@ sequenceDiagram
     
     RT->>App: 返回AgentType("ChatAgent")
     deactivate RT
+
 ```
 
 #### 代理注册核心实现
 
 ```python
+
 @classmethod
 async def register(
     cls,
@@ -1274,6 +1287,7 @@ async def register(
     代理注册的完整实现 - 基于实际BaseAgent.register源码
     
     这个方法实现了代理注册的完整生命周期：
+
     1. 工厂函数注册 - 支持懒加载代理创建
     2. 类级订阅处理 - 处理@default_subscription等装饰器定义的订阅
     3. 直接消息订阅 - 添加基于代理类型的前缀订阅
@@ -1283,8 +1297,8 @@ async def register(
     # 1. 注册代理工厂到运行时
     agent_type = AgentType(type)
     agent_type = await runtime.register_factory(
-        type=agent_type, 
-        agent_factory=factory, 
+        type=agent_type,
+        agent_factory=factory,
         expected_class=cls
     )
     
@@ -1373,31 +1387,33 @@ async def _deliver_message_to_agent(
 #### 运行时控制调用路径
 
 **运行时启动调用链**：
+
 ```
-SingleThreadedAgentRuntime.start() → 
-  RunContext.__init__() → 
-    asyncio.create_task(self._run()) → 
-      while True: _runtime._process_next() → 
-        _message_queue.get() → 
-          match message_envelope: [SendMessage|PublishMessage|ResponseMessage] → 
+SingleThreadedAgentRuntime.start() →
+  RunContext.__init__() →
+    asyncio.create_task(self._run()) →
+      while True: _runtime._process_next() →
+        _message_queue.get() →
+          match message_envelope: [SendMessage|PublishMessage|ResponseMessage] →
             dispatch_to_appropriate_handler()
 ```
 
 **运行时停止调用链**：
+
 ```
-RunContext.stop() → 
-  _stopped.set() → 
-    _message_queue.shutdown(immediate=True) → 
-      await _run_task → 
+RunContext.stop() →
+  _stopped.set() →
+    _message_queue.shutdown(immediate=True) →
+      await _run_task →
         [cleanup] stop_all_background_tasks
 
-RunContext.stop_when_idle() → 
-  _message_queue.join() → [等待队列空] → 
+RunContext.stop_when_idle() →
+  _message_queue.join() → [等待队列空] →
     stop() → graceful_shutdown
 
-RunContext.stop_when(condition) → 
-  check_condition_periodically() → 
-    [condition met] stop() → 
+RunContext.stop_when(condition) →
+  check_condition_periodically() →
+    [condition met] stop() →
       conditional_shutdown
 ```
 
@@ -1492,7 +1508,7 @@ class CognitiveArchitecture:
         """认知流程分析"""
         # 认知计算的三阶段流程
         return f"""
-        阶段1: 感知输入 → {type(message).__name__} 
+        阶段1: 感知输入 → {type(message).__name__}
         阶段2: 认知处理 → 路由决策和处理器选择
         阶段3: 行为输出 → 生成响应和状态更新
         元认知监控: 整个过程的自我监督和优化
@@ -1546,10 +1562,10 @@ class CustomReplyStrategy:
         self.message_count = 0
     
     async def __call__(
-        self, 
-        recipient: Agent, 
-        messages: List[BaseChatMessage], 
-        sender: Agent, 
+        self,
+        recipient: Agent,
+        messages: List[BaseChatMessage],
+        sender: Agent,
         config: Dict[str, Any]
     ) -> Tuple[bool, Optional[str]]:
         """
@@ -1676,9 +1692,9 @@ class ConversationFlowController:
         await agent.send_system_message(f"对话已中断: {reason}")
     
     async def redirect_conversation(
-        self, 
-        from_agent: Agent, 
-        to_agent: Agent, 
+        self,
+        from_agent: Agent,
+        to_agent: Agent,
         message: str,
         preserve_context: bool = True
     ) -> None:
@@ -1782,6 +1798,7 @@ class ConfigurationEpigenetics:
 #### 组件配置调用链
 
 **配置进化完整生命周期**：
+
 ```
 ComponentEvolution.genesis() → [配置起源]
   ComponentModel.DNA_parsing() → [基因解析]
@@ -1858,6 +1875,7 @@ class Component(ComponentFromConfig[ConfigT], ComponentSchemaType[ConfigT], Gene
     组件基类 - 基于实际源码实现
     
     支持配置驱动的组件实例化，需要子类实现：
+
     - component_config_schema: 配置模式类变量
     - component_type: 组件类型类变量
     - _from_config: 从配置创建实例的类方法
@@ -1982,6 +2000,7 @@ class ToolNeuroplasticity:
 #### 工具调用模式
 
 **工具量子化调用模型**：
+
 ```
 # 工具调用的量子力学类比
 
@@ -2007,7 +2026,7 @@ class ToolCoevolution:
         # 发现：工具之间存在类似生物群落的相互依赖关系
         self.ecological_relationships = {
             'mutualism': '互利共生 - 工具链模式',
-            'commensalism': '偏利共生 - 工具代理模式', 
+            'commensalism': '偏利共生 - 工具代理模式',
             'competition': '竞争关系 - 同类型工具选择',
             'parasitism': '寄生关系 - 工具依赖过度'
         }
@@ -2093,6 +2112,7 @@ class FunctionTool(BaseTool[BaseModel, BaseModel], Component[FunctionToolConfig]
     函数工具 - 基于实际源码实现
     
     将Python函数包装为代理工具，支持：
+
     - 同步和异步函数
     - 取消令牌支持
     - 类型安全的参数验证
@@ -2156,7 +2176,7 @@ class FunctionTool(BaseTool[BaseModel, BaseModel], Component[FunctionToolConfig]
                 )
             else:
                 future = asyncio.get_event_loop().run_in_executor(
-                    None, 
+                    None,
                     functools.partial(self._func, **kwargs)
                 )
                 # 链接取消令牌到future
@@ -2198,11 +2218,12 @@ class FunctionTool(BaseTool[BaseModel, BaseModel], Component[FunctionToolConfig]
             raise ValueError(f"无法编译和加载函数: {e}") from e
         
         return cls(
-            func, 
+            func,
             description=config.description,
             name=config.name,
             global_imports=config.global_imports
         )
+
 ```
 
 #### Workbench工作台实现
@@ -2298,8 +2319,8 @@ class StaticWorkbench(Workbench, Component[StaticWorkbenchConfig]):
             is_error = True
         
         return ToolResult(
-            name=name, 
-            result=[TextResultContent(content=result_str)], 
+            name=name,
+            result=[TextResultContent(content=result_str)],
             is_error=is_error
         )
     
@@ -2334,35 +2355,37 @@ workbench = StaticWorkbench([add_tool, weather_tool], description="通用工具�
 #### 干预处理调用路径
 
 **干预处理完整调用链**：
+
 ```
-AgentRuntime.send_message() → 
-  _process_next() → 
-    _handle_send_message_with_intervention() → 
-      [for handler in intervention_handlers] → 
-        handler.on_send(message, ctx, recipient) → 
-          validate_and_transform_message() → 
-            [DropMessage] → MessageDroppedException() → 
-            [modified_message] → update_envelope.message → 
+AgentRuntime.send_message() →
+  _process_next() →
+    _handle_send_message_with_intervention() →
+      [for handler in intervention_handlers] →
+        handler.on_send(message, ctx, recipient) →
+          validate_and_transform_message() →
+            [DropMessage] → MessageDroppedException() →
+            [modified_message] → update_envelope.message →
               _process_send(modified_envelope)
 
 发布消息干预：
-AgentRuntime.publish_message() → 
-  _handle_publish_message_with_intervention() → 
-    [for handler in intervention_handlers] → 
-      handler.on_publish(message, ctx, topic_id) → 
-        check_publish_permissions() → 
-          apply_message_filters() → 
+AgentRuntime.publish_message() →
+  _handle_publish_message_with_intervention() →
+    [for handler in intervention_handlers] →
+      handler.on_publish(message, ctx, topic_id) →
+        check_publish_permissions() →
+          apply_message_filters() →
             _process_publish(processed_envelope)
 ```
 
 **干预处理器链式调用**：
+
 ```
-intervention_handlers[0].on_send() → 
-  transform_message_1() → 
-    intervention_handlers[1].on_send() → 
-      transform_message_2() → 
-        intervention_handlers[n].on_send() → 
-          final_transformed_message → 
+intervention_handlers[0].on_send() →
+  transform_message_1() →
+    intervention_handlers[1].on_send() →
+      transform_message_2() →
+        intervention_handlers[n].on_send() →
+          final_transformed_message →
             _process_send()
 ```
 
@@ -2373,18 +2396,18 @@ class InterventionHandler(Protocol):
     """干预处理器协议 - 在消息发送/发布前进行拦截"""
     
     async def on_send_message(
-        self, 
-        message: Any, 
-        sender: AgentId | None, 
+        self,
+        message: Any,
+        sender: AgentId | None,
         recipient: AgentId
     ) -> Any | DropMessage:
         """拦截发送消息"""
         ...
     
     async def on_publish_message(
-        self, 
-        message: Any, 
-        sender: AgentId | None, 
+        self,
+        message: Any,
+        sender: AgentId | None,
         topic_id: TopicId
     ) -> Any | DropMessage:
         """拦截发布消息"""  
@@ -2439,57 +2462,60 @@ class MessageFilterHandler:
 #### 异步处理调用路径
 
 **异步消息处理调用链**：
+
 ```
-AsyncChatAgent.handle_message() → 
-  asyncio.create_task(get_conversation_context()) → [并发任务1] → 
-  asyncio.create_task(preprocess_message()) → [并发任务2] → 
-    asyncio.gather(context_task, preprocessing_task) → 
-      model_client.generate_response() → [异步模型调用] → 
-        asyncio.create_task(update_conversation_cache()) → [后台任务] → 
+AsyncChatAgent.handle_message() →
+  asyncio.create_task(get_conversation_context()) → [并发任务1] →
+  asyncio.create_task(preprocess_message()) → [并发任务2] →
+    asyncio.gather(context_task, preprocessing_task) →
+      model_client.generate_response() → [异步模型调用] →
+        asyncio.create_task(update_conversation_cache()) → [后台任务] →
           return ChatResponse()
 
 异步工具执行链：
-FunctionTool.run() → 
-  [async function] await func(**kwargs) → 
-  [sync function] run_in_executor(partial(func, **kwargs)) → 
-    cancellation_token.link_future(executor_future) → 
-      [cancelled] raise CancelledError → 
+FunctionTool.run() →
+  [async function] await func(**kwargs) →
+  [sync function] run_in_executor(partial(func, **kwargs)) →
+    cancellation_token.link_future(executor_future) →
+      [cancelled] raise CancelledError →
       [completed] return result
 ```
 
 **消息处理性能瓶颈调用链**：
+
 ```
 高频调用路径（热路径）：
-send_message() → [高频] → 
-  _message_queue.put() → [O(1)] → 
-    _process_next() → [循环调用] → 
-      _process_send() → [后台任务] → 
-        _get_agent() → [缓存查找O(1)] → 
-          on_message_impl() → [类型路由O(1)] → 
-            handler.router() → [条件匹配O(n)] → 
+send_message() → [高频] →
+  _message_queue.put() → [O(1)] →
+    _process_next() → [循环调用] →
+      _process_send() → [后台任务] →
+        _get_agent() → [缓存查找O(1)] →
+          on_message_impl() → [类型路由O(1)] →
+            handler.router() → [条件匹配O(n)] →
               handler() → [业务逻辑]
 
 代理创建路径（冷路径）：
-_get_agent() → [首次调用] → 
-  AgentInstantiationContext.populate_context() → [线程局部变量] → 
-    factory_func() → [用户自定义工厂] → 
-      Agent.__init__() → [依赖注入] → 
-        bind_id_and_runtime() → [验证绑定] → 
+_get_agent() → [首次调用] →
+  AgentInstantiationContext.populate_context() → [线程局部变量] →
+    factory_func() → [用户自定义工厂] →
+      Agent.__init__() → [依赖注入] →
+        bind_id_and_runtime() → [验证绑定] →
           _instantiated_agents[id] = agent → [缓存O(1)]
 ```
 
 **并发控制调用链**：
+
 ```
-SingleThreadedAgentRuntime._process_send() → 
-  asyncio.create_task(process_message) → 
-    _background_tasks.add(task) → 
-      task.add_done_callback(_background_tasks.discard) → 
+SingleThreadedAgentRuntime._process_send() →
+  asyncio.create_task(process_message) →
+    _background_tasks.add(task) →
+      task.add_done_callback(_background_tasks.discard) →
         [on completion] remove_from_background_tasks
 
-RunContext.stop() → 
-  _stopped.set() → 
-    _message_queue.shutdown(immediate=True) → 
-      await _run_task → 
+RunContext.stop() →
+  _stopped.set() →
+    _message_queue.shutdown(immediate=True) →
+      await _run_task →
         [cleanup] all_background_tasks_completed
 ```
 
@@ -2647,40 +2673,42 @@ class ManagedAgentRuntime(SingleThreadedAgentRuntime):
 #### 错误处理调用路径
 
 **异常传播完整调用链**：
+
 ```
-Agent.on_message() → 
-  [业务逻辑异常] raise CustomException → 
-    _process_send() → catch BaseException → 
-      message_envelope.future.set_exception(e) → 
-        _message_queue.task_done() → 
-          [caller] await future → 
+Agent.on_message() →
+  [业务逻辑异常] raise CustomException →
+    _process_send() → catch BaseException →
+      message_envelope.future.set_exception(e) →
+        _message_queue.task_done() →
+          [caller] await future →
             raise propagated_exception
 
 CantHandleException传播：
-RoutedAgent.on_message_impl() → 
-  [no matching handler] raise CantHandleException → 
-    _process_send() → catch CantHandleException → 
-      future.set_exception(CantHandleException) → 
+RoutedAgent.on_message_impl() →
+  [no matching handler] raise CantHandleException →
+    _process_send() → catch CantHandleException →
+      future.set_exception(CantHandleException) →
         [caller] handle_cant_handle_error()
 ```
 
 **错误恢复调用链**：
+
 ```
-ResilientAgent.handle_with_retry() → 
-  [attempt 1] _process_request_impl() → 
-    [ConnectionError] catch retriable_exception → 
-      _circuit_breaker.record_failure() → 
-        exponential_backoff_delay() → 
-          [attempt 2] _process_request_impl() → 
-            [success] _circuit_breaker.record_success() → 
+ResilientAgent.handle_with_retry() →
+  [attempt 1] _process_request_impl() →
+    [ConnectionError] catch retriable_exception →
+      _circuit_breaker.record_failure() →
+        exponential_backoff_delay() →
+          [attempt 2] _process_request_impl() →
+            [success] _circuit_breaker.record_success() →
               return ProcessingResponse(success=True)
 
 断路器状态调用链：
-CircuitBreaker.record_failure() → 
-  increment_failure_count() → 
-    [threshold exceeded] state = "OPEN" → 
-      subsequent_calls → is_open → return True → 
-        [timeout] state = "HALF_OPEN" → 
+CircuitBreaker.record_failure() →
+  increment_failure_count() →
+    [threshold exceeded] state = "OPEN" →
+      subsequent_calls → is_open → return True →
+        [timeout] state = "HALF_OPEN" →
           [next success] state = "CLOSED"
 ```
 
@@ -2920,16 +2948,19 @@ AutoGen代表了智能代理系统架构的发展演进：
 #### 架构演进三阶段
 
 **第一阶段 - 石器时代**：单体智能系统
+
 - 特征：单一LLM，单线程处理
 - 代表：早期ChatBot系统
 - 局限：无法处理复杂多步骤任务
 
 **第二阶段 - 青铜时代**：多代理协作系统  
+
 - 特征：多个专业代理，预定义协作流程
 - 代表：传统多代理框架
 - 局限：静态组织结构，缺乏动态适应性
 
 **第三阶段 - 智能时代**：自适应代理生态系统
+
 - 特征：动态代理创建，自适应路由，生态化协作
 - 代表：AutoGen架构
 - 创新：幽灵实例化、流体路由、基因表达组件系统
@@ -2943,7 +2974,7 @@ class ArchitecturalEvolution:
         """计算架构演进指数"""
         metrics = {
             1: {'flexibility': 0.2, 'scalability': 0.1, 'intelligence': 0.3},
-            2: {'flexibility': 0.6, 'scalability': 0.5, 'intelligence': 0.6}, 
+            2: {'flexibility': 0.6, 'scalability': 0.5, 'intelligence': 0.6},
             3: {'flexibility': 0.9, 'scalability': 0.9, 'intelligence': 0.95}
         }
         return metrics.get(stage, {})
