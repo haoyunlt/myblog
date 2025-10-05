@@ -7,7 +7,7 @@ tags:
   - 实战经验
   - 源码分析
 categories:
-  - 技术文档
+  - vLLM
 description: "源码剖析 - vLLM-99-最佳实践与案例"
 author: "源码分析"
 weight: 500

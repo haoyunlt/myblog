@@ -7,7 +7,7 @@ tags:
   - 概览
   - 源码分析
 categories:
-  - 技术文档
+  - CPython
 description: "源码剖析 - CPython-10-Python高级特性-概览"
 author: "源码分析"
 weight: 500

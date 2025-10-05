@@ -7,7 +7,7 @@ tags:
   - 概览
   - 源码分析
 categories:
-  - 技术文档
+  - MySQL
 description: "源码剖析 - MySQL Server 源码剖析 - 存储引擎层概览"
 author: "源码分析"
 weight: 500

@@ -1,7 +1,8 @@
 ---
 title: "Kratos-04-Config配置管理"
 date: 2025-10-05T14:00:00+08:00
-categories: ["Go", "微服务", "框架源码"]
+categories:
+  - Kratos
 tags: ["Kratos", "Config", "配置管理", "热重载", "多数据源", "类型安全"]
 series: ["Kratos源码剖析"]
 description: "深入分析Kratos框架Config配置管理模块，包括多数据源支持、配置热重载、类型安全解析、配置监听机制等核心功能。"

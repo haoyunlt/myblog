@@ -7,7 +7,7 @@ tags:
   - 实战经验
   - 源码分析
 categories:
-  - 技术文档
+  - AI应用
 description: "源码剖析 - Home Assistant Core - 使用示例与最佳实践"
 author: "源码分析"
 weight: 500

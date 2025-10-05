@@ -7,7 +7,7 @@ tags:
   - 接口文档
   - 源码分析
 categories:
-  - 技术文档
+  - AutoGen
 description: "源码剖析 - AutoGen-01-PythonCore-API"
 author: "源码分析"
 weight: 500

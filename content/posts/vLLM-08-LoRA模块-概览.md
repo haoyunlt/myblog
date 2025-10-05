@@ -7,7 +7,7 @@ tags:
   - 概览
   - 源码分析
 categories:
-  - 技术文档
+  - vLLM
 description: "源码剖析 - vLLM-08-LoRA模块-概览"
 author: "源码分析"
 weight: 500

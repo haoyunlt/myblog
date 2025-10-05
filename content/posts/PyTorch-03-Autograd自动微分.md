@@ -5,7 +5,7 @@ draft: false
 tags:
   - 源码分析
 categories:
-  - 技术文档
+  - PyTorch
 description: "源码剖析 - PyTorch-03-Autograd自动微分"
 author: "源码分析"
 weight: 500

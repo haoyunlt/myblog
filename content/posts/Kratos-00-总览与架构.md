@@ -1,7 +1,8 @@
 ---
 title: "Kratos 框架源码剖析 - 总览与架构"
 date: 2025-10-05T10:00:00+08:00
-categories: ["Go", "微服务", "框架源码"]
+categories:
+  - Kratos
 tags: ["Kratos", "Go", "微服务", "架构设计", "源码分析"]
 series: ["Kratos源码剖析"]
 description: "深入分析Kratos微服务框架的整体架构设计，包括分层结构、模块交互、核心设计原则等，为理解Kratos框架奠定基础。"

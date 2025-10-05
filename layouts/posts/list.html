@@ -10,10 +10,11 @@
 
 {{/* 按类目分组文章 */}}
 {{- range $allPosts }}
+  {{- $currentPost := . }}
   {{- range .Params.categories }}
     {{- $category := . }}
     {{- $posts := index $postsByCategory $category | default slice }}
-    {{- $posts = $posts | append $ }}
+    {{- $posts = $posts | append $currentPost }}
     {{- $postsByCategory = merge $postsByCategory (dict $category $posts) }}
   {{- end }}
 {{- end }}
@@ -76,8 +77,7 @@
       {{- $icon := index $categoryInfo "icon" | default "📖" }}
       {{- $desc := index $categoryInfo "desc" | default (printf "%s 相关技术文档和源码分析" $category) }}
       {{- $postCount := len $posts }}
-      {{- $sortedPosts := sort $posts ".Params.weight" "asc" }}
-      {{- $sortedPosts = $sortedPosts | default (sort $posts "Date" "desc") }}
+      {{- $sortedPosts := $posts }}
       
 <section class="category-section">
   <div class="category-header">
@@ -140,8 +140,7 @@
     {{- end }}
     {{- if not $isInOrder }}
       {{- $postCount := len $posts }}
-      {{- $sortedPosts := sort $posts ".Params.weight" "asc" }}
-      {{- $sortedPosts = $sortedPosts | default (sort $posts "Date" "desc") }}
+      {{- $sortedPosts := $posts }}
 
 <section class="category-section">
   <div class="category-header">

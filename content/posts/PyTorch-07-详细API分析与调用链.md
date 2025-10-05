@@ -7,7 +7,7 @@ tags:
   - 接口文档
   - 源码分析
 categories:
-  - 技术文档
+  - PyTorch
 description: "源码剖析 - PyTorch-07-详细API分析与调用链"
 author: "源码分析"
 weight: 500

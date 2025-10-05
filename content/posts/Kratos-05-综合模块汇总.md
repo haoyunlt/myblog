@@ -1,7 +1,8 @@
 ---
 title: "Kratos-05-综合模块汇总"
 date: 2025-10-05T15:00:00+08:00
-categories: ["Go", "微服务", "框架源码"]
+categories:
+  - Kratos
 tags: ["Kratos", "Registry", "Selector", "Encoding", "Metadata", "Errors", "Log", "负载均衡", "服务发现"]
 series: ["Kratos源码剖析"]
 description: "全面汇总Kratos框架的其他核心模块，包括Registry服务注册发现、Selector负载均衡、Encoding编码解码、Errors错误处理、Log日志系统等。"

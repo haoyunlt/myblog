@@ -1,7 +1,8 @@
 ---
 title: "Kratos-03-Middleware中间件系统"
 date: 2025-10-05T13:00:00+08:00
-categories: ["Go", "微服务", "框架源码"]
+categories:
+  - Kratos
 tags: ["Kratos", "Middleware", "中间件", "装饰器模式", "责任链模式", "横切关注点"]
 series: ["Kratos源码剖析"]
 description: "深入分析Kratos框架Middleware中间件系统，包括中间件链设计、核心中间件实现、异常恢复、日志记录、参数校验等功能。"

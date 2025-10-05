@@ -7,7 +7,7 @@ tags:
   - UML
   - 源码分析
 categories:
-  - 技术文档
+  - PyTorch
 description: "源码剖析 - PyTorch-08-数据结构UML与交互图"
 author: "源码分析"
 weight: 500

@@ -7,7 +7,7 @@ tags:
   - 架构分析
   - 源码分析
 categories:
-  - 技术文档
+  - CPython
 description: "源码剖析 - CPython-00-总览"
 author: "源码分析"
 weight: 500

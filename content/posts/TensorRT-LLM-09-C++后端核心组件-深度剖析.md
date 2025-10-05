@@ -5,7 +5,7 @@ draft: false
 tags:
   - 源码分析
 categories:
-  - 技术文档
+  - TensorRT
 description: "源码剖析 - TensorRT-LLM-09-C++后端核心组件-深度剖析"
 author: "源码分析"
 weight: 500

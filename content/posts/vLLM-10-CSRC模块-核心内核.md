@@ -5,7 +5,7 @@ draft: false
 tags:
   - 源码分析
 categories:
-  - 技术文档
+  - vLLM
 description: "源码剖析 - vLLM-10-CSRC模块-核心内核"
 author: "源码分析"
 weight: 500

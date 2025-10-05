@@ -7,7 +7,7 @@ tags:
   - 实战经验
   - 源码分析
 categories:
-  - 技术文档
+  - MySQL
 description: "源码剖析 - MySQL Server 源码剖析 - 框架使用示例、实战经验和最佳实践"
 author: "源码分析"
 weight: 500

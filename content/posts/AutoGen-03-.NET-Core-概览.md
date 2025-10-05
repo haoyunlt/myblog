@@ -7,7 +7,7 @@ tags:
   - 概览
   - 源码分析
 categories:
-  - 技术文档
+  - AutoGen
 description: "源码剖析 - AutoGen-03-.NET-Core-概览"
 author: "源码分析"
 weight: 500

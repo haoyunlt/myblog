@@ -1,7 +1,8 @@
 ---
 title: "Kratos-02-Transport传输层"
 date: 2025-10-05T12:00:00+08:00
-categories: ["Go", "微服务", "框架源码"]
+categories:
+  - Kratos
 tags: ["Kratos", "Transport", "HTTP服务器", "gRPC服务器", "网络通信", "中间件集成"]
 series: ["Kratos源码剖析"]
 description: "深入分析Kratos框架Transport传输层模块，包括HTTP/gRPC协议支持、服务器实现、客户端调用、中间件集成等核心功能。"

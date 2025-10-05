@@ -5,7 +5,7 @@ draft: false
 tags:
   - 源码分析
 categories:
-  - 技术文档
+  - AI应用
 description: "源码剖析 - FastChat-02-serve模块-Controller详细分析"
 author: "源码分析"
 weight: 500

@@ -7,7 +7,7 @@ tags:
   - 实战经验
   - 源码分析
 categories:
-  - 技术文档
+  - PyTorch
 description: "源码剖析 - PyTorch-09-使用示例与最佳实践"
 author: "源码分析"
 weight: 500

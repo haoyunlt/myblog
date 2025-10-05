@@ -7,7 +7,7 @@ tags:
   - 接口文档
   - 源码分析
 categories:
-  - 技术文档
+  - MySQL
 description: "源码剖析 - MySQL Server 源码剖析 - SQL核心层-API详解"
 author: "源码分析"
 weight: 500

@@ -7,7 +7,7 @@ tags:
   - 概览
   - 源码分析
 categories:
-  - 技术文档
+  - AI应用
 description: "源码剖析 - FastChat-07-train模块-概览"
 author: "源码分析"
 weight: 500

@@ -31,10 +31,6 @@ enableEmoji = true
     url = "/"
     weight = 10
   [[menu.main]]
-    name = "文章"
-    url = "/posts/"
-    weight = 20
-  [[menu.main]]
     name = "归档"
     url = "/archives/"
     weight = 30

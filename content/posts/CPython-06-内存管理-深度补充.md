@@ -5,7 +5,7 @@ draft: false
 tags:
   - 源码分析
 categories:
-  - 技术文档
+  - CPython
 description: "源码剖析 - CPython-06-内存管理-深度补充"
 author: "源码分析"
 weight: 500

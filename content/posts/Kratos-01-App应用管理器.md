@@ -1,7 +1,8 @@
 ---
 title: "Kratos-01-App应用管理器"
 date: 2025-10-05T11:00:00+08:00
-categories: ["Go", "微服务", "框架源码"]
+categories:
+  - Kratos
 tags: ["Kratos", "App管理器", "生命周期管理", "服务启动", "优雅关闭"]
 series: ["Kratos源码剖析"]
 description: "深入分析Kratos框架App应用管理器模块，包括应用生命周期管理、服务器协调、服务注册发现、优雅关闭机制等核心功能。"
