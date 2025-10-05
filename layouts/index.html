@@ -34,7 +34,7 @@
   {{- end }}
   
   <div class="categories-grid">
-    {{- $categoryOrder := slice "ai语音助手" "ai聊天助手" "dify" "autogpt" "autogen" "openaiagent" "qwenagent" "eino" "githubmcpserver" "langgraph" "langchain" "metagpt" "vllm" "tensorrtllm" "python" "golang" "tensorflow" "ray" "fastapi" "grpc" "kitex" "nginx" "kafka" "flink" "pulsar" "kubernetes" "docker" "etcd" "istio" "envoy" "mongodb" "mysql" "clickhouse" "rocksdb" "leveldb" "pgvector" "milvus" "ceph" "minio" "elasticsearch" "netpoll" "openmanus" }}
+    {{- $categoryOrder := slice "ai应用" "dify" "langchain" "langgraph"  "autogpt" "autogen" "openaiagent"  "eino" "githubmcpserver" "metagpt" "pgvector" "milvus" "vllm" "tensorrt" "pytorch" "tensorflow" "python" "golang"  "kubernetes" "docker" "mongodb" "mysql" "elasticsearch"  "kafka" "kitex" "kratos" "fastapi" "grpc"  "nginx" "flink" "pulsar"  "etcd" "istio" "envoy"  "clickhouse" "rocksdb"  "ceph"  "leveldb" "netpoll" "ray" "qwenagent" "minio"}}
     {{- range $categoryOrder }}
       {{- $category := . }}
       {{- $posts := index $categories $category }}
@@ -48,10 +48,8 @@
         <span class="category-count">{{ $postCount }} 篇文章</span>
       </div>
       <div class="category-description">
-        {{- if eq $category "ai语音助手" }}
-        <p>🎤 智能语音助手系统 - Home Assistant、LiveKit、VoiceHelper实时语音处理技术栈</p>
-        {{- else if eq $category "ai聊天助手" }}
-        <p>💬 AI聊天助手平台 - Chatwoot开源客服系统架构设计与源码实现详解</p>
+        {{- if eq $category "ai应用" }}
+        <p>🎤 智能语音助手系统 - Home Assistant、LiveKit、VoiceHelper、fastchat实时语音处理技术栈</p>
         {{- else if eq $category "dify" }}
           <p>🤖 Dify低代码LLM应用开发平台 - 工作流引擎架构与核心模块源码深度剖析</p>
         {{- else if eq $category "autogpt" }}
@@ -74,7 +72,7 @@
           <p>🎯 MetaGPT软件开发框架 - 多角色协作与代码生成流水线设计</p>
         {{- else if eq $category "vllm" }}
           <p>⚡ vLLM推理加速引擎 - PagedAttention与连续批处理优化技术</p>
-        {{- else if eq $category "tensorrtllm" }}
+        {{- else if eq $category "tensorrt" }}
           <p>🚄 NVIDIA TensorRT-LLM - GPU推理优化与模型量化部署实践</p>
         {{- else if eq $category "python" }}
           <p>🐍 Python深度解析 - CPython解释器内核、GIL机制与内存管理源码剖析</p>
@@ -130,8 +128,8 @@
           <p>🔎 Elasticsearch搜索引擎 - Lucene倒排索引与分布式查询协调机制</p>
         {{- else if eq $category "netpoll" }}
           <p>🌐 字节跳动NetPoll - 高性能网络库与epoll事件驱动架构优化</p>
-        {{- else if eq $category "openmanus" }}
-          <p>🤖 OpenManus机器人平台 - 实时控制系统与传感器数据处理架构</p>
+        {{- else if eq $category "kratos" }}
+          <p>🤖 Kratos微服务框架 - 微服务治理与分布式系统架构设计</p>
         {{- else }}
           <p>📖 {{ $category }} 相关技术文档和源码分析</p>
         {{- end }}
