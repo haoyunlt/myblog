@@ -1,3 +1,13 @@
+---
+title: "Flink-05-客户端与作业提交"
+date: 2024-12-28T12:05:00+08:00
+series: ["Apache Flink源码剖析"]
+categories: ['Flink']
+tags: ['Flink', '源码剖析', '流计算', '实时计算']
+description: "Flink 客户端与作业提交模块源码剖析 - 详细分析客户端与作业提交模块的架构设计、核心功能和实现机制"
+---
+
+
 # Flink-05-客户端与作业提交（flink-clients）
 
 ## 一、模块概览

@@ -1,0 +1,67 @@
+{{- /*
+响应式图片Shortcode - 移动端性能优化版
+支持WebP、响应式尺寸、懒加载
+
+用法：
+{{< responsive-image src="image.jpg" alt="图片描述" class="custom-class" >}}
+{{< responsive-image src="image.png" alt="图片描述" sizes="(max-width: 768px) 100vw, 50vw" >}}
+*/ -}}
+
+{{- $src := .Get "src" -}}
+{{- $alt := .Get "alt" | default "" -}}
+{{- $class := .Get "class" | default "" -}}
+{{- $sizes := .Get "sizes" | default "(max-width: 768px) 100vw, (max-width: 1200px) 50vw, 33vw" -}}
+{{- $loading := .Get "loading" | default "lazy" -}}
+
+{{- if $src -}}
+  {{- $image := resources.Get (printf "images/%s" $src) -}}
+  {{- if $image -}}
+    {{- $webpSupported := slice 320 640 768 1024 1200 -}}
+    {{- $originalSupported := slice 320 640 768 1024 1200 -}}
+    
+    <picture class="responsive-image {{ $class }}">
+      {{- /* WebP格式 */ -}}
+      <source 
+        srcset="{{- range $i, $width := $webpSupported -}}
+          {{- if ge $image.Width $width -}}
+            {{- $resized := $image.Resize (printf "%dx" $width) -}}
+            {{- printf "%s %dw" $resized.RelPermalink $width -}}
+            {{- if ne $i (sub (len $webpSupported) 1) }}, {{ end -}}
+          {{- end -}}
+        {{- end }}"
+        sizes="{{ $sizes }}"
+        type="image/webp">
+      
+      {{- /* 原格式 */ -}}
+      <source 
+        srcset="{{- range $i, $width := $originalSupported -}}
+          {{- if ge $image.Width $width -}}
+            {{- $resized := $image.Resize (printf "%dx" $width) -}}
+            {{- printf "%s %dw" $resized.RelPermalink $width -}}
+            {{- if ne $i (sub (len $originalSupported) 1) }}, {{ end -}}
+          {{- end -}}
+        {{- end }}"
+        sizes="{{ $sizes }}"
+        type="image/{{ $image.MediaType.SubType }}">
+      
+      {{- /* 回退图片 */ -}}
+      {{- $fallback := $image.Resize "768x" -}}
+      <img 
+        src="{{ $fallback.RelPermalink }}" 
+        alt="{{ $alt }}"
+        loading="{{ $loading }}"
+        decoding="async"
+        {{ with $class }}class="{{ . }}"{{ end }}
+        width="{{ $fallback.Width }}"
+        height="{{ $fallback.Height }}">
+    </picture>
+  {{- else -}}
+    {{- /* 外部图片或不存在的图片 */ -}}
+    <img 
+      src="{{ $src }}" 
+      alt="{{ $alt }}"
+      loading="{{ $loading }}"
+      decoding="async"
+      {{ with $class }}class="{{ . }}"{{ end }}>
+  {{- end -}}
+{{- end -}}

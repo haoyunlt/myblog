@@ -1,3 +1,13 @@
+---
+title: "ClickHouse-20-实战经验与最佳实践"
+date: 2024-12-28T10:20:00+08:00
+series: ["ClickHouse源码剖析"]
+categories: ['ClickHouse']
+tags: ['ClickHouse', '源码剖析', '列式数据库']
+description: "ClickHouse 实战经验与最佳实践模块源码剖析 - 详细分析实战经验与最佳实践模块的架构设计、核心功能和实现机制"
+---
+
+
 # ClickHouse-20-实战经验与最佳实践
 
 ## 框架使用示例

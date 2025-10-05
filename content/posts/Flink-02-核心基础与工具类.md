@@ -1,3 +1,13 @@
+---
+title: "Flink-02-核心基础与工具类"
+date: 2024-12-28T12:02:00+08:00
+series: ["Apache Flink源码剖析"]
+categories: ['Flink']
+tags: ['Flink', '源码剖析', '流计算', '实时计算']
+description: "Flink 核心基础与工具类模块源码剖析 - 详细分析核心基础与工具类模块的架构设计、核心功能和实现机制"
+---
+
+
 # Flink-02-核心基础与工具类（flink-core）
 
 ## 一、模块概览

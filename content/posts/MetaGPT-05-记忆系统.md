@@ -1,3 +1,13 @@
+---
+title: "MetaGPT-05-记忆系统"
+date: 2024-12-28T13:05:00+08:00
+series: ["MetaGPT源码剖析"]
+categories: ['MetaGPT']
+tags: ['MetaGPT', '源码剖析', '多智能体', 'AI代码生成']
+description: "MetaGPT 记忆系统模块源码剖析 - 详细分析记忆系统模块的架构设计、核心功能和实现机制"
+---
+
+
 # MetaGPT-05-记忆系统
 
 ## 一、模块概览

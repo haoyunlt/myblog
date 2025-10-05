@@ -1,3 +1,13 @@
+---
+title: "MetaGPT-00-总览"
+date: 2024-12-28T13:00:00+08:00
+series: ["MetaGPT源码剖析"]
+categories: ['MetaGPT']
+tags: ['MetaGPT', '源码剖析', '多智能体', 'AI代码生成']
+description: "MetaGPT源码剖析系列总览 - 深入分析MetaGPT的整体架构、核心组件及设计理念"
+---
+
+
 # MetaGPT-00-总览
 
 ## 0. 摘要

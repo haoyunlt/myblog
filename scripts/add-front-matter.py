@@ -1,262 +1,220 @@
 #!/usr/bin/env python3
 """
-为缺少 Front Matter 的 Markdown 文件添加 YAML Front Matter
-自动从标题提取信息并生成合适的元数据
+批量为Markdown文档添加front matter的脚本
 """
 
+import os
 import re
-import sys
+from datetime import datetime, timedelta
 from pathlib import Path
-from datetime import datetime
-from typing import Dict, Optional
 
+# 定义各个系列的元数据
+SERIES_METADATA = {
+    'ClickHouse': {
+        'series': 'ClickHouse源码剖析',
+        'categories': ['ClickHouse'],
+        'base_tags': ['ClickHouse', '源码剖析', '列式数据库'],
+        'base_date': datetime(2024, 12, 28, 10, 0, 0)
+    },
+    'Ray': {
+        'series': 'Ray源码剖析',
+        'categories': ['Ray'],
+        'base_tags': ['Ray', '源码剖析', '分布式计算', '机器学习'],
+        'base_date': datetime(2024, 12, 28, 11, 0, 0)
+    },
+    'Flink': {
+        'series': 'Apache Flink源码剖析',
+        'categories': ['Flink'],
+        'base_tags': ['Flink', '源码剖析', '流计算', '实时计算'],
+        'base_date': datetime(2024, 12, 28, 12, 0, 0)
+    },
+    'MetaGPT': {
+        'series': 'MetaGPT源码剖析',
+        'categories': ['MetaGPT'],
+        'base_tags': ['MetaGPT', '源码剖析', '多智能体', 'AI代码生成'],
+        'base_date': datetime(2024, 12, 28, 13, 0, 0)
+    },
+    'Pulsar': {
+        'series': 'Apache Pulsar源码剖析',
+        'categories': ['Pulsar'],
+        'base_tags': ['Pulsar', '源码剖析', '消息队列', '发布订阅'],
+        'base_date': datetime(2024, 12, 28, 14, 0, 0)
+    }
+}
 
-def extract_info_from_content(content: str, filename: str) -> Dict:
-    """从内容和文件名中提取信息"""
+# 模块特定的标签映射
+MODULE_TAGS = {
+    'Server': ['网络通信', '协议处理', '多协议支持'],
+    'Core': ['数据结构', 'Block', 'Field', 'Settings'],
+    'Storages': ['存储引擎', 'MergeTree', '数据持久化'],
+    'Processors': ['执行引擎', '流式处理', '向量化执行', '状态机'],
+    'Parsers': ['SQL解析', '语法分析', 'AST'],
+    'Interpreters': ['查询解释', '查询执行', '计划生成'],
+    'Functions': ['函数系统', '表达式计算', '标量函数'],
+    'DataTypes': ['类型系统', '数据类型', '序列化'],
+    'IO': ['输入输出', '文件系统', '网络IO'],
+    'Formats': ['数据格式', '序列化', '导入导出'],
+    'Columns': ['列存储', '内存表示', '压缩'],
+    'AggregateFunctions': ['聚合函数', 'GROUP BY', '状态管理'],
+    'Databases': ['数据库层', '元数据管理', '表管理'],
+    'Access': ['权限控制', '用户认证', '安全'],
+    'QueryPipeline': ['查询管道', '执行计划', '并行执行'],
+    'Coordination': ['分布式协调', 'Keeper', '一致性'],
+    'Client': ['客户端', '连接管理', 'CLI工具'],
+    'Backups': ['备份恢复', '数据迁移', '容灾'],
+    'Actor': ['Actor模型', '有状态计算', '远程调用'],
+    'GCS': ['全局控制服务', '元数据管理', '资源调度'],
+    'Raylet': ['本地调度器', '任务执行', '对象存储'],
+    'Data': ['数据处理', 'DataFrame', '数据集'],
+    'Serve': ['模型服务', '在线推理', 'API服务'],
+    'Train': ['分布式训练', '机器学习', '模型训练'],
+    'Tune': ['超参数调优', 'AutoML', '实验管理'],
+    'Autoscaler': ['自动扩缩容', '资源管理', '弹性计算'],
+    'RuntimeEnv': ['运行时环境', '依赖管理', '环境隔离'],
+    'Dashboard': ['监控面板', '可视化', '系统监控'],
+}
+
+def parse_filename(filename):
+    """解析文件名，提取项目名、序号和模块名"""
+    # 匹配格式：ProjectName-NN-ModuleName.md
+    match = re.match(r'([A-Za-z]+)-(\d+)-(.+)\.md$', filename)
+    if match:
+        project = match.group(1)
+        number = int(match.group(2))
+        module = match.group(3)
+        return project, number, module
     
-    # 提取第一个标题作为 title
-    title_match = re.search(r'^#\s+(.+?)$', content, re.MULTILINE)
-    if title_match:
-        title = title_match.group(1).strip()
+    # 匹配格式：ProjectName-NN-总览.md
+    match = re.match(r'([A-Za-z]+)-(\d+)-总览\.md$', filename)
+    if match:
+        project = match.group(1)
+        number = int(match.group(2))
+        return project, number, '总览'
+    
+    return None, None, None
+
+def get_module_specific_tags(module_name):
+    """获取模块特定的标签"""
+    for key, tags in MODULE_TAGS.items():
+        if key in module_name:
+            return tags
+    return []
+
+def generate_front_matter(project, number, module_name):
+    """生成front matter"""
+    if project not in SERIES_METADATA:
+        return None
+    
+    metadata = SERIES_METADATA[project]
+    
+    # 生成标题
+    if module_name == '总览':
+        title = f"{project}-{number:02d}-总览"
     else:
-        # 从文件名生成 title
-        title = filename.replace('.md', '').replace('-', ' ')
+        title = f"{project}-{number:02d}-{module_name}"
     
-    # 从文件名提取项目和模块信息
-    filename_lower = filename.lower()
+    # 生成日期（基于序号递增）
+    date = metadata['base_date'] + timedelta(minutes=number)
+    date_str = date.strftime('%Y-%m-%dT%H:%M:%S+08:00')
     
-    # 项目映射
-    project_map = {
-        'autogpt': 'AutoGPT',
-        'dify': 'Dify',
-        'docker': 'Docker',
-        'eino': 'Eino',
-        'elasticsearch': 'Elasticsearch',
-        'etcd': 'etcd',
-        'fastapi': 'FastAPI',
-        'go': 'Go',
-        'grpc-go': 'gRPC-Go',
-        'kafka': 'Apache Kafka',
-        'kitex': 'Kitex',
-        'kubernetes': 'Kubernetes',
-        'langchain': 'LangChain',
-        'langgraph': 'LangGraph',
-        'milvus': 'Milvus',
-        'nginx': 'Nginx',
-        'openaiagent': 'OpenAI Agent',
-        'pgvector': 'pgvector',
-        'rocksdb': 'RocksDB',
-    }
+    # 生成标签
+    tags = metadata['base_tags'].copy()
     
-    # 分类映射
-    category_map = {
-        'autogpt': ['AutoGPT', 'AI应用开发'],
-        'dify': ['Dify', 'AI应用开发'],
-        'docker': ['Docker', '容器技术'],
-        'eino': ['Eino', 'AI框架', 'Go'],
-        'elasticsearch': ['Elasticsearch', '搜索引擎', '分布式系统'],
-        'etcd': ['etcd', '分布式系统', '键值存储'],
-        'fastapi': ['FastAPI', 'Python', 'Web框架'],
-        'go': ['Go', '编程语言', '运行时'],
-        'grpc-go': ['gRPC', 'Go', 'RPC框架'],
-        'kafka': ['Kafka', '消息队列', '分布式系统'],
-        'kitex': ['Kitex', 'Go', 'RPC框架'],
-        'kubernetes': ['Kubernetes', '容器编排', '云原生'],
-        'langchain': ['LangChain', 'AI框架', 'Python'],
-        'langgraph': ['LangGraph', 'AI框架', 'Python'],
-        'milvus': ['Milvus', '向量数据库', '分布式系统'],
-        'nginx': ['Nginx', 'Web服务器', 'C'],
-        'openaiagent': ['OpenAI', 'AI Agent', 'Python'],
-        'pgvector': ['PostgreSQL', '向量检索', '数据库'],
-        'rocksdb': ['RocksDB', '存储引擎', 'C++'],
-    }
-    
-    # 标签生成
-    tags = []
-    categories = []
-    project_name = ''
-    
-    for key, name in project_map.items():
-        if key in filename_lower:
-            project_name = name
-            tags.append(name)
-            categories = category_map.get(key, [name])
-            break
-    
-    # 根据文件名添加更多标签
-    if 'api' in filename_lower:
-        tags.extend(['API设计', '接口文档'])
-    if '数据结构' in filename or 'datastructure' in filename_lower:
-        tags.extend(['数据结构', 'UML'])
-    if '时序图' in filename or 'sequence' in filename_lower:
-        tags.extend(['时序图', '流程分析'])
-    if '概览' in filename or 'overview' in filename_lower:
-        tags.extend(['架构设计', '概览'])
-    if '总览' in filename:
-        tags.extend(['源码剖析', '架构分析'])
-    if '最佳实践' in filename or 'best-practice' in filename_lower:
-        tags.extend(['最佳实践', '实战经验'])
-    
-    # 添加"源码分析"标签
-    tags.append('源码分析')
-    
-    # 去重
-    tags = list(dict.fromkeys(tags))  # 保持顺序去重
+    # 添加模块特定标签
+    module_tags = get_module_specific_tags(module_name)
+    tags.extend(module_tags)
     
     # 生成描述
-    description = f"{project_name} 源码剖析 - {title}" if project_name else f"源码剖析 - {title}"
+    if module_name == '总览':
+        description = f"{project}源码剖析系列总览 - 深入分析{project}的整体架构、核心组件及设计理念"
+    else:
+        description = f"{project} {module_name}模块源码剖析 - 详细分析{module_name}模块的架构设计、核心功能和实现机制"
     
-    # 确定 series
-    series = None
-    if project_name:
-        series = f"{project_name.lower()}-source-analysis"
-    
-    return {
-        'title': title,
-        'date': datetime.now().strftime('%Y-%m-%dT%H:%M:%S+08:00'),
-        'draft': False,
-        'tags': tags[:8],  # 最多 8 个标签
-        'categories': categories[:3] if categories else [project_name] if project_name else ['技术文档'],
-        'series': series,
-        'description': description,
-        'author': '源码分析',
-        'weight': 500,
-        'ShowToc': True,
-        'TocOpen': True,
-    }
+    # 生成front matter
+    front_matter = f"""---
+title: "{title}"
+date: {date_str}
+series: ["{metadata['series']}"]
+categories: {metadata['categories']}
+tags: {tags}
+description: "{description}"
+---
 
+"""
+    
+    return front_matter
 
-def generate_front_matter(info: Dict) -> str:
-    """生成 YAML Front Matter"""
-    fm_lines = ['---']
-    
-    # 基本字段
-    fm_lines.append(f'title: "{info["title"]}"')
-    fm_lines.append(f'date: {info["date"]}')
-    fm_lines.append(f'draft: {str(info["draft"]).lower()}')
-    
-    # 标签
-    if info['tags']:
-        fm_lines.append('tags:')
-        for tag in info['tags']:
-            fm_lines.append(f'  - {tag}')
-    
-    # 分类
-    if info['categories']:
-        fm_lines.append('categories:')
-        for cat in info['categories']:
-            fm_lines.append(f'  - {cat}')
-    
-    # 系列
-    if info.get('series'):
-        fm_lines.append(f'series: "{info["series"]}"')
-    
-    # 其他字段
-    fm_lines.append(f'description: "{info["description"]}"')
-    fm_lines.append(f'author: "{info["author"]}"')
-    fm_lines.append(f'weight: {info["weight"]}')
-    fm_lines.append(f'ShowToc: {str(info["ShowToc"]).lower()}')
-    fm_lines.append(f'TocOpen: {str(info["TocOpen"]).lower()}')
-    
-    fm_lines.append('---')
-    return '\n'.join(fm_lines)
+def has_front_matter(content):
+    """检查文件是否已有front matter"""
+    return content.strip().startswith('---')
 
+def remove_existing_front_matter(content):
+    """移除现有的front matter"""
+    if not has_front_matter(content):
+        return content
+    
+    lines = content.split('\n')
+    if lines[0].strip() == '---':
+        # 找到第二个 ---
+        for i in range(1, len(lines)):
+            if lines[i].strip() == '---':
+                # 返回去掉front matter的内容
+                return '\n'.join(lines[i+1:])
+    
+    return content
 
-def add_front_matter(file_path: Path, dry_run: bool = False) -> bool:
-    """为文件添加 Front Matter"""
+def process_file(file_path):
+    """处理单个文件"""
+    filename = os.path.basename(file_path)
+    project, number, module_name = parse_filename(filename)
+    
+    if not project or project not in SERIES_METADATA:
+        print(f"跳过文件: {filename} (无法识别项目或不在支持列表中)")
+        return False
+    
     try:
-        content = file_path.read_text(encoding='utf-8')
+        with open(file_path, 'r', encoding='utf-8') as f:
+            content = f.read()
         
-        # 检查是否已有 Front Matter
-        if content.startswith('---'):
+        # 移除现有的front matter（如果有的话）
+        content_without_fm = remove_existing_front_matter(content)
+        
+        front_matter = generate_front_matter(project, number, module_name)
+        if not front_matter:
+            print(f"跳过文件: {filename} (无法生成front matter)")
             return False
         
-        # 提取信息
-        info = extract_info_from_content(content, file_path.name)
+        new_content = front_matter + content_without_fm
         
-        # 生成 Front Matter
-        front_matter = generate_front_matter(info)
+        with open(file_path, 'w', encoding='utf-8') as f:
+            f.write(new_content)
         
-        # 组合新内容
-        new_content = front_matter + '\n\n' + content
-        
-        if not dry_run:
-            file_path.write_text(new_content, encoding='utf-8')
-        
+        action = "更新" if has_front_matter(content) else "添加"
+        print(f"✅ 已{action}front matter: {filename}")
         return True
-    
+        
     except Exception as e:
-        print(f"❌ 处理失败 {file_path.name}: {e}", file=sys.stderr)
+        print(f"❌ 处理文件失败: {filename}, 错误: {e}")
         return False
 
-
 def main():
-    import argparse
+    """主函数"""
+    posts_dir = Path('content/posts')
     
-    parser = argparse.ArgumentParser(description='为 Markdown 文件添加 Front Matter')
-    parser.add_argument('path', type=str, help='要处理的目录路径')
-    parser.add_argument('--dry-run', action='store_true', help='试运行，不实际修改文件')
-    parser.add_argument('--verbose', '-v', action='store_true', help='显示详细信息')
-    args = parser.parse_args()
+    if not posts_dir.exists():
+        print("错误: content/posts 目录不存在")
+        return
     
-    path = Path(args.path)
-    if not path.exists():
-        print(f"❌ 路径不存在: {path}", file=sys.stderr)
-        sys.exit(1)
+    processed_count = 0
+    total_count = 0
     
-    # 收集需要处理的文件
-    md_files = sorted(path.rglob('*.md'))
+    # 遍历所有Markdown文件
+    for file_path in posts_dir.glob('*.md'):
+        total_count += 1
+        if process_file(file_path):
+            processed_count += 1
     
-    print(f"🔍 检查 {len(md_files)} 个 Markdown 文件")
-    
-    if args.dry_run:
-        print("🔧 试运行模式（不会修改文件）\n")
-    else:
-        print("🔧 开始添加 Front Matter\n")
-    
-    modified_count = 0
-    skipped_count = 0
-    
-    for file_path in md_files:
-        # 读取前几行检查
-        try:
-            content = file_path.read_text(encoding='utf-8')
-            if content.startswith('---'):
-                skipped_count += 1
-                if args.verbose:
-                    print(f"⏭️  跳过（已有 Front Matter）: {file_path.name}")
-                continue
-        except:
-            continue
-        
-        if add_front_matter(file_path, args.dry_run):
-            modified_count += 1
-            print(f"✅ {file_path.name}")
-            
-            if args.verbose:
-                # 显示生成的信息
-                info = extract_info_from_content(content, file_path.name)
-                print(f"   标题: {info['title']}")
-                print(f"   分类: {', '.join(info['categories'])}")
-                print(f"   标签: {', '.join(info['tags'][:5])}...")
-    
-    # 打印摘要
-    print("\n" + "="*80)
-    print("📊 处理摘要")
-    print("="*80)
-    print(f"检查文件数:    {len(md_files)}")
-    print(f"✅ 已添加:     {modified_count}")
-    print(f"⏭️  已跳过:     {skipped_count}")
-    print("="*80)
-    
-    if args.dry_run:
-        print("\n💡 使用不带 --dry-run 参数运行以实际修改文件")
-    else:
-        print(f"\n✅ 成功为 {modified_count} 个文件添加 Front Matter")
-    
-    return 0
-
+    print(f"\n处理完成: 共处理 {total_count} 个文件，成功更新front matter {processed_count} 个")
 
 if __name__ == '__main__':
-    sys.exit(main())
-
+    main()

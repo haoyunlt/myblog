@@ -1,3 +1,13 @@
+---
+title: "Pulsar-08-Functions"
+date: 2024-12-28T14:08:00+08:00
+series: ["Apache Pulsar源码剖析"]
+categories: ['Pulsar']
+tags: ['Pulsar', '源码剖析', '消息队列', '发布订阅', '函数系统', '表达式计算', '标量函数']
+description: "Pulsar Functions模块源码剖析 - 详细分析Functions模块的架构设计、核心功能和实现机制"
+---
+
+
 # Pulsar-08-Functions
 
 ## 模块概览

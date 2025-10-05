@@ -1,3 +1,13 @@
+---
+title: "Flink-00-总览"
+date: 2024-12-28T12:00:00+08:00
+series: ["Apache Flink源码剖析"]
+categories: ['Flink']
+tags: ['Flink', '源码剖析', '流计算', '实时计算']
+description: "Flink源码剖析系列总览 - 深入分析Flink的整体架构、核心组件及设计理念"
+---
+
+
 # Flink-00-总览
 
 ## 一、项目摘要

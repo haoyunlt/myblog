@@ -1,3 +1,13 @@
+---
+title: "ClickHouse-03-Storages模块"
+date: 2024-12-28T10:03:00+08:00
+series: ["ClickHouse源码剖析"]
+categories: ['ClickHouse']
+tags: ['ClickHouse', '源码剖析', '列式数据库', '存储引擎', 'MergeTree', '数据持久化']
+description: "ClickHouse Storages模块模块源码剖析 - 详细分析Storages模块模块的架构设计、核心功能和实现机制"
+---
+
+
 # ClickHouse-03-Storages模块
 
 ## 模块概览

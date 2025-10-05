@@ -51,6 +51,11 @@ enableEmoji = true
   # 作者信息
   author = "林涛"
   
+  # 移动端优化参数
+  mobileOptimized = true
+  enableServiceWorker = true
+  enableWebAppManifest = true
+  
   # 显示阅读时间
   ShowReadingTime = true
   
@@ -168,14 +173,26 @@ enableEmoji = true
   tag = "tags"
   series = "series"
 
-# 媒体类型配置（修复移动端SVG加载问题）
+# 媒体类型配置（修复移动端图片加载问题）
 [mediaTypes]
   [mediaTypes."image/svg+xml"]
     suffixes = ["svg"]
+  [mediaTypes."image/webp"]
+    suffixes = ["webp"]
+  [mediaTypes."image/png"]
+    suffixes = ["png"]
+  [mediaTypes."image/jpeg"]
+    suffixes = ["jpg", "jpeg"]
+  [mediaTypes."image/gif"]
+    suffixes = ["gif"]
 
-# 输出格式配置
+# 输出格式配置（增强图片支持）
 [outputFormats]
   [outputFormats.SVG]
     mediaType = "image/svg+xml"
+    isPlainText = false
+    isHTML = false
+  [outputFormats.WEBP]
+    mediaType = "image/webp"
     isPlainText = false
     isHTML = false

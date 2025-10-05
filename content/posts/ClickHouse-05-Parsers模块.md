@@ -1,3 +1,13 @@
+---
+title: "ClickHouse-05-Parsers模块"
+date: 2024-12-28T10:05:00+08:00
+series: ["ClickHouse源码剖析"]
+categories: ['ClickHouse']
+tags: ['ClickHouse', '源码剖析', '列式数据库', 'SQL解析', '语法分析', 'AST']
+description: "ClickHouse Parsers模块模块源码剖析 - 详细分析Parsers模块模块的架构设计、核心功能和实现机制"
+---
+
+
 # ClickHouse-05-Parsers模块
 
 ## 模块概览

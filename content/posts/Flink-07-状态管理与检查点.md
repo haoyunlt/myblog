@@ -1,3 +1,13 @@
+---
+title: "Flink-07-状态管理与检查点"
+date: 2024-12-28T12:07:00+08:00
+series: ["Apache Flink源码剖析"]
+categories: ['Flink']
+tags: ['Flink', '源码剖析', '流计算', '实时计算']
+description: "Flink 状态管理与检查点模块源码剖析 - 详细分析状态管理与检查点模块的架构设计、核心功能和实现机制"
+---
+
+
 # Flink-07-状态管理与检查点（flink-state-backends）
 
 ## 一、模块概览

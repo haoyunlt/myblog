@@ -1,3 +1,13 @@
+---
+title: "MetaGPT-02-角色系统"
+date: 2024-12-28T13:02:00+08:00
+series: ["MetaGPT源码剖析"]
+categories: ['MetaGPT']
+tags: ['MetaGPT', '源码剖析', '多智能体', 'AI代码生成']
+description: "MetaGPT 角色系统模块源码剖析 - 详细分析角色系统模块的架构设计、核心功能和实现机制"
+---
+
+
 # MetaGPT-02-角色系统
 
 本文档深入剖析 MetaGPT 的角色系统，包括 Role 基类、各种具体角色实现（ProductManager、Architect、Engineer 等）、角色生命周期、观察-思考-行动（OTA）循环、以及角色协作机制。

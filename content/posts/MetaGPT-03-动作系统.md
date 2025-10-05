@@ -1,3 +1,13 @@
+---
+title: "MetaGPT-03-动作系统"
+date: 2024-12-28T13:03:00+08:00
+series: ["MetaGPT源码剖析"]
+categories: ['MetaGPT']
+tags: ['MetaGPT', '源码剖析', '多智能体', 'AI代码生成']
+description: "MetaGPT 动作系统模块源码剖析 - 详细分析动作系统模块的架构设计、核心功能和实现机制"
+---
+
+
 # MetaGPT-03-动作系统
 
 本文档深入剖析 MetaGPT 的动作系统（Action System），包括 Action 基类、各种具体动作实现（WritePRD、WriteDesign、WriteCode 等）、动作执行流程、上下文传递机制，以及动作与角色的协作关系。

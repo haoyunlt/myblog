@@ -1,3 +1,13 @@
+---
+title: "ClickHouse-04-Processors模块"
+date: 2024-12-28T10:04:00+08:00
+series: ["ClickHouse源码剖析"]
+categories: ['ClickHouse']
+tags: ['ClickHouse', '源码剖析', '列式数据库', '执行引擎', '流式处理', '向量化执行', '状态机']
+description: "ClickHouse Processors模块模块源码剖析 - 详细分析Processors模块模块的架构设计、核心功能和实现机制"
+---
+
+
 # ClickHouse-04-Processors模块
 
 ## 模块概览

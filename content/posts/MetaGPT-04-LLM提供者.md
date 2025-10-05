@@ -1,3 +1,13 @@
+---
+title: "MetaGPT-04-LLM提供者"
+date: 2024-12-28T13:04:00+08:00
+series: ["MetaGPT源码剖析"]
+categories: ['MetaGPT']
+tags: ['MetaGPT', '源码剖析', '多智能体', 'AI代码生成']
+description: "MetaGPT LLM提供者模块源码剖析 - 详细分析LLM提供者模块的架构设计、核心功能和实现机制"
+---
+
+
 # MetaGPT-04-LLM提供者
 
 ## 一、模块概览

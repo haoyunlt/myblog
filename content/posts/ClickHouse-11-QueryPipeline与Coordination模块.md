@@ -1,3 +1,13 @@
+---
+title: "ClickHouse-11-QueryPipeline与Coordination模块"
+date: 2024-12-28T10:11:00+08:00
+series: ["ClickHouse源码剖析"]
+categories: ['ClickHouse']
+tags: ['ClickHouse', '源码剖析', '列式数据库', '查询管道', '执行计划', '并行执行']
+description: "ClickHouse QueryPipeline与Coordination模块模块源码剖析 - 详细分析QueryPipeline与Coordination模块模块的架构设计、核心功能和实现机制"
+---
+
+
 # ClickHouse-11-QueryPipeline与Coordination模块
 
 ## 模块概览

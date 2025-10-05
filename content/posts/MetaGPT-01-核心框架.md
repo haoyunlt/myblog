@@ -1,3 +1,13 @@
+---
+title: "MetaGPT-01-核心框架"
+date: 2024-12-28T13:01:00+08:00
+series: ["MetaGPT源码剖析"]
+categories: ['MetaGPT']
+tags: ['MetaGPT', '源码剖析', '多智能体', 'AI代码生成']
+description: "MetaGPT 核心框架模块源码剖析 - 详细分析核心框架模块的架构设计、核心功能和实现机制"
+---
+
+
 # MetaGPT-01-核心框架
 
 本文档深入剖析 MetaGPT 的核心框架层，包括 Team（团队）、Environment（环境）、Context（上下文）三大核心组件及其交互机制。

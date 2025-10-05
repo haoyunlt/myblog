@@ -1,3 +1,13 @@
+---
+title: "Flink-04-DataStream API编程指南"
+date: 2024-12-28T12:04:00+08:00
+series: ["Apache Flink源码剖析"]
+categories: ['Flink']
+tags: ['Flink', '源码剖析', '流计算', '实时计算', '数据处理', 'DataFrame', '数据集']
+description: "Flink DataStream API编程指南模块源码剖析 - 详细分析DataStream API编程指南模块的架构设计、核心功能和实现机制"
+---
+
+
 # Flink-04-DataStream API编程指南（flink-streaming-java）
 
 ## 一、模块概览

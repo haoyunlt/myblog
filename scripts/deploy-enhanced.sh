@@ -41,7 +41,7 @@ REMOTE_WEB_ROOT="/var/www/html"
 REMOTE_NGINX_CONF="/etc/nginx/sites-available/blog"
 REMOTE_NGINX_ENABLED="/etc/nginx/sites-enabled/blog"
 LOCAL_PUBLIC="./public"
-BUILD_SCRIPT="./scripts/enhanced-build.sh"
+BUILD_SCRIPT="./scripts/build-mobile-optimized.sh"
 DEPLOY_LOG="deploy-$(date +%Y%m%d_%H%M%S).log"
 
 # SSH配置

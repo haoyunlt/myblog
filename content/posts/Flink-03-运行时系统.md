@@ -1,3 +1,13 @@
+---
+title: "Flink-03-运行时系统"
+date: 2024-12-28T12:03:00+08:00
+series: ["Apache Flink源码剖析"]
+categories: ['Flink']
+tags: ['Flink', '源码剖析', '流计算', '实时计算']
+description: "Flink 运行时系统模块源码剖析 - 详细分析运行时系统模块的架构设计、核心功能和实现机制"
+---
+
+
 # Flink-03-运行时系统（flink-runtime）
 
 ## 一、模块概览

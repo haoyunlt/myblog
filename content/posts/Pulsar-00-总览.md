@@ -1,3 +1,13 @@
+---
+title: "Pulsar-00-总览"
+date: 2024-12-28T14:00:00+08:00
+series: ["Apache Pulsar源码剖析"]
+categories: ['Pulsar']
+tags: ['Pulsar', '源码剖析', '消息队列', '发布订阅']
+description: "Pulsar源码剖析系列总览 - 深入分析Pulsar的整体架构、核心组件及设计理念"
+---
+
+
 # Pulsar-00-总览
 
 ## 0. 摘要

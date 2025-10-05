@@ -1,0 +1,158 @@
+{{- /* 移动端性能优化头部 */ -}}
+<!DOCTYPE html>
+<html lang="{{ .Site.LanguageCode | default "zh" }}" itemscope itemtype="https://schema.org/WebPage">
+<head>
+    {{- /* 关键元数据 - 首先加载 */ -}}
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover">
+    <meta http-equiv="X-UA-Compatible" content="IE=edge">
+    
+    {{- /* DNS预解析 - 提升外部资源加载速度 */ -}}
+    <link rel="dns-prefetch" href="//fonts.googleapis.com">
+    <link rel="dns-prefetch" href="//fonts.gstatic.com">
+    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
+    
+    {{- /* 预连接关键域名 */ -}}
+    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    
+    {{- /* 关键CSS内联 - 避免阻塞渲染 */ -}}
+    <style>
+        /* 关键渲染路径CSS */
+        html{line-height:1.15;-webkit-text-size-adjust:100%}
+        body{margin:0;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,"Helvetica Neue",Arial,sans-serif;font-size:16px;line-height:1.6;color:#333}
+        .main{max-width:1200px;margin:0 auto;padding:0 1rem}
+        
+        /* 移动端优化 */
+        @media(max-width:768px){
+            body{font-size:16px;-webkit-font-smoothing:antialiased;-moz-osx-font-smoothing:grayscale}
+            .main{padding:0 16px}
+            img{max-width:100%;height:auto;display:block}
+            .post-entry{margin-bottom:1.5rem;padding:1rem;border-radius:8px;box-shadow:0 2px 8px rgba(0,0,0,0.1)}
+        }
+        
+        /* 懒加载占位符 */
+        img[loading="lazy"]{background:linear-gradient(90deg,#f0f0f0 25%,#e0e0e0 37%,#f0f0f0 63%);background-size:400% 100%;animation:shimmer 1.5s ease-in-out infinite}
+        @keyframes shimmer{0%{background-position:0% 0%}100%{background-position:100% 0%}}
+        
+        /* 防止布局抖动 */
+        .post-entry{contain:layout style paint}
+        
+        /* 触摸优化 */
+        button,a,.post-entry{-webkit-tap-highlight-color:rgba(0,0,0,0.1);touch-action:manipulation}
+    </style>
+    
+    {{- /* 字体预加载 - 移动端关键 */ -}}
+    <link rel="preload" href="{{ "fonts/inter/inter-regular.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
+    <link rel="preload" href="{{ "fonts/inter/inter-bold.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
+    
+    {{- /* 关键CSS预加载 */ -}}
+    <link rel="preload" href="{{ "css/stylesheet.css" | relURL }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="{{ "css/mobile-performance.css" | relURL }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    
+    {{- /* CSS回退 */ -}}
+    <noscript>
+        <link rel="stylesheet" href="{{ "css/stylesheet.css" | relURL }}">
+        <link rel="stylesheet" href="{{ "css/mobile-performance.css" | relURL }}">
+    </noscript>
+    
+    {{- /* 标题和描述 */ -}}
+    <title>{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }} - {{ .Site.Title }}{{ end }}</title>
+    <meta name="description" content="{{ if .Description }}{{ .Description }}{{ else if .Summary }}{{ .Summary }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+    
+    {{- /* Open Graph */ -}}
+    <meta property="og:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }}{{ end }}">
+    <meta property="og:description" content="{{ if .Description }}{{ .Description }}{{ else if .Summary }}{{ .Summary }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+    <meta property="og:type" content="{{ if .IsPage }}article{{ else }}website{{ end }}">
+    <meta property="og:url" content="{{ .Permalink }}">
+    <meta property="og:site_name" content="{{ .Site.Title }}">
+    
+    {{- /* Twitter Card */ -}}
+    <meta name="twitter:card" content="summary_large_image">
+    <meta name="twitter:title" content="{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }}{{ end }}">
+    <meta name="twitter:description" content="{{ if .Description }}{{ .Description }}{{ else if .Summary }}{{ .Summary }}{{ else }}{{ .Site.Params.description }}{{ end }}">
+    
+    {{- /* 移动端图标 */ -}}
+    <link rel="icon" type="image/x-icon" href="{{ "favicon.ico" | relURL }}">
+    <link rel="apple-touch-icon" sizes="180x180" href="{{ "apple-touch-icon.png" | relURL }}">
+    <link rel="icon" type="image/png" sizes="32x32" href="{{ "favicon-32x32.png" | relURL }}">
+    <link rel="icon" type="image/png" sizes="16x16" href="{{ "favicon-16x16.png" | relURL }}">
+    <link rel="manifest" href="{{ "manifest.json" | relURL }}">
+    
+    {{- /* 主题色彩 */ -}}
+    <meta name="theme-color" content="#2563eb">
+    <meta name="msapplication-TileColor" content="#2563eb">
+    
+    {{- /* 移动端特定优化 */ -}}
+    <meta name="mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="default">
+    <meta name="apple-mobile-web-app-title" content="{{ .Site.Title }}">
+    
+    {{- /* 性能提示 */ -}}
+    <meta http-equiv="Accept-CH" content="DPR, Viewport-Width, Width">
+    <meta name="color-scheme" content="light dark">
+    
+    {{- /* 结构化数据 */ -}}
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "{{ if .IsHome }}WebSite{{ else if .IsPage }}Article{{ else }}WebPage{{ end }}",
+        "name": "{{ if .IsHome }}{{ .Site.Title }}{{ else }}{{ .Title }}{{ end }}",
+        "description": "{{ if .Description }}{{ .Description }}{{ else if .Summary }}{{ .Summary }}{{ else }}{{ .Site.Params.description }}{{ end }}",
+        "url": "{{ .Permalink }}"
+        {{- if .IsPage -}}
+        ,"datePublished": "{{ .Date.Format "2006-01-02T15:04:05Z07:00" }}",
+        "dateModified": "{{ .Lastmod.Format "2006-01-02T15:04:05Z07:00" }}",
+        "author": {
+            "@type": "Person",
+            "name": "{{ .Site.Params.author | default "作者" }}"
+        }
+        {{- end -}}
+    }
+    </script>
+    
+    {{- /* 扩展头部 */ -}}
+    {{ partial "extend_head.html" . }}
+</head>
+
+<body class="mobile-optimized">
+    {{- /* 页面加载指示器 */ -}}
+    <div id="loading-indicator" style="position:fixed;top:0;left:0;width:100%;height:3px;background:linear-gradient(90deg,#2563eb,#f59e0b);transform:scaleX(0);transform-origin:left;transition:transform 0.3s ease;z-index:10000"></div>
+    
+    {{- /* 跳过链接 - 无障碍优化 */ -}}
+    <a href="#main-content" class="skip-link" style="position:absolute;top:-40px;left:0;background:#2563eb;color:white;padding:8px 16px;text-decoration:none;transition:top 0.3s;z-index:10001">跳转到主要内容</a>
+    
+    <script>
+        // 页面加载进度
+        (function(){
+            var indicator = document.getElementById('loading-indicator');
+            var progress = 0;
+            var interval = setInterval(function(){
+                progress += Math.random() * 10;
+                if(progress >= 90){
+                    progress = 90;
+                    clearInterval(interval);
+                }
+                indicator.style.transform = 'scaleX(' + (progress/100) + ')';
+            }, 100);
+            
+            window.addEventListener('load', function(){
+                indicator.style.transform = 'scaleX(1)';
+                setTimeout(function(){
+                    indicator.style.opacity = '0';
+                    setTimeout(function(){
+                        indicator.remove();
+                    }, 300);
+                }, 200);
+            });
+        })();
+        
+        // 跳过链接显示
+        document.querySelector('.skip-link').addEventListener('focus', function(){
+            this.style.top = '0';
+        });
+        document.querySelector('.skip-link').addEventListener('blur', function(){
+            this.style.top = '-40px';
+        });
+    </script>

@@ -1,3 +1,13 @@
+---
+title: "Pulsar-09-IO"
+date: 2024-12-28T14:09:00+08:00
+series: ["Apache Pulsar源码剖析"]
+categories: ['Pulsar']
+tags: ['Pulsar', '源码剖析', '消息队列', '发布订阅', '输入输出', '文件系统', '网络IO']
+description: "Pulsar IO模块源码剖析 - 详细分析IO模块的架构设计、核心功能和实现机制"
+---
+
+
 # Pulsar-09-IO
 
 ## 模块概览

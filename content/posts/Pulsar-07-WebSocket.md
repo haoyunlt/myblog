@@ -1,3 +1,13 @@
+---
+title: "Pulsar-07-WebSocket"
+date: 2024-12-28T14:07:00+08:00
+series: ["Apache Pulsar源码剖析"]
+categories: ['Pulsar']
+tags: ['Pulsar', '源码剖析', '消息队列', '发布订阅']
+description: "Pulsar WebSocket模块源码剖析 - 详细分析WebSocket模块的架构设计、核心功能和实现机制"
+---
+
+
 # Pulsar-07-WebSocket
 
 ## 模块概览

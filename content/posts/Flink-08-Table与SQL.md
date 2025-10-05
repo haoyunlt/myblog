@@ -1,3 +1,13 @@
+---
+title: "Flink-08-Table与SQL"
+date: 2024-12-28T12:08:00+08:00
+series: ["Apache Flink源码剖析"]
+categories: ['Flink']
+tags: ['Flink', '源码剖析', '流计算', '实时计算']
+description: "Flink Table与SQL模块源码剖析 - 详细分析Table与SQL模块的架构设计、核心功能和实现机制"
+---
+
+
 # Flink-08-Table与SQL（flink-table）
 
 ## 一、模块概览

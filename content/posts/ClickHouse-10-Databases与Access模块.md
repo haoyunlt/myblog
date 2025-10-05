@@ -1,3 +1,13 @@
+---
+title: "ClickHouse-10-Databases与Access模块"
+date: 2024-12-28T10:10:00+08:00
+series: ["ClickHouse源码剖析"]
+categories: ['ClickHouse']
+tags: ['ClickHouse', '源码剖析', '列式数据库', '数据库层', '元数据管理', '表管理']
+description: "ClickHouse Databases与Access模块模块源码剖析 - 详细分析Databases与Access模块模块的架构设计、核心功能和实现机制"
+---
+
+
 # ClickHouse-10-Databases与Access模块
 
 ## 模块概览

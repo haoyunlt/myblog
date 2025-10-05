@@ -1,3 +1,13 @@
+---
+title: "ClickHouse-06-Interpreters模块"
+date: 2024-12-28T10:06:00+08:00
+series: ["ClickHouse源码剖析"]
+categories: ['ClickHouse']
+tags: ['ClickHouse', '源码剖析', '列式数据库', '查询解释', '查询执行', '计划生成']
+description: "ClickHouse Interpreters模块模块源码剖析 - 详细分析Interpreters模块模块的架构设计、核心功能和实现机制"
+---
+
+
 # ClickHouse-06-Interpreters模块
 
 ## 模块概览
