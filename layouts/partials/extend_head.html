@@ -31,23 +31,54 @@ window.addEventListener('load', function() {
     });
     
     // 查找并转换所有mermaid代码块（包括fallback类型和错误识别的类型）
-    const codeBlocks = document.querySelectorAll('pre code.language-mermaid, pre code.language-fallback, pre code.language-gdscript3, pre code');
+    const codeBlocks = document.querySelectorAll('pre code');
     
-    // 过滤出真正的mermaid代码块
+    // 过滤出真正的mermaid代码块 - 增强检测逻辑
     const mermaidBlocks = Array.from(codeBlocks).filter(function(codeElement) {
         const content = codeElement.textContent.trim();
-        return content.startsWith('graph ') || 
-               content.startsWith('sequenceDiagram') || 
-               content.startsWith('pie ') ||
-               content.startsWith('gantt') ||
-               content.startsWith('classDiagram') ||
-               content.startsWith('stateDiagram') ||
-               content.startsWith('stateDiagram-v2') ||
-               content.startsWith('flowchart ') ||
-               content.includes('-->') ||
-               content.includes('->>') ||
-               content.includes('-->>') ||
-               content.includes('participant ');
+        const classList = codeElement.classList;
+        
+        // 检查类名或内容特征
+        const hasMermaidClass = classList.contains('language-mermaid');
+        
+        // 增强的内容特征检测
+        const mermaidPatterns = [
+            /^graph\s+(TB|TD|BT|RL|LR)/,  // flowchart patterns
+            /^sequenceDiagram/,
+            /^classDiagram/,
+            /^stateDiagram/,
+            /^pie\s+title/,
+            /^gantt/,
+            /^flowchart\s+(TB|TD|BT|RL|LR)/,
+            /participant\s+\w+/,  // sequence diagram participants
+            /class\s+\w+\s*\{/,   // class definitions
+            /\w+\s*-->\s*\w+/,    // flowchart arrows
+            /\w+\s*->>\s*\w+/,    // sequence arrows
+            /\w+\s*<\|\-\-\s*\w+/, // inheritance arrows
+            /subgraph\s+/,        // subgraphs
+            /%%.*classDef/,       // mermaid comments with styles
+            /fill:#[0-9a-fA-F]{6}/, // color definitions
+        ];
+        
+        const hasValidMermaidContent = mermaidPatterns.some(pattern => pattern.test(content));
+        
+        const isFallbackWithMermaid = (classList.contains('language-fallback') || 
+                                      classList.contains('language-gdscript3') || 
+                                      classList.contains('language-gdscript')) && hasValidMermaidContent;
+        
+        const shouldProcess = hasMermaidClass || isFallbackWithMermaid;
+        
+        // 调试日志
+        if (shouldProcess) {
+            console.log(`发现Mermaid代码块 - 类名: ${Array.from(classList).join(', ')}, 内容开头: ${content.substring(0, 50)}...`);
+        }
+        
+        return shouldProcess;
+    });
+    
+    console.log('找到Mermaid代码块数量:', mermaidBlocks.length);
+    mermaidBlocks.forEach((block, index) => {
+        console.log(`Mermaid块 ${index + 1}:`, block.textContent.substring(0, 100) + '...');
     });
     
     mermaidBlocks.forEach(function(codeElement, index) {

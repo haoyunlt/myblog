@@ -156,17 +156,8 @@ async def react(self) -> Message:
 
 ```
 
-<div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-0">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-0.svg"
-       alt="Mermaid Chart MetaGPT_核心模块时序图-0"
-       class="mermaid-generated-image"
-       loading="lazy"
-       style="max-width: 100%; height: auto;"
-       onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-  <div class="mermaid-fallback" style="display: none;">
-    <details>
-      <summary>显示 Mermaid 源码</summary>
-      <pre class="mermaid">sequenceDiagram
+```mermaid
+sequenceDiagram
     participant Env as Environment
     participant Role as Role
     participant Memory as Memory
@@ -200,10 +191,8 @@ async def react(self) -> Message:
         Role->>Env: publish_message(response)
     else 无新消息
         Role-->>Env: None (idle)
-    end</pre>
-    </details>
-  </div>
-</div>
+    end
+```
 
 ### 1.2 调用链分析
 
@@ -393,17 +382,8 @@ async def _run_action_node(self, *args, **kwargs):
 
 ```
 
-<div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-1">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-1.svg"
-       alt="Mermaid Chart MetaGPT_核心模块时序图-1"
-       class="mermaid-generated-image"
-       loading="lazy"
-       style="max-width: 100%; height: auto;"
-       onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-  <div class="mermaid-fallback" style="display: none;">
-    <details>
-      <summary>显示 Mermaid 源码</summary>
-      <pre class="mermaid">sequenceDiagram
+```mermaid
+sequenceDiagram
     participant Action as Action
     participant Node as ActionNode
     participant LLM as LLM Provider
@@ -441,10 +421,8 @@ async def _run_action_node(self, *args, **kwargs):
         Node->>Node: self.instruct_content = instance
     end
     
-    Node-->>Action: self</pre>
-    </details>
-  </div>
-</div>
+    Node-->>Action: self
+```
 
 ### 2.2 调用链分析
 
@@ -593,17 +571,8 @@ def add_roles(self, roles: Iterable[BaseRole]):
 
 ```
 
-<div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-2">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-2.svg"
-       alt="Mermaid Chart MetaGPT_核心模块时序图-2"
-       class="mermaid-generated-image"
-       loading="lazy"
-       style="max-width: 100%; height: auto;"
-       onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-  <div class="mermaid-fallback" style="display: none;">
-    <details>
-      <summary>显示 Mermaid 源码</summary>
-      <pre class="mermaid">sequenceDiagram
+```mermaid
+sequenceDiagram
     participant Role1 as 发送角色
     participant Env as Environment
     participant Role2 as 接收角色1
@@ -626,10 +595,8 @@ def add_roles(self, roles: Iterable[BaseRole]):
     Env->>History: add(message)
     Env-->>Role1: True (发送成功)
     
-    Note over Env: 如果没有找到接收者，记录警告日志</pre>
-    </details>
-  </div>
-</div>
+    Note over Env: 如果没有找到接收者，记录警告日志
+```
 
 ### 3.2 调用链分析
 
@@ -768,9 +735,6 @@ sequenceDiagram
     Team-->>CLI: env.history
 ```
 
-  </div>
-</div>
-
 ### 4.2 调用链分析
 
 ```
@@ -785,17 +749,8 @@ Team.run()
 
 ## 5. MGXEnv 多模态消息处理时序图
 
-<div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-4">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-4.svg"
-       alt="Mermaid Chart MetaGPT_核心模块时序图-4"
-       class="mermaid-generated-image"
-       loading="lazy"
-       style="max-width: 100%; height: auto;"
-       onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-  <div class="mermaid-fallback" style="display: none;">
-    <details>
-      <summary>显示 Mermaid 源码</summary>
-      <pre class="mermaid">sequenceDiagram
+```mermaid
+sequenceDiagram
     participant User as 用户
     participant MGXEnv as MGXEnv
     participant TL as TeamLeader
@@ -826,24 +781,13 @@ Team.run()
     end
     
     MGXEnv->>MGXEnv: move_message_info_to_content(message)
-    MGXEnv->>MGXEnv: history.add(message)</pre>
-    </details>
-  </div>
-</div>
+    MGXEnv->>MGXEnv: history.add(message)
+```
 
 ## 6. Memory 记忆管理时序图
 
-<div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-5">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-5.svg"
-       alt="Mermaid Chart MetaGPT_核心模块时序图-5"
-       class="mermaid-generated-image"
-       loading="lazy"
-       style="max-width: 100%; height: auto;"
-       onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-  <div class="mermaid-fallback" style="display: none;">
-    <details>
-      <summary>显示 Mermaid 源码</summary>
-      <pre class="mermaid">sequenceDiagram
+```mermaid
+sequenceDiagram
     participant Role as Role
     participant Memory as Memory
     participant Index as 索引系统
@@ -869,10 +813,8 @@ Team.run()
     Role->>Memory: find_news(observed, k)
     Memory->>Storage: get(k) 获取最近k条
     Memory->>Memory: 对比找出新消息
-    Memory-->>Role: 新消息列表</pre>
-    </details>
-  </div>
-</div>
+    Memory-->>Role: 新消息列表
+```
 
 ## 7. LLM Provider 调用时序图
 
@@ -907,22 +849,10 @@ sequenceDiagram
     LLM-->>Action: content
 ```
 
-  </div>
-</div>
-
 ## 8. 配置系统初始化时序图
 
-<div class="mermaid-image-container" data-chart-id="MetaGPT_核心模块时序图-7">
-  <img src="/images/mermaid/MetaGPT_核心模块时序图-7.svg"
-       alt="Mermaid Chart MetaGPT_核心模块时序图-7"
-       class="mermaid-generated-image"
-       loading="lazy"
-       style="max-width: 100%; height: auto;"
-       onerror="this.style.display='none'; this.nextElementSibling.style.display='block';">
-  <div class="mermaid-fallback" style="display: none;">
-    <details>
-      <summary>显示 Mermaid 源码</summary>
-      <pre class="mermaid">sequenceDiagram
+```mermaid
+sequenceDiagram
     participant CLI as 命令行
     participant Config as Config2
     participant Context as Context
@@ -947,10 +877,8 @@ sequenceDiagram
     
     Provider-->>Context: llm_instance
     Context->>Context: 设置cost_manager
-    Context-->>CLI: 初始化完成的上下文</pre>
-    </details>
-  </div>
-</div>
+    Context-->>CLI: 初始化完成的上下文
+```
 
 ## 9. 核心类结构图和继承关系
 
