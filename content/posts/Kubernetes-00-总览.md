@@ -1,6 +1,6 @@
 ---
 title: "Kubernetes-00-总览"
-date: 2025-10-04T20:42:30+08:00
+date: 2025-10-05T01:01:58+08:00
 draft: false
 tags:
   - Kubernetes
@@ -28,7 +28,6 @@ TocOpen: true
 Kubernetes 是一个用于自动化部署、扩展和管理容器化应用的开源平台。作为云原生生态的核心，Kubernetes 通过声明式API 和自动化控制循环，将容器编排的复杂性隐藏在简洁的抽象层之后,为用户提供了统一的容器集群管理能力。
 
 **核心能力边界：**
-
 - **资源编排**：Pod、Deployment、StatefulSet、DaemonSet 等工作负载的生命周期管理
 - **服务发现与负载均衡**：Service、Endpoint、Ingress 的动态路由与流量分发
 - **存储编排**：PersistentVolume、StorageClass 的自动化存储管理
@@ -37,7 +36,6 @@ Kubernetes 是一个用于自动化部署、扩展和管理容器化应用的开
 - **自愈能力**：容器崩溃重启、节点故障转移、健康检查与自动修复
 
 **非目标：**
-
 - 不提供应用构建工具链（CI/CD 由外部集成）
 - 不内置应用监控系统（依赖 Prometheus 等外部方案）
 - 不限定底层容器运行时（通过 CRI 接口解耦）
@@ -46,18 +44,15 @@ Kubernetes 是一个用于自动化部署、扩展和管理容器化应用的开
 ### 0.2 运行环境与部署形态
 
 **语言与运行时：**
-
 - Go 1.22+（编译型语言，静态链接，无运行时依赖）
 - 关键依赖：etcd 3.5+（集群状态持久化）、containerd/CRI-O（容器运行时）
 
 **部署形态：**
-
 - **控制平面（Control Plane）**：通常部署为 StaticPod 或系统服务，包含 kube-apiserver、kube-controller-manager、kube-scheduler、etcd
 - **数据平面（Data Plane）**：每个节点运行 kubelet（节点代理）和 kube-proxy（网络代理）
 - **插件系统（Add-ons）**：CoreDNS、CNI 插件、CSI 驱动、Metrics Server 等以 Pod 形式运行
 
 **高可用架构：**
-
 - API Server：无状态，可水平扩展（通过负载均衡器对外提供统一入口）
 - etcd：多节点 Raft 集群（奇数节点，建议 3/5/7）
 - Controller Manager 和 Scheduler：主备模式（通过 Leader Election 选主）
@@ -160,12 +155,12 @@ flowchart TB
 
 **数据平面组件：**
 
-1. **kubelet**（节点代理）
+5. **kubelet**（节点代理）
    - **职责**：Pod 生命周期管理、容器启停、健康检查、资源监控、Volume 挂载、镜像拉取
    - **耦合关系**：通过 CRI 与容器运行时解耦，通过 CNI/CSI 与网络/存储插件解耦
    - **通信模式**：定期同步循环（SyncLoop）+ gRPC 调用 CRI
 
-2. **kube-proxy**（网络代理）
+6. **kube-proxy**（网络代理）
    - **职责**：维护 Service 到 Endpoint 的网络规则（iptables/IPVS/nftables），实现集群内负载均衡
    - **耦合关系**：独立于 kubelet 运行，通过 Watch Service/Endpoint 动态更新规则
    - **通信模式**：事件驱动（ServiceChangeTracker/EndpointsChangeTracker）
@@ -173,19 +168,16 @@ flowchart TB
 #### 1.1.2 数据流与控制流分界
 
 **数据流（Data Plane）：**
-
 - 业务流量在 Pod 之间直接传输，经过 CNI 配置的虚拟网络（Overlay 或 Underlay）
 - kube-proxy 负责 Service ClusterIP 的流量拦截与转发，但不处理 Pod-to-Pod 直连流量
 - Volume 数据通过 CSI Driver 直接挂载到 Pod，不经过控制平面
 
 **控制流（Control Plane）：**
-
 - 所有集群状态变更必须通过 API Server 提交到 etcd
 - 控制器通过 Watch 机制监听资源变化，触发 Reconcile 逻辑
 - 调度器的绑定决策、控制器的资源更新均为控制流操作
 
 **跨进程/跨线程/跨协程路径：**
-
 - **跨进程**：API Server ↔ etcd（gRPC）、kubelet ↔ CRI Runtime（gRPC）
 - **跨 Goroutine**：Informer 的事件分发（SharedInformerFactory 的 EventHandler 并发调用）
 - **跨节点**：Pod 跨节点迁移（控制器删除旧 Pod + 调度器绑定新 Node + kubelet 启动容器）
@@ -193,19 +185,16 @@ flowchart TB
 #### 1.1.3 高可用与状态管理
 
 **高可用策略：**
-
 - **API Server**：无状态，可水平扩展（通过 LB 做健康检查与故障转移）
 - **etcd**：Raft 集群（Leader 处理写请求，Follower 处理读请求），允许少数节点故障（N/2 + 1 存活即可）
 - **Controller Manager / Scheduler**：主备模式，通过 Lease 对象实现 Leader Election，仅主节点工作，备节点 Standby
 
 **状态管理位置：**
-
 - **持久化状态**：etcd 存储所有资源对象（序列化为 Protobuf）
 - **内存缓存**：Informer 的 Indexer 缓存（减少 API Server 压力），kubelet 的 Pod Status Cache
 - **临时状态**：容器运行时的容器状态（通过 CRI 查询）、kube-proxy 的规则同步状态（内核 iptables/IPVS 表）
 
 **扩展性设计：**
-
 - **水平扩展**：增加 API Server 实例（etcd 成为瓶颈时需扩容 etcd 集群）
 - **垂直扩展**：增加 etcd 节点的 CPU/Memory（Watch 连接数多时）
 - **分片策略**：大集群可按 Namespace 或 Node 分片（通过多集群联邦管理）
@@ -443,36 +432,30 @@ graph TB
 #### 4.1.1 一致性模型
 
 **etcd 层（强一致）：**
-
 - 所有写操作通过 Raft Leader 串行化，保证线性一致性（Linearizability）
 - 读操作默认走 Leader（强一致读），可配置 Follower 读（牺牲一致性换取性能）
 
 **API Server 层（最终一致）：**
-
 - Watch 机制存在延迟（事件传播耗时 100ms-1s）
 - Informer 本地缓存为快照（可能滞后于 etcd）
 - List 操作默认从 etcd 读取（可配置从 API Server 缓存读取）
 
 **Controller 层（最终一致）：**
-
 - 基于 Reconcile Loop 不断纠正偏差，容忍短期不一致
 - 通过 `resourceVersion` 检测冲突，失败重试保证最终收敛
 
 #### 4.1.2 事务边界
 
 **单资源原子性：**
-
 - etcd 单个 Key 的 Put 操作原子（利用 Raft Log Entry）
 - API Server 的 Create/Update/Delete 操作单资源原子
 
 **跨资源事务（无原生支持）：**
-
 - Kubernetes 不支持跨资源的 ACID 事务（etcd 支持有限的 Transaction，但 K8s 未使用）
 - 多资源变更通过控制器 Reconcile Loop 最终一致（例如 Deployment → ReplicaSet → Pod 的级联创建）
 - Finalizer 机制保证删除顺序（资源删除前执行清理逻辑）
 
 **补偿机制：**
-
 - OwnerReference：级联删除（删除父对象自动删除子对象）
 - Finalizer：阻塞删除直到清理完成（如 PV 的数据卷解挂）
 - Admission Webhook：拒绝不符合约束的变更（如配额超限）
@@ -521,7 +504,6 @@ graph TB
 #### 4.3.2 可观测性指标
 
 **API Server 指标：**
-
 ```go
 // 请求延迟（P50/P95/P99）
 apiserver_request_duration_seconds{verb="GET|POST|PATCH|DELETE", resource="pods|nodes|services"}
@@ -534,7 +516,6 @@ etcd_request_duration_seconds{operation="range|put|delete"}
 ```
 
 **Controller Manager 指标：**
-
 ```go
 // 控制循环延迟
 workqueue_queue_duration_seconds{name="deployment|replicaset|pod"}
@@ -547,7 +528,6 @@ controller_reconcile_errors_total
 ```
 
 **Scheduler 指标：**
-
 ```go
 // 调度延迟
 scheduler_scheduling_duration_seconds
@@ -560,7 +540,6 @@ scheduler_pending_pods
 ```
 
 **kubelet 指标：**
-
 ```go
 // Pod 启动时间
 kubelet_pod_start_duration_seconds
@@ -643,7 +622,6 @@ spec:
         app: nginx
     spec:
       containers:
-
       - name: nginx
         image: nginx:1.21
         ports:
@@ -655,7 +633,6 @@ spec:
           limits:
             cpu: "200m"
             memory: "256Mi"
-
 ---
 apiVersion: v1
 kind: Service
@@ -666,14 +643,11 @@ spec:
   selector:
     app: nginx
   ports:
-
   - port: 80
     targetPort: 80
-
 ```
 
 **执行流程：**
-
 ```bash
 # 1. 创建资源
 kubectl apply -f nginx-deployment.yaml
@@ -689,7 +663,6 @@ kubectl run test-pod --image=busybox --rm -it --restart=Never -- wget -O- nginx
 ```
 
 **端到端调用链路：**
-
 1. kubectl 发送 POST 请求到 API Server（创建 Deployment）
 2. Deployment Controller 监听到事件，创建 ReplicaSet
 3. ReplicaSet Controller 创建 3 个 Pod（未调度状态）
@@ -744,13 +717,11 @@ func New(ctx context.Context, obj runtime.Object, handle framework.Handle) (fram
 ```
 
 **配置文件：**
-
 ```yaml
 # scheduler-config.yaml
 apiVersion: kubescheduler.config.k8s.io/v1
 kind: KubeSchedulerConfiguration
 profiles:
-
 - schedulerName: custom-scheduler
   plugins:
     filter:
@@ -759,11 +730,9 @@ profiles:
     score:
       disabled:
       - name: NodeResourcesBalancedAllocation  # 禁用默认插件
-
 ```
 
 **部署：**
-
 ```bash
 # 1. 编译自定义调度器
 go build -o custom-scheduler main.go
@@ -827,7 +796,6 @@ func MutatePod(ar *admissionv1.AdmissionReview) *admissionv1.AdmissionResponse {
 ```
 
 **注册 Webhook：**
-
 ```yaml
 # mutating-webhook.yaml
 apiVersion: admissionregistration.k8s.io/v1
@@ -835,7 +803,6 @@ kind: MutatingWebhookConfiguration
 metadata:
   name: sidecar-injector
 webhooks:
-
 - name: sidecar.example.com
   clientConfig:
     service:
@@ -850,7 +817,6 @@ webhooks:
     resources: ["pods"]
   admissionReviewVersions: ["v1"]
   sideEffects: None
-
 ```
 
 ### 5.3 规模化/上线注意事项清单
@@ -937,7 +903,7 @@ webhooks:
 ---
 
 **文档维护：**
-
 - 版本：v1.0
 - 最后更新：2025-10-04
 - 适用 Kubernetes 版本：v1.29+
+

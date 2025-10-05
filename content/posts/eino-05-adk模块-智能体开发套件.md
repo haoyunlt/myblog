@@ -17,7 +17,7 @@ ShowToc: true
 TocOpen: true
 ---
 
-# Eino 源码剖析 - ADK 模块：智能体开发套件
+# Eino-05-adk模块-智能体开发套件
 
 ## 一、模块概览
 
@@ -89,7 +89,7 @@ graph TB
     style Runner fill:#fff4e1
     style ChatModelAgent fill:#e8f5e9
     style WorkflowAgent fill:#f3e5f5
-</mermaid>
+```
 
 **架构说明**：
 
@@ -652,7 +652,6 @@ type State struct {
 ### 4.4 ReAct 执行流程
 
 ```mermaid
-
 sequenceDiagram
     participant User
     participant Runner
@@ -688,7 +687,7 @@ sequenceDiagram
     
     ChatModelAgent-->>Runner: AgentEvent（Output）
     Runner-->>User: AsyncIterator[*AgentEvent]
-</mermaid>
+```
 
 **执行流程说明**：
 

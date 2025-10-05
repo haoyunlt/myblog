@@ -17,6 +17,7 @@ author: "源码分析"
 weight: 500
 ShowToc: true
 TocOpen: true
+mermaid: true
 ---
 
 # Eino-00-总览

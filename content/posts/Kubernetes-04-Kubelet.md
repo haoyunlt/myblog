@@ -1,6 +1,6 @@
 ---
-title: "Kubernetes-04-Kubelet"
-date: 2025-10-04T21:26:31+08:00
+title: "Kubernetes-04-Kubelet-概览"
+date: 2025-10-05T01:01:58+08:00
 draft: false
 tags:
   - Kubernetes
@@ -12,17 +12,14 @@ categories:
   - 容器编排
   - 云原生
 series: "kubernetes-source-analysis"
-description: "Kubernetes 源码剖析 - 04-Kubelet"
+description: "Kubernetes 源码剖析 - Kubernetes-04-Kubelet-概览"
 author: "源码分析"
 weight: 500
 ShowToc: true
 TocOpen: true
-
 ---
 
-# Kubernetes-04-Kubelet
-
-## 模块概览
+# Kubernetes-04-Kubelet-概览
 
 ## 模块职责
 
@@ -63,13 +60,11 @@ kubelet 是运行在每个节点上的**节点代理（Node Agent）**，负责�
 ### 输入/输出
 
 **输入：**
-
 - **Pod Spec**：来自 API Server 的 Pod 定义（通过 List-Watch）
 - **配置文件**：Kubelet 配置（`--config`）
 - **静态 Pod**：本地 YAML 文件（`--pod-manifest-path`）
 
 **输出：**
-
 - **容器操作**：通过 CRI 创建/停止/删除容器
 - **节点状态更新**：向 API Server 上报节点和 Pod 状态
 - **Event 记录**：记录 Pod 相关事件（如 Pulled、Created、Started、Failed）
@@ -572,412 +567,332 @@ readinessProbe:
 
 ```yaml
 initContainers:
-
 - name: init-db
   image: busybox
   command: ['sh', '-c', 'until nc -z db 5432; do sleep 1; done']
-
 ```
 
 ---
 
 **文档维护：**
-
 - 版本：v1.0
 - 最后更新：2025-10-04
 - 适用 Kubernetes 版本：v1.29+
 
 ---
 
-## API接口
+# Kubernetes-04-Kubelet-时序图
 
-## API 概述
+## 时序图概述
 
-Kubelet 通过三大标准接口与外部系统交互：
-
-1. **CRI（Container Runtime Interface）**：容器运行时接口
-2. **CNI（Container Network Interface）**：容器网络接口  
-3. **CSI（Container Storage Interface）**：容器存储接口
-
-本文档详细介绍这三大接口的规格和实现。
+本文档提供 Kubelet 核心场景的时序图：
+1. **Pod 启动完整流程**：从接收到 Pod 到容器运行
+2. **容器重启流程**：Liveness Probe 失败触发重启
+3. **Volume 挂载流程**：CSI Volume 的完整挂载过程
 
 ---
 
-## 1. CRI（Container Runtime Interface）
+## 场景 1：Pod 启动完整流程
 
-### 1.1 接口定义
-
-CRI 是 Kubelet 与容器运行时（如 containerd、CRI-O）之间的 gRPC 接口。
-
-```protobuf
-// api/services.proto
-
-service RuntimeService {
-    // Sandbox 操作
-    rpc RunPodSandbox(RunPodSandboxRequest) returns (RunPodSandboxResponse) {}
-    rpc StopPodSandbox(StopPodSandboxRequest) returns (StopPodSandboxResponse) {}
-    rpc RemovePodSandbox(RemovePodSandboxRequest) returns (RemovePodSandboxResponse) {}
-    rpc PodSandboxStatus(PodSandboxStatusRequest) returns (PodSandboxStatusResponse) {}
-    rpc ListPodSandbox(ListPodSandboxRequest) returns (ListPodSandboxResponse) {}
+```mermaid
+sequenceDiagram
+    autonumber
+    participant API as API Server
+    participant KL as Kubelet
+    participant PM as PodManager
+    participant PW as PodWorker
+    participant VM as VolumeManager
+    participant CRI as Container Runtime
+    participant CNI as CNI Plugin
     
-    // Container 操作
-    rpc CreateContainer(CreateContainerRequest) returns (CreateContainerResponse) {}
-    rpc StartContainer(StartContainerRequest) returns (StartContainerResponse) {}
-    rpc StopContainer(StopContainerRequest) returns (StopContainerResponse) {}
-    rpc RemoveContainer(RemoveContainerRequest) returns (RemoveContainerResponse) {}
-    rpc ListContainers(ListContainersRequest) returns (ListContainersResponse) {}
+    Note over API,CNI: 场景：Scheduler 将 Pod 调度到本节点
     
-    // 镜像操作
-    rpc PullImage(PullImageRequest) returns (PullImageResponse) {}
-    rpc ListImages(ListImagesRequest) returns (ListImagesResponse) {}
-    rpc RemoveImage(RemoveImageRequest) returns (RemoveImageResponse) {}
-}
-```
-
-### 1.2 RunPodSandbox（创建 Pod 沙箱）
-
-**作用：** 创建 Pod 的网络和 IPC 命名空间（Sandbox）
-
-**请求结构：**
-
-```go
-type RunPodSandboxRequest struct {
-    Config *PodSandboxConfig  // Pod 配置
-}
-
-type PodSandboxConfig struct {
-    Metadata   *PodSandboxMetadata  // 元数据
-    Hostname   string                // 主机名
-    LogDir     string                // 日志目录
-    DnsConfig  *DNSConfig            // DNS 配置
-    PortMappings []*PortMapping      // 端口映射
-    Labels     map[string]string     // 标签
-    Annotations map[string]string    // 注解
-}
-```
-
-**响应结构：**
-
-```go
-type RunPodSandboxResponse struct {
-    PodSandboxId string  // Sandbox ID
-}
-```
-
-**核心代码：**
-
-```go
-// pkg/kubelet/kuberuntime/kuberuntime_sandbox.go
-
-func (m *kubeGenericRuntimeManager) RunPodSandbox(pod *v1.Pod) (string, error) {
-    // 1. 生成 PodSandboxConfig
-    podSandboxConfig := m.generatePodSandboxConfig(pod)
+    API->>KL: Watch Event: Pod/nginx<br/>(Pod.Spec.NodeName = "node-1")
+    KL->>PM: AddPod(pod)
+    PM->>PM: 更新 Pod 缓存
     
-    // 2. 调用 CRI RunPodSandbox
-    resp, err := m.runtimeService.RunPodSandbox(podSandboxConfig)
-    if err != nil {
-        return "", err
-    }
+    KL->>PW: dispatchWork(pod, SyncPod)
+    PW->>PW: 加入 Pod 的更新队列
     
-    return resp.PodSandboxId, nil
-}
+    Note over PW: PodWorker 处理队列
+    
+    PW->>PW: syncPod(pod)
+    
+    Note over PW,VM: 步骤 1：创建 Pod 目录
+    
+    PW->>PW: makePodDataDirs()<br/>- /var/lib/kubelet/pods/{pod-uid}/<br/>- /var/lib/kubelet/pods/{pod-uid}/volumes/<br/>- /var/lib/kubelet/pods/{pod-uid}/plugins/
+    
+    Note over PW,VM: 步骤 2：挂载 Volume
+    
+    PW->>VM: WaitForAttachAndMount(pod)
+    VM->>VM: 检查需要挂载的 Volume<br/>（从 Pod.Spec.Volumes 提取）
+    
+    loop 遍历所有 Volume
+        VM->>VM: AttachVolume() - CSI ControllerPublishVolume
+        VM->>VM: MountVolume() - CSI NodeStageVolume + NodePublishVolume
+    end
+    
+    VM-->>PW: 所有 Volume 挂载完成
+    
+    Note over PW,CRI: 步骤 3：拉取镜像
+    
+    PW->>CRI: PullImage(image="nginx:1.25")
+    CRI->>CRI: 从镜像仓库拉取镜像
+    CRI-->>PW: Image ID
+    
+    Note over PW,CNI: 步骤 4：创建 Pod Sandbox
+    
+    PW->>CRI: RunPodSandbox(podConfig)
+    CRI->>CRI: 创建 Pause 容器<br/>（持有网络和 IPC 命名空间）
+    CRI-->>PW: Sandbox ID
+    
+    PW->>CNI: SetUpPod(pod)
+    CNI->>CNI: 调用 CNI 插件（ADD 操作）<br/>- 创建 veth pair<br/>- 分配 IP 地址<br/>- 配置路由
+    CNI-->>PW: Pod IP = 10.244.1.5
+    
+    Note over PW,CRI: 步骤 5：启动 Init Containers（串行）
+    
+    loop 遍历 Init Containers
+        PW->>CRI: CreateContainer(sandboxID, initContainerConfig)
+        CRI-->>PW: Container ID
+        
+        PW->>CRI: StartContainer(containerID)
+        CRI->>CRI: 启动容器
+        CRI-->>PW: Success
+        
+        PW->>PW: 等待容器完成（退出码 = 0）
+    end
+    
+    Note over PW,CRI: 步骤 6：启动 App Containers（并行）
+    
+    par 并行启动
+        PW->>CRI: CreateContainer(sandboxID, container1Config)
+        CRI-->>PW: Container-1 ID
+        PW->>CRI: StartContainer(container1ID)
+    and
+        PW->>CRI: CreateContainer(sandboxID, container2Config)
+        CRI-->>PW: Container-2 ID
+        PW->>CRI: StartContainer(container2ID)
+    end
+    
+    Note over PW: 步骤 7：启动健康检查
+    
+    PW->>PW: startProbes(pod)<br/>- Liveness Probe<br/>- Readiness Probe<br/>- Startup Probe
+    
+    Note over PW,API: 步骤 8：更新 Pod Status
+    
+    PW->>API: PATCH /api/v1/pods/nginx/status<br/>{<br/>  phase: "Running",<br/>  podIP: "10.244.1.5",<br/>  conditions: [{type: "Ready", status: "True"}]<br/>}
+    API-->>PW: 200 OK
 ```
 
-### 1.3 CreateContainer（创建容器）
+### 要点说明
 
-**请求结构：**
-
-```go
-type CreateContainerRequest struct {
-    PodSandboxId  string              // Sandbox ID
-    Config        *ContainerConfig    // 容器配置
-    SandboxConfig *PodSandboxConfig   // Sandbox 配置
-}
-
-type ContainerConfig struct {
-    Metadata    *ContainerMetadata   // 元数据
-    Image       *ImageSpec           // 镜像
-    Command     []string             // 命令
-    Args        []string             // 参数
-    WorkingDir  string               // 工作目录
-    Envs        []*KeyValue          // 环境变量
-    Mounts      []*Mount             // 挂载点
-    Devices     []*Device            // 设备
-    Linux       *LinuxContainerConfig // Linux 配置（cgroups）
-}
+#### 1. Pod 目录结构
+```text
+/var/lib/kubelet/pods/{pod-uid}/
+├── volumes/              # Volume 挂载点
+│   ├── kubernetes.io~empty-dir/
+│   ├── kubernetes.io~configmap/
+│   └── kubernetes.io~csi/
+├── plugins/              # 插件目录
+└── containers/           # 容器日志
 ```
 
-**响应结构：**
+#### 2. Init Containers 特点
+- **串行执行**：必须按顺序成功
+- **共享 Volume**：与 App Containers 共享 Volume
+- **常见用途**：等待依赖服务、初始化数据库
 
-```go
-type CreateContainerResponse struct {
-    ContainerId string  // 容器 ID
-}
-```
+#### 3. 网络配置时机
+- Pod Sandbox 创建后立即配置网络
+- 所有容器共享 Sandbox 的网络命名空间
 
 ---
 
-## 2. CNI（Container Network Interface）
+## 场景 2：容器重启流程（Liveness Probe 失败）
 
-### 2.1 接口定义
-
-CNI 通过**可执行文件**实现（存放在 `/opt/cni/bin/`）：
-
-```bash
-# CNI 插件调用示例
-echo '{
-  "cniVersion": "1.0.0",
-  "name": "pod-network",
-  "type": "bridge",
-  "bridge": "cni0",
-  "ipam": {
-    "type": "host-local",
-    "subnet": "10.244.0.0/24"
-  }
-}' | /opt/cni/bin/bridge ADD <container-id> <netns-path>
+```mermaid
+sequenceDiagram
+    autonumber
+    participant PROBE as ProbeManager
+    participant KL as Kubelet
+    participant PW as PodWorker
+    participant CRI as Container Runtime
+    participant API as API Server
+    
+    Note over PROBE,API: 场景：容器死锁，Liveness Probe 失败
+    
+    loop 每 10s 执行一次 Liveness Probe
+        PROBE->>PROBE: execProbe(container)<br/>HTTP GET /healthz → 超时
+        PROBE->>PROBE: failureCount++
+    end
+    
+    PROBE->>PROBE: failureCount >= FailureThreshold (3)
+    PROBE->>PROBE: 标记容器为 Unhealthy
+    
+    PROBE->>KL: livenessManager.Updates() <- Failure
+    KL->>KL: syncLoop 收到 Probe Update 事件
+    
+    KL->>PW: dispatchWork(pod, SyncPod)
+    
+    Note over PW,CRI: PodWorker 处理容器重启
+    
+    PW->>PW: syncPod(pod)
+    PW->>PW: 检测到容器 Unhealthy
+    
+    PW->>CRI: StopContainer(containerID, timeout=30s)
+    CRI->>CRI: 1. 发送 SIGTERM 信号<br/>2. 等待 30s<br/>3. 发送 SIGKILL 信号
+    CRI-->>PW: Success
+    
+    PW->>CRI: RemoveContainer(containerID)
+    CRI->>CRI: 删除容器
+    CRI-->>PW: Success
+    
+    Note over PW: RestartCount++
+    
+    PW->>CRI: CreateContainer(sandboxID, containerConfig)
+    CRI-->>PW: New Container ID
+    
+    PW->>CRI: StartContainer(newContainerID)
+    CRI->>CRI: 启动新容器
+    CRI-->>PW: Success
+    
+    Note over PW,API: 更新容器状态
+    
+    PW->>API: PATCH /api/v1/pods/nginx/status<br/>{<br/>  containerStatuses: [{<br/>    restartCount: 1,<br/>    lastState: {terminated: {exitCode: 137, reason: "Error"}},<br/>    state: {running: {startedAt: "2025-10-04T10:00:00Z"}}<br/>  }]<br/>}
+    API-->>PW: 200 OK
+    
+    Note over PROBE: 重新启动 Liveness Probe
+    
+    PROBE->>PROBE: 重置 successCount 和 failureCount
+    PROBE->>PROBE: 等待 initialDelaySeconds 后开始探测
 ```
 
-### 2.2 ADD 操作（为容器配置网络）
+### 要点说明
 
-**输入（stdin）：**
-
-```json
-{
-  "cniVersion": "1.0.0",
-  "name": "pod-network",
-  "type": "bridge",
-  "bridge": "cni0",
-  "ipam": {
-    "type": "host-local",
-    "subnet": "10.244.1.0/24",
-    "gateway": "10.244.1.1"
-  }
-}
+#### 1. 容器终止流程
+```text
+SIGTERM（优雅关闭）
+   ↓ 等待 terminationGracePeriodSeconds（默认 30s）
+SIGKILL（强制终止）
 ```
 
-**环境变量：**
+#### 2. RestartPolicy 策略
+- **Always**：总是重启（默认）
+- **OnFailure**：退出码非 0 时重启
+- **Never**：不重启
 
-- `CNI_COMMAND=ADD`
-- `CNI_CONTAINERID=abc123`
-- `CNI_NETNS=/var/run/netns/abc123`
-- `CNI_IFNAME=eth0`
-
-**输出（stdout）：**
-
-```json
-{
-  "cniVersion": "1.0.0",
-  "interfaces": [
-    {
-      "name": "eth0",
-      "mac": "02:42:ac:11:00:02"
-    }
-  ],
-  "ips": [
-    {
-      "version": "4",
-      "address": "10.244.1.5/24",
-      "gateway": "10.244.1.1",
-      "interface": 0
-    }
-  ],
-  "routes": [
-    {
-      "dst": "0.0.0.0/0",
-      "gw": "10.244.1.1"
-    }
-  ]
-}
-```
-
-### 2.3 核心代码
-
-```go
-// pkg/kubelet/dockershim/network/cni/cni.go
-
-func (plugin *cniNetworkPlugin) SetUpPod(namespace, name string, id kubecontainer.ContainerID) error {
-    // 1. 构造 CNI 配置
-    netConf := plugin.getNetConfig()
-    
-    // 2. 创建网络命名空间
-    netns, err := plugin.host.GetNetNS(id.ID)
-    if err != nil {
-        return err
-    }
-    
-    // 3. 调用 CNI 插件（ADD 操作）
-    result, err := plugin.addToNetwork(netConf, id.ID, netns)
-    if err != nil {
-        return err
-    }
-    
-    // 4. 记录网络配置结果
-    plugin.podNetworks[id.ID] = result
-    
-    return nil
-}
-```
+#### 3. CrashLoopBackOff
+- 容器启动后 10s 内退出 → 判定为 Crash
+- 退避时间：10s → 20s → 40s → ... → 5min（最大）
 
 ---
 
-## 3. CSI（Container Storage Interface）
+## 场景 3：Volume 挂载流程（CSI）
 
-### 3.1 接口定义
-
-CSI 是 gRPC 接口，包含三个服务：
-
-```protobuf
-// csi.proto
-
-// Identity Service（身份服务）
-service Identity {
-    rpc GetPluginInfo(GetPluginInfoRequest) returns (GetPluginInfoResponse) {}
-    rpc GetPluginCapabilities(GetPluginCapabilitiesRequest) returns (GetPluginCapabilitiesResponse) {}
-    rpc Probe(ProbeRequest) returns (ProbeResponse) {}
-}
-
-// Controller Service（控制器服务）
-service Controller {
-    rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse) {}
-    rpc DeleteVolume(DeleteVolumeRequest) returns (DeleteVolumeResponse) {}
-    rpc ControllerPublishVolume(ControllerPublishVolumeRequest) returns (ControllerPublishVolumeResponse) {}
-    rpc ControllerUnpublishVolume(ControllerUnpublishVolumeRequest) returns (ControllerUnpublishVolumeResponse) {}
-}
-
-// Node Service（节点服务）
-service Node {
-    rpc NodeStageVolume(NodeStageVolumeRequest) returns (NodeStageVolumeResponse) {}
-    rpc NodeUnstageVolume(NodeUnstageVolumeRequest) returns (NodeUnstageVolumeResponse) {}
-    rpc NodePublishVolume(NodePublishVolumeRequest) returns (NodePublishVolumeResponse) {}
-    rpc NodeUnpublishVolume(NodeUnpublishVolumeRequest) returns (NodeUnpublishVolumeResponse) {}
-}
-```
-
-### 3.2 Volume 挂载流程
-
-**步骤 1：ControllerPublishVolume（Attach）**
-
-**作用：** 将云盘挂载到节点（如 AWS EBS Attach）
-
-**请求：**
-
-```go
-type ControllerPublishVolumeRequest struct {
-    VolumeId         string              // Volume ID
-    NodeId           string              // Node ID
-    VolumeCapability *VolumeCapability   // Volume 能力
-}
-```
-
-**响应：**
-
-```go
-type ControllerPublishVolumeResponse struct {
-    PublishContext map[string]string  // 挂载上下文（如设备路径 /dev/xvdf）
-}
-```
-
-**步骤 2：NodeStageVolume（Stage）**
-
-**作用：** 将设备格式化并挂载到临时目录
-
-**请求：**
-
-```go
-type NodeStageVolumeRequest struct {
-    VolumeId          string              // Volume ID
-    PublishContext    map[string]string   // 挂载上下文
-    StagingTargetPath string              // 临时挂载路径
-    VolumeCapability  *VolumeCapability   // Volume 能力
-}
-```
-
-**步骤 3：NodePublishVolume（Publish）**
-
-**作用：** Bind Mount 到 Pod 目录
-
-**请求：**
-
-```go
-type NodePublishVolumeRequest struct {
-    VolumeId          string    // Volume ID
-    PublishContext    map[string]string
-    StagingTargetPath string    // 临时挂载路径
-    TargetPath        string    // Pod 挂载路径（/var/lib/kubelet/pods/{uid}/volumes/{name}）
-    Readonly          bool
-}
-```
-
-### 3.3 核心代码
-
-```go
-// pkg/volume/csi/csi_attacher.go
-
-func (c *csiAttacher) Attach(spec *volume.Spec, nodeName types.NodeName) (string, error) {
-    // 1. 调用 CSI ControllerPublishVolume
-    ctx := context.Background()
-    req := &csi.ControllerPublishVolumeRequest{
-        VolumeId: volumeHandle,
-        NodeId:   string(nodeName),
-        VolumeCapability: &csi.VolumeCapability{
-            AccessMode: &csi.VolumeCapability_AccessMode{
-                Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
-            },
-        },
-    }
+```mermaid
+sequenceDiagram
+    autonumber
+    participant KL as Kubelet
+    participant VM as VolumeManager
+    participant CSI as CSI Driver
+    participant CLOUD as Cloud Storage
     
-    resp, err := c.client.ControllerPublishVolume(ctx, req)
-    if err != nil {
-        return "", err
-    }
+    Note over KL,CLOUD: 场景：挂载 AWS EBS Volume
     
-    // 2. 返回 PublishContext
-    return resp.PublishContext["devicePath"], nil
-}
+    KL->>VM: WaitForAttachAndMount(pod)
+    VM->>VM: 检查 Pod.Spec.Volumes
+    
+    Note over VM,CLOUD: 步骤 1：Attach（Controller 端）
+    
+    VM->>CSI: ControllerPublishVolume(volumeID, nodeID)
+    CSI->>CLOUD: AWS API: AttachVolume<br/>(VolumeID=vol-123, InstanceID=i-456)
+    CLOUD-->>CSI: Device Path = /dev/xvdf
+    CSI-->>VM: PublishContext = {devicePath: "/dev/xvdf"}
+    
+    Note over VM: 等待设备出现
+    
+    VM->>VM: 轮询检查 /dev/xvdf 是否存在
+    
+    Note over VM,CSI: 步骤 2：Stage（Node 端 - 格式化并挂载到临时目录）
+    
+    VM->>CSI: NodeStageVolume(volumeID, stagingPath)
+    CSI->>CSI: 检查文件系统<br/>blkid /dev/xvdf
+    
+    alt 文件系统不存在
+        CSI->>CSI: 格式化<br/>mkfs.ext4 /dev/xvdf
+    end
+    
+    CSI->>CSI: 挂载到临时目录<br/>mount /dev/xvdf /var/lib/kubelet/plugins/.../staging/{volume-id}
+    CSI-->>VM: Success
+    
+    Note over VM,CSI: 步骤 3：Publish（Node 端 - Bind Mount 到 Pod 目录）
+    
+    VM->>CSI: NodePublishVolume(volumeID, targetPath)
+    CSI->>CSI: Bind Mount<br/>mount --bind \<br/>  /var/lib/kubelet/plugins/.../staging/{volume-id} \<br/>  /var/lib/kubelet/pods/{pod-uid}/volumes/{volume-name}
+    CSI-->>VM: Success
+    
+    VM-->>KL: Volume 挂载完成
 ```
+
+### 要点说明
+
+#### 1. Volume 生命周期
+```text
+Provision（创建 PV）
+   ↓
+Attach（挂载到节点）
+   ↓
+Stage（格式化并挂载到临时目录）
+   ↓
+Publish（Bind Mount 到 Pod 目录）
+   ↓
+Unpublish（卸载 Bind Mount）
+   ↓
+Unstage（卸载临时目录）
+   ↓
+Detach（从节点卸载）
+   ↓
+Delete（删除 PV）
+```
+
+#### 2. Stage 和 Publish 的区别
+- **Stage**：挂载到节点级别的临时目录（一次性，多个 Pod 共享）
+- **Publish**：Bind Mount 到每个 Pod 的目录（每个 Pod 一次）
+
+#### 3. 为什么需要 Stage？
+- 避免重复格式化（多个 Pod 使用同一 Volume）
+- 提高挂载效率（仅一次 mkfs 和 mount）
 
 ---
 
-## 性能优化与最佳实践
+## 性能指标
 
-### 1. CRI 优化
+### 关键指标
 
-**使用 containerd 而非 Docker**
-
-- containerd 更轻量（无 Docker Daemon）
-- 减少一层调用链（kubelet → containerd CRI 插件 → containerd）
-
-### 2. CNI 优化
-
-**选择高性能 CNI 插件**
-
-- Calico（eBPF 模式）：最高性能
-- Cilium（eBPF）：L7 策略支持
-- Flannel（VXLAN）：简单易用
-
-### 3. CSI 优化
-
-**使用本地存储**
-
-- Local PV：直接使用节点磁盘（无网络开销）
-- 适用场景：数据库、缓存
+| 指标 | 类型 | 说明 |
+|-----|------|------|
+| `kubelet_pod_start_duration_seconds` | Histogram | Pod 启动延迟（从接收到容器运行） |
+| `kubelet_pod_worker_duration_seconds` | Histogram | PodWorker 处理时间 |
+| `kubelet_pleg_relist_duration_seconds` | Histogram | PLEG 轮询耗时 |
+| `kubelet_cri_operations_duration_seconds` | Histogram | CRI 操作延迟 |
+| `kubelet_volume_mount_duration_seconds` | Histogram | Volume 挂载延迟 |
+| `kubelet_container_restart_total` | Counter | 容器重启次数 |
 
 ---
 
 **文档维护：**
-
 - 版本：v1.0
 - 最后更新：2025-10-04
 - 适用 Kubernetes 版本：v1.29+
 
 ---
 
-## 数据结构
+# Kubernetes-04-Kubelet-数据结构
 
 ## 数据结构概述
 
 Kubelet 的核心数据结构围绕 **Pod 和容器状态管理** 设计：
-
 1. **PodStatus**：Pod 的状态信息
 2. **ContainerStatus**：容器的状态信息
 3. **PodWorker**：Pod 管理的工作单元
@@ -1202,7 +1117,7 @@ type ContainerStateTerminated struct {
 
 **状态转换：**
 
-```
+```text
 Waiting → Running → Terminated
    ↑                    ↓
    └────────────────────┘
@@ -1355,357 +1270,402 @@ func (prober *prober) runProbe(probeType, pod, container) {
 ### 1. PodWorker 并发
 
 **并发模型：**
-
 - 每个 Pod 一个 Worker Goroutine（串行处理）
 - 不同 Pod 间并行处理
 
 **内存占用：**
-
 - 每个 PodWorker：约 10 KB（Goroutine + channel）
 - 100 个 Pod ≈ 1 MB
 
 ### 2. PLEG 轮询开销
 
 **CPU 占用：**
-
 - 轮询周期：默认 1s
 - 每次轮询：调用 CRI ListPodSandbox + ListContainers（约 10-50ms）
 
 **优化建议：**
-
 - 使用 Evented PLEG（基于 CRI Event 流，无需轮询）
 - 适用于 containerd 1.7+
 
 ### 3. StatusManager 上报频率
 
 **默认配置：**
-
 - 每 10s 上报一次节点状态
 - Pod 状态变化时立即上报
 
 **优化建议：**
-
 - 减少上报频率（适用于大规模集群）
 - 批量上报 Pod 状态
 
 ---
 
 **文档维护：**
-
 - 版本：v1.0
 - 最后更新：2025-10-04
 - 适用 Kubernetes 版本：v1.29+
 
 ---
 
-## 时序图
+# Kubernetes-04-Kubelet-API
 
-## 时序图概述
+## API 概述
 
-本文档提供 Kubelet 核心场景的时序图：
+Kubelet 通过三大标准接口与外部系统交互：
+1. **CRI（Container Runtime Interface）**：容器运行时接口
+2. **CNI（Container Network Interface）**：容器网络接口  
+3. **CSI（Container Storage Interface）**：容器存储接口
 
-1. **Pod 启动完整流程**：从接收到 Pod 到容器运行
-2. **容器重启流程**：Liveness Probe 失败触发重启
-3. **Volume 挂载流程**：CSI Volume 的完整挂载过程
-
----
-
-## 场景 1：Pod 启动完整流程
-
-```mermaid
-sequenceDiagram
-    autonumber
-    participant API as API Server
-    participant KL as Kubelet
-    participant PM as PodManager
-    participant PW as PodWorker
-    participant VM as VolumeManager
-    participant CRI as Container Runtime
-    participant CNI as CNI Plugin
-    
-    Note over API,CNI: 场景：Scheduler 将 Pod 调度到本节点
-    
-    API->>KL: Watch Event: Pod/nginx<br/>(Pod.Spec.NodeName = "node-1")
-    KL->>PM: AddPod(pod)
-    PM->>PM: 更新 Pod 缓存
-    
-    KL->>PW: dispatchWork(pod, SyncPod)
-    PW->>PW: 加入 Pod 的更新队列
-    
-    Note over PW: PodWorker 处理队列
-    
-    PW->>PW: syncPod(pod)
-    
-    Note over PW,VM: 步骤 1：创建 Pod 目录
-    
-    PW->>PW: makePodDataDirs()<br/>- /var/lib/kubelet/pods/{pod-uid}/<br/>- /var/lib/kubelet/pods/{pod-uid}/volumes/<br/>- /var/lib/kubelet/pods/{pod-uid}/plugins/
-    
-    Note over PW,VM: 步骤 2：挂载 Volume
-    
-    PW->>VM: WaitForAttachAndMount(pod)
-    VM->>VM: 检查需要挂载的 Volume<br/>（从 Pod.Spec.Volumes 提取）
-    
-    loop 遍历所有 Volume
-        VM->>VM: AttachVolume() - CSI ControllerPublishVolume
-        VM->>VM: MountVolume() - CSI NodeStageVolume + NodePublishVolume
-    end
-    
-    VM-->>PW: 所有 Volume 挂载完成
-    
-    Note over PW,CRI: 步骤 3：拉取镜像
-    
-    PW->>CRI: PullImage(image="nginx:1.25")
-    CRI->>CRI: 从镜像仓库拉取镜像
-    CRI-->>PW: Image ID
-    
-    Note over PW,CNI: 步骤 4：创建 Pod Sandbox
-    
-    PW->>CRI: RunPodSandbox(podConfig)
-    CRI->>CRI: 创建 Pause 容器<br/>（持有网络和 IPC 命名空间）
-    CRI-->>PW: Sandbox ID
-    
-    PW->>CNI: SetUpPod(pod)
-    CNI->>CNI: 调用 CNI 插件（ADD 操作）<br/>- 创建 veth pair<br/>- 分配 IP 地址<br/>- 配置路由
-    CNI-->>PW: Pod IP = 10.244.1.5
-    
-    Note over PW,CRI: 步骤 5：启动 Init Containers（串行）
-    
-    loop 遍历 Init Containers
-        PW->>CRI: CreateContainer(sandboxID, initContainerConfig)
-        CRI-->>PW: Container ID
-        
-        PW->>CRI: StartContainer(containerID)
-        CRI->>CRI: 启动容器
-        CRI-->>PW: Success
-        
-        PW->>PW: 等待容器完成（退出码 = 0）
-    end
-    
-    Note over PW,CRI: 步骤 6：启动 App Containers（并行）
-    
-    par 并行启动
-        PW->>CRI: CreateContainer(sandboxID, container1Config)
-        CRI-->>PW: Container-1 ID
-        PW->>CRI: StartContainer(container1ID)
-    and
-        PW->>CRI: CreateContainer(sandboxID, container2Config)
-        CRI-->>PW: Container-2 ID
-        PW->>CRI: StartContainer(container2ID)
-    end
-    
-    Note over PW: 步骤 7：启动健康检查
-    
-    PW->>PW: startProbes(pod)<br/>- Liveness Probe<br/>- Readiness Probe<br/>- Startup Probe
-    
-    Note over PW,API: 步骤 8：更新 Pod Status
-    
-    PW->>API: PATCH /api/v1/pods/nginx/status<br/>{<br/>  phase: "Running",<br/>  podIP: "10.244.1.5",<br/>  conditions: [{type: "Ready", status: "True"}]<br/>}
-    API-->>PW: 200 OK
-```
-
-### 要点说明
-
-#### 1. Pod 目录结构
-
-```
-/var/lib/kubelet/pods/{pod-uid}/
-├── volumes/              # Volume 挂载点
-│   ├── kubernetes.io~empty-dir/
-│   ├── kubernetes.io~configmap/
-│   └── kubernetes.io~csi/
-├── plugins/              # 插件目录
-└── containers/           # 容器日志
-```
-
-#### 2. Init Containers 特点
-- **串行执行**：必须按顺序成功
-- **共享 Volume**：与 App Containers 共享 Volume
-- **常见用途**：等待依赖服务、初始化数据库
-
-#### 3. 网络配置时机
-- Pod Sandbox 创建后立即配置网络
-- 所有容器共享 Sandbox 的网络命名空间
+本文档详细介绍这三大接口的规格和实现。
 
 ---
 
-## 场景 2：容器重启流程（Liveness Probe 失败）
+## 1. CRI（Container Runtime Interface）
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant PROBE as ProbeManager
-    participant KL as Kubelet
-    participant PW as PodWorker
-    participant CRI as Container Runtime
-    participant API as API Server
+### 1.1 接口定义
+
+CRI 是 Kubelet 与容器运行时（如 containerd、CRI-O）之间的 gRPC 接口。
+
+```protobuf
+// api/services.proto
+
+service RuntimeService {
+    // Sandbox 操作
+    rpc RunPodSandbox(RunPodSandboxRequest) returns (RunPodSandboxResponse) {}
+    rpc StopPodSandbox(StopPodSandboxRequest) returns (StopPodSandboxResponse) {}
+    rpc RemovePodSandbox(RemovePodSandboxRequest) returns (RemovePodSandboxResponse) {}
+    rpc PodSandboxStatus(PodSandboxStatusRequest) returns (PodSandboxStatusResponse) {}
+    rpc ListPodSandbox(ListPodSandboxRequest) returns (ListPodSandboxResponse) {}
     
-    Note over PROBE,API: 场景：容器死锁，Liveness Probe 失败
+    // Container 操作
+    rpc CreateContainer(CreateContainerRequest) returns (CreateContainerResponse) {}
+    rpc StartContainer(StartContainerRequest) returns (StartContainerResponse) {}
+    rpc StopContainer(StopContainerRequest) returns (StopContainerResponse) {}
+    rpc RemoveContainer(RemoveContainerRequest) returns (RemoveContainerResponse) {}
+    rpc ListContainers(ListContainersRequest) returns (ListContainersResponse) {}
     
-    loop 每 10s 执行一次 Liveness Probe
-        PROBE->>PROBE: execProbe(container)<br/>HTTP GET /healthz → 超时
-        PROBE->>PROBE: failureCount++
-    end
-    
-    PROBE->>PROBE: failureCount >= FailureThreshold (3)
-    PROBE->>PROBE: 标记容器为 Unhealthy
-    
-    PROBE->>KL: livenessManager.Updates() <- Failure
-    KL->>KL: syncLoop 收到 Probe Update 事件
-    
-    KL->>PW: dispatchWork(pod, SyncPod)
-    
-    Note over PW,CRI: PodWorker 处理容器重启
-    
-    PW->>PW: syncPod(pod)
-    PW->>PW: 检测到容器 Unhealthy
-    
-    PW->>CRI: StopContainer(containerID, timeout=30s)
-    CRI->>CRI: 1. 发送 SIGTERM 信号<br/>2. 等待 30s<br/>3. 发送 SIGKILL 信号
-    CRI-->>PW: Success
-    
-    PW->>CRI: RemoveContainer(containerID)
-    CRI->>CRI: 删除容器
-    CRI-->>PW: Success
-    
-    Note over PW: RestartCount++
-    
-    PW->>CRI: CreateContainer(sandboxID, containerConfig)
-    CRI-->>PW: New Container ID
-    
-    PW->>CRI: StartContainer(newContainerID)
-    CRI->>CRI: 启动新容器
-    CRI-->>PW: Success
-    
-    Note over PW,API: 更新容器状态
-    
-    PW->>API: PATCH /api/v1/pods/nginx/status<br/>{<br/>  containerStatuses: [{<br/>    restartCount: 1,<br/>    lastState: {terminated: {exitCode: 137, reason: "Error"}},<br/>    state: {running: {startedAt: "2025-10-04T10:00:00Z"}}<br/>  }]<br/>}
-    API-->>PW: 200 OK
-    
-    Note over PROBE: 重新启动 Liveness Probe
-    
-    PROBE->>PROBE: 重置 successCount 和 failureCount
-    PROBE->>PROBE: 等待 initialDelaySeconds 后开始探测
+    // 镜像操作
+    rpc PullImage(PullImageRequest) returns (PullImageResponse) {}
+    rpc ListImages(ListImagesRequest) returns (ListImagesResponse) {}
+    rpc RemoveImage(RemoveImageRequest) returns (RemoveImageResponse) {}
+}
 ```
 
-### 要点说明
+### 1.2 RunPodSandbox（创建 Pod 沙箱）
 
-#### 1. 容器终止流程
+**作用：** 创建 Pod 的网络和 IPC 命名空间（Sandbox）
 
+**请求结构：**
+```go
+type RunPodSandboxRequest struct {
+    Config *PodSandboxConfig  // Pod 配置
+}
+
+type PodSandboxConfig struct {
+    Metadata   *PodSandboxMetadata  // 元数据
+    Hostname   string                // 主机名
+    LogDir     string                // 日志目录
+    DnsConfig  *DNSConfig            // DNS 配置
+    PortMappings []*PortMapping      // 端口映射
+    Labels     map[string]string     // 标签
+    Annotations map[string]string    // 注解
+}
 ```
-SIGTERM（优雅关闭）
-   ↓ 等待 terminationGracePeriodSeconds（默认 30s）
-SIGKILL（强制终止）
+
+**响应结构：**
+```go
+type RunPodSandboxResponse struct {
+    PodSandboxId string  // Sandbox ID
+}
 ```
 
-#### 2. RestartPolicy 策略
-- **Always**：总是重启（默认）
-- **OnFailure**：退出码非 0 时重启
-- **Never**：不重启
+**核心代码：**
+```go
+// pkg/kubelet/kuberuntime/kuberuntime_sandbox.go
 
-#### 3. CrashLoopBackOff
-- 容器启动后 10s 内退出 → 判定为 Crash
-- 退避时间：10s → 20s → 40s → ... → 5min（最大）
+func (m *kubeGenericRuntimeManager) RunPodSandbox(pod *v1.Pod) (string, error) {
+    // 1. 生成 PodSandboxConfig
+    podSandboxConfig := m.generatePodSandboxConfig(pod)
+    
+    // 2. 调用 CRI RunPodSandbox
+    resp, err := m.runtimeService.RunPodSandbox(podSandboxConfig)
+    if err != nil {
+        return "", err
+    }
+    
+    return resp.PodSandboxId, nil
+}
+```
+
+### 1.3 CreateContainer（创建容器）
+
+**请求结构：**
+```go
+type CreateContainerRequest struct {
+    PodSandboxId  string              // Sandbox ID
+    Config        *ContainerConfig    // 容器配置
+    SandboxConfig *PodSandboxConfig   // Sandbox 配置
+}
+
+type ContainerConfig struct {
+    Metadata    *ContainerMetadata   // 元数据
+    Image       *ImageSpec           // 镜像
+    Command     []string             // 命令
+    Args        []string             // 参数
+    WorkingDir  string               // 工作目录
+    Envs        []*KeyValue          // 环境变量
+    Mounts      []*Mount             // 挂载点
+    Devices     []*Device            // 设备
+    Linux       *LinuxContainerConfig // Linux 配置（cgroups）
+}
+```
+
+**响应结构：**
+```go
+type CreateContainerResponse struct {
+    ContainerId string  // 容器 ID
+}
+```
 
 ---
 
-## 场景 3：Volume 挂载流程（CSI）
+## 2. CNI（Container Network Interface）
 
-```mermaid
-sequenceDiagram
-    autonumber
-    participant KL as Kubelet
-    participant VM as VolumeManager
-    participant CSI as CSI Driver
-    participant CLOUD as Cloud Storage
-    
-    Note over KL,CLOUD: 场景：挂载 AWS EBS Volume
-    
-    KL->>VM: WaitForAttachAndMount(pod)
-    VM->>VM: 检查 Pod.Spec.Volumes
-    
-    Note over VM,CLOUD: 步骤 1：Attach（Controller 端）
-    
-    VM->>CSI: ControllerPublishVolume(volumeID, nodeID)
-    CSI->>CLOUD: AWS API: AttachVolume<br/>(VolumeID=vol-123, InstanceID=i-456)
-    CLOUD-->>CSI: Device Path = /dev/xvdf
-    CSI-->>VM: PublishContext = {devicePath: "/dev/xvdf"}
-    
-    Note over VM: 等待设备出现
-    
-    VM->>VM: 轮询检查 /dev/xvdf 是否存在
-    
-    Note over VM,CSI: 步骤 2：Stage（Node 端 - 格式化并挂载到临时目录）
-    
-    VM->>CSI: NodeStageVolume(volumeID, stagingPath)
-    CSI->>CSI: 检查文件系统<br/>blkid /dev/xvdf
-    
-    alt 文件系统不存在
-        CSI->>CSI: 格式化<br/>mkfs.ext4 /dev/xvdf
-    end
-    
-    CSI->>CSI: 挂载到临时目录<br/>mount /dev/xvdf /var/lib/kubelet/plugins/.../staging/{volume-id}
-    CSI-->>VM: Success
-    
-    Note over VM,CSI: 步骤 3：Publish（Node 端 - Bind Mount 到 Pod 目录）
-    
-    VM->>CSI: NodePublishVolume(volumeID, targetPath)
-    CSI->>CSI: Bind Mount<br/>mount --bind \<br/>  /var/lib/kubelet/plugins/.../staging/{volume-id} \<br/>  /var/lib/kubelet/pods/{pod-uid}/volumes/{volume-name}
-    CSI-->>VM: Success
-    
-    VM-->>KL: Volume 挂载完成
+### 2.1 接口定义
+
+CNI 通过**可执行文件**实现（存放在 `/opt/cni/bin/`）：
+
+```bash
+# CNI 插件调用示例
+echo '{
+  "cniVersion": "1.0.0",
+  "name": "pod-network",
+  "type": "bridge",
+  "bridge": "cni0",
+  "ipam": {
+    "type": "host-local",
+    "subnet": "10.244.0.0/24"
+  }
+}' | /opt/cni/bin/bridge ADD <container-id> <netns-path>
 ```
 
-### 要点说明
+### 2.2 ADD 操作（为容器配置网络）
 
-#### 1. Volume 生命周期
-
-```
-Provision（创建 PV）
-   ↓
-Attach（挂载到节点）
-   ↓
-Stage（格式化并挂载到临时目录）
-   ↓
-Publish（Bind Mount 到 Pod 目录）
-   ↓
-Unpublish（卸载 Bind Mount）
-   ↓
-Unstage（卸载临时目录）
-   ↓
-Detach（从节点卸载）
-   ↓
-Delete（删除 PV）
+**输入（stdin）：**
+```json
+{
+  "cniVersion": "1.0.0",
+  "name": "pod-network",
+  "type": "bridge",
+  "bridge": "cni0",
+  "ipam": {
+    "type": "host-local",
+    "subnet": "10.244.1.0/24",
+    "gateway": "10.244.1.1"
+  }
+}
 ```
 
-#### 2. Stage 和 Publish 的区别
-- **Stage**：挂载到节点级别的临时目录（一次性，多个 Pod 共享）
-- **Publish**：Bind Mount 到每个 Pod 的目录（每个 Pod 一次）
+**环境变量：**
+- `CNI_COMMAND=ADD`
+- `CNI_CONTAINERID=abc123`
+- `CNI_NETNS=/var/run/netns/abc123`
+- `CNI_IFNAME=eth0`
 
-#### 3. 为什么需要 Stage？
-- 避免重复格式化（多个 Pod 使用同一 Volume）
-- 提高挂载效率（仅一次 mkfs 和 mount）
+**输出（stdout）：**
+```json
+{
+  "cniVersion": "1.0.0",
+  "interfaces": [
+    {
+      "name": "eth0",
+      "mac": "02:42:ac:11:00:02"
+    }
+  ],
+  "ips": [
+    {
+      "version": "4",
+      "address": "10.244.1.5/24",
+      "gateway": "10.244.1.1",
+      "interface": 0
+    }
+  ],
+  "routes": [
+    {
+      "dst": "0.0.0.0/0",
+      "gw": "10.244.1.1"
+    }
+  ]
+}
+```
+
+### 2.3 核心代码
+
+```go
+// pkg/kubelet/dockershim/network/cni/cni.go
+
+func (plugin *cniNetworkPlugin) SetUpPod(namespace, name string, id kubecontainer.ContainerID) error {
+    // 1. 构造 CNI 配置
+    netConf := plugin.getNetConfig()
+    
+    // 2. 创建网络命名空间
+    netns, err := plugin.host.GetNetNS(id.ID)
+    if err != nil {
+        return err
+    }
+    
+    // 3. 调用 CNI 插件（ADD 操作）
+    result, err := plugin.addToNetwork(netConf, id.ID, netns)
+    if err != nil {
+        return err
+    }
+    
+    // 4. 记录网络配置结果
+    plugin.podNetworks[id.ID] = result
+    
+    return nil
+}
+```
 
 ---
 
-## 性能指标
+## 3. CSI（Container Storage Interface）
 
-### 关键指标
+### 3.1 接口定义
 
-| 指标 | 类型 | 说明 |
-|-----|------|------|
-| `kubelet_pod_start_duration_seconds` | Histogram | Pod 启动延迟（从接收到容器运行） |
-| `kubelet_pod_worker_duration_seconds` | Histogram | PodWorker 处理时间 |
-| `kubelet_pleg_relist_duration_seconds` | Histogram | PLEG 轮询耗时 |
-| `kubelet_cri_operations_duration_seconds` | Histogram | CRI 操作延迟 |
-| `kubelet_volume_mount_duration_seconds` | Histogram | Volume 挂载延迟 |
-| `kubelet_container_restart_total` | Counter | 容器重启次数 |
+CSI 是 gRPC 接口，包含三个服务：
+
+```protobuf
+// csi.proto
+
+// Identity Service（身份服务）
+service Identity {
+    rpc GetPluginInfo(GetPluginInfoRequest) returns (GetPluginInfoResponse) {}
+    rpc GetPluginCapabilities(GetPluginCapabilitiesRequest) returns (GetPluginCapabilitiesResponse) {}
+    rpc Probe(ProbeRequest) returns (ProbeResponse) {}
+}
+
+// Controller Service（控制器服务）
+service Controller {
+    rpc CreateVolume(CreateVolumeRequest) returns (CreateVolumeResponse) {}
+    rpc DeleteVolume(DeleteVolumeRequest) returns (DeleteVolumeResponse) {}
+    rpc ControllerPublishVolume(ControllerPublishVolumeRequest) returns (ControllerPublishVolumeResponse) {}
+    rpc ControllerUnpublishVolume(ControllerUnpublishVolumeRequest) returns (ControllerUnpublishVolumeResponse) {}
+}
+
+// Node Service（节点服务）
+service Node {
+    rpc NodeStageVolume(NodeStageVolumeRequest) returns (NodeStageVolumeResponse) {}
+    rpc NodeUnstageVolume(NodeUnstageVolumeRequest) returns (NodeUnstageVolumeResponse) {}
+    rpc NodePublishVolume(NodePublishVolumeRequest) returns (NodePublishVolumeResponse) {}
+    rpc NodeUnpublishVolume(NodeUnpublishVolumeRequest) returns (NodeUnpublishVolumeResponse) {}
+}
+```
+
+### 3.2 Volume 挂载流程
+
+**步骤 1：ControllerPublishVolume（Attach）**
+
+**作用：** 将云盘挂载到节点（如 AWS EBS Attach）
+
+**请求：**
+```go
+type ControllerPublishVolumeRequest struct {
+    VolumeId         string              // Volume ID
+    NodeId           string              // Node ID
+    VolumeCapability *VolumeCapability   // Volume 能力
+}
+```
+
+**响应：**
+```go
+type ControllerPublishVolumeResponse struct {
+    PublishContext map[string]string  // 挂载上下文（如设备路径 /dev/xvdf）
+}
+```
+
+**步骤 2：NodeStageVolume（Stage）**
+
+**作用：** 将设备格式化并挂载到临时目录
+
+**请求：**
+```go
+type NodeStageVolumeRequest struct {
+    VolumeId          string              // Volume ID
+    PublishContext    map[string]string   // 挂载上下文
+    StagingTargetPath string              // 临时挂载路径
+    VolumeCapability  *VolumeCapability   // Volume 能力
+}
+```
+
+**步骤 3：NodePublishVolume（Publish）**
+
+**作用：** Bind Mount 到 Pod 目录
+
+**请求：**
+```go
+type NodePublishVolumeRequest struct {
+    VolumeId          string    // Volume ID
+    PublishContext    map[string]string
+    StagingTargetPath string    // 临时挂载路径
+    TargetPath        string    // Pod 挂载路径（/var/lib/kubelet/pods/{uid}/volumes/{name}）
+    Readonly          bool
+}
+```
+
+### 3.3 核心代码
+
+```go
+// pkg/volume/csi/csi_attacher.go
+
+func (c *csiAttacher) Attach(spec *volume.Spec, nodeName types.NodeName) (string, error) {
+    // 1. 调用 CSI ControllerPublishVolume
+    ctx := context.Background()
+    req := &csi.ControllerPublishVolumeRequest{
+        VolumeId: volumeHandle,
+        NodeId:   string(nodeName),
+        VolumeCapability: &csi.VolumeCapability{
+            AccessMode: &csi.VolumeCapability_AccessMode{
+                Mode: csi.VolumeCapability_AccessMode_SINGLE_NODE_WRITER,
+            },
+        },
+    }
+    
+    resp, err := c.client.ControllerPublishVolume(ctx, req)
+    if err != nil {
+        return "", err
+    }
+    
+    // 2. 返回 PublishContext
+    return resp.PublishContext["devicePath"], nil
+}
+```
+
+---
+
+## 性能优化与最佳实践
+
+### 1. CRI 优化
+
+**使用 containerd 而非 Docker**
+- containerd 更轻量（无 Docker Daemon）
+- 减少一层调用链（kubelet → containerd CRI 插件 → containerd）
+
+### 2. CNI 优化
+
+**选择高性能 CNI 插件**
+- Calico（eBPF 模式）：最高性能
+- Cilium（eBPF）：L7 策略支持
+- Flannel（VXLAN）：简单易用
+
+### 3. CSI 优化
+
+**使用本地存储**
+- Local PV：直接使用节点磁盘（无网络开销）
+- 适用场景：数据库、缓存
 
 ---
 
 **文档维护：**
-
 - 版本：v1.0
 - 最后更新：2025-10-04
 - 适用 Kubernetes 版本：v1.29+
-
----
