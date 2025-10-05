@@ -1,3 +1,14 @@
+---
+title: "Istio 源码剖析 - Pilot模块"
+date: 2024-01-16
+draft: false
+tags: ["Istio", "Pilot", "配置管理", "服务发现", "xDS协议", "源码分析"]
+categories: ["Istio"]
+series: ["Istio源码剖析"]
+weight: 2
+description: "深入分析Istio Pilot模块的架构设计和核心实现，包括配置管理、服务发现、xDS协议、配置生成和分发机制的完整技术解析。"
+---
+
 # Istio 源码剖析 - Pilot模块
 
 ## 模块概览

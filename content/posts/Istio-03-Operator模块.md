@@ -1,3 +1,14 @@
+---
+title: "Istio 源码剖析 - Operator模块"
+date: 2024-01-18
+draft: false
+tags: ["Istio", "Operator", "运维管理", "声明式API", "Helm", "Kubernetes", "源码分析"]
+categories: ["Istio"]
+series: ["Istio源码剖析"]
+weight: 4
+description: "深入分析Istio Operator模块的运维管理能力，包括声明式API、配置渲染、组件协调、版本升级和企业级多环境部署的完整实现。"
+---
+
 # Istio 源码剖析 - Operator模块
 
 ## 模块概览

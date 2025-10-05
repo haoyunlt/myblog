@@ -1,3 +1,14 @@
+---
+title: "Istio 源码剖析 - CNI模块"
+date: 2024-01-19
+draft: false
+tags: ["Istio", "CNI", "网络插件", "流量拦截", "iptables", "nftables", "源码分析"]
+categories: ["Istio"]
+series: ["Istio源码剖析"]
+weight: 5
+description: "深入解析Istio CNI模块的网络功能实现，包括流量拦截、网络规则管理、Pod生命周期处理和多租户网络隔离的完整技术方案。"
+---
+
 # Istio 源码剖析 - CNI模块
 
 ## 模块概览

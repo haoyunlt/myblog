@@ -1,3 +1,14 @@
+---
+title: "Istio 源码剖析 - 综合实践指南"
+date: 2024-01-20
+draft: false
+tags: ["Istio", "综合实践", "istioctl", "PKG包", "企业级部署", "性能优化", "故障排查", "源码分析"]
+categories: ["Istio"]
+series: ["Istio源码剖析"]
+weight: 6
+description: "全面解析Istio的综合实践指南，包括istioctl工具深度剖析、PKG核心包架构、企业级部署方案、性能监控调优和故障排查工具集。"
+---
+
 # Istio 源码剖析 - 综合实践指南
 
 ## 概览

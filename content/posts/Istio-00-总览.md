@@ -1,3 +1,14 @@
+---
+title: "Istio 源码剖析 - 总览"
+date: 2024-01-15
+draft: false
+tags: ["Istio", "服务网格", "微服务", "云原生", "源码分析"]
+categories: ["Istio"]
+series: ["Istio源码剖析"]
+weight: 1
+description: "深入剖析Istio服务网格的整体架构设计，涵盖控制平面、数据平面、管理工具和基础设施的完整技术栈，解析关键组件交互和设计权衡。"
+---
+
 # Istio 源码剖析 - 总览
 
 ## 项目摘要

@@ -1,3 +1,14 @@
+---
+title: "Istio 源码剖析 - Security模块"
+date: 2024-01-17
+draft: false
+tags: ["Istio", "Security", "证书管理", "身份认证", "mTLS", "SDS协议", "源码分析"]
+categories: ["Istio"]
+series: ["Istio源码剖析"]
+weight: 3
+description: "深入解析Istio Security模块的安全架构，包括证书管理、身份认证、SDS协议、证书轮换和零信任网络安全实现的完整技术栈。"
+---
+
 # Istio 源码剖析 - Security模块
 
 ## 模块概览
