@@ -1,0 +1,543 @@
+{
+  "config": {
+    "url": "https://www.tommienotes.com/",
+    "device": "iPhone 13 Pro",
+    "iterations": 50,
+    "delayBetweenVisits": 2000,
+    "timeout": 30000,
+    "screenshotOnError": true,
+    "collectMetrics": true,
+    "outputDir": "./test-results"
+  },
+  "stats": {
+    "total": 50,
+    "success": 49,
+    "failed": 1,
+    "crashed": 0,
+    "timeouts": 0,
+    "errors": [
+      {
+        "iteration": 33,
+        "success": false,
+        "crashed": false,
+        "timeout": false,
+        "error": {
+          "message": "page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"https://www.tommienotes.com/\", waiting until \"networkidle\"\n",
+          "stack": "page.goto: Timeout 30000ms exceeded.\nCall log:\n  - navigating to \"https://www.tommienotes.com/\", waiting until \"networkidle\"\n\n    at testVisit (/Users/lintao/important/ai-customer/myblog/test-mobile-crash.js:157:37)\n    at async main (/Users/lintao/important/ai-customer/myblog/test-mobile-crash.js:376:13)",
+          "name": "TimeoutError"
+        },
+        "metrics": null,
+        "consoleErrors": [
+          {
+            "iteration": 33,
+            "type": "error",
+            "text": "Failed to load resource: net::ERR_TIMED_OUT",
+            "timestamp": 1759758703691
+          },
+          {
+            "iteration": 33,
+            "type": "error",
+            "text": "[ERROR] Mermaid库未加载  ",
+            "timestamp": 1759758703755
+          }
+        ],
+        "duration": 30003,
+        "timestamp": 1759758673335
+      }
+    ],
+    "metrics": [
+      {
+        "loadTime": 1322.5999999940395,
+        "domReady": 1319.8999999985099,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758486255
+      },
+      {
+        "loadTime": 1048.0999999940395,
+        "domReady": 1045.3999999985099,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758491742
+      },
+      {
+        "loadTime": 1147.3000000044703,
+        "domReady": 1144.7000000029802,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758497321
+      },
+      {
+        "loadTime": 1179.7000000029802,
+        "domReady": 1177.1000000014901,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758502931
+      },
+      {
+        "loadTime": 1075.2000000029802,
+        "domReady": 1072.7000000029802,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758508444
+      },
+      {
+        "loadTime": 2341.60000000149,
+        "domReady": 2339,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758515208
+      },
+      {
+        "loadTime": 1258.7999999970198,
+        "domReady": 1256.2999999970198,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758520893
+      },
+      {
+        "loadTime": 1831.8000000044703,
+        "domReady": 1829.2000000029802,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758527146
+      },
+      {
+        "loadTime": 1075.8999999985099,
+        "domReady": 1073.3999999985099,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758532659
+      },
+      {
+        "loadTime": 1090.8999999985099,
+        "domReady": 1088.3999999985099,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758538179
+      },
+      {
+        "loadTime": 1110.3999999985099,
+        "domReady": 1107.8999999985099,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758543727
+      },
+      {
+        "loadTime": 1177.3000000044703,
+        "domReady": 1174.8000000044703,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758549328
+      },
+      {
+        "loadTime": 1157.1000000014901,
+        "domReady": 1154.6000000014901,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758554912
+      },
+      {
+        "loadTime": 1177,
+        "domReady": 1174.3999999985099,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758560528
+      },
+      {
+        "loadTime": 1137,
+        "domReady": 1134.5,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758566100
+      },
+      {
+        "loadTime": 1086.3999999985099,
+        "domReady": 1084,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758571616
+      },
+      {
+        "loadTime": 1100.0999999940395,
+        "domReady": 1097.5,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758577145
+      },
+      {
+        "loadTime": 1105,
+        "domReady": 1102.3999999985099,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758582688
+      },
+      {
+        "loadTime": 1138,
+        "domReady": 1135.4000000059605,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758588255
+      },
+      {
+        "loadTime": 1424.7000000029802,
+        "domReady": 1422.2000000029802,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758594107
+      },
+      {
+        "loadTime": 2475.2999999970198,
+        "domReady": 2472.7999999970198,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758601007
+      },
+      {
+        "loadTime": 2491.39999999851,
+        "domReady": 2488.6999999955297,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758607927
+      },
+      {
+        "loadTime": 2510.2999999970198,
+        "domReady": 2507.7999999970198,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758614865
+      },
+      {
+        "loadTime": 1114.2999999970198,
+        "domReady": 1111.7999999970198,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758620388
+      },
+      {
+        "loadTime": 1153.1000000014901,
+        "domReady": 1150.2999999970198,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758625969
+      },
+      {
+        "loadTime": 2133.10000000149,
+        "domReady": 2130.60000000149,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758632514
+      },
+      {
+        "loadTime": 1126.8999999985099,
+        "domReady": 1124.1000000014901,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758638069
+      },
+      {
+        "loadTime": 3231.4000000059605,
+        "domReady": 3229,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758645731
+      },
+      {
+        "loadTime": 1155.2999999970198,
+        "domReady": 1152.6000000014901,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758651306
+      },
+      {
+        "loadTime": 2443.9000000059605,
+        "domReady": 2441.3000000044703,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758658304
+      },
+      {
+        "loadTime": 1078.3999999985099,
+        "domReady": 1075.8999999985099,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758663812
+      },
+      {
+        "loadTime": 1057.6000000014901,
+        "domReady": 1055.2000000029802,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758669288
+      },
+      {
+        "loadTime": 2365.4000000059605,
+        "domReady": 2362.7000000029802,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758709684
+      },
+      {
+        "loadTime": 1960.8999999985099,
+        "domReady": 1958.3000000044703,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758716061
+      },
+      {
+        "loadTime": 1351.3999999985099,
+        "domReady": 1348.7000000029802,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758721826
+      },
+      {
+        "loadTime": 1187.5,
+        "domReady": 1184.7999999970198,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758727438
+      },
+      {
+        "loadTime": 1106.1000000014901,
+        "domReady": 1103.5,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758732968
+      },
+      {
+        "loadTime": 1284.7999999970198,
+        "domReady": 1282.1999999955297,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758738676
+      },
+      {
+        "loadTime": 1098.4000000059605,
+        "domReady": 1095.6000000014901,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758744192
+      },
+      {
+        "loadTime": 1137.3999999985099,
+        "domReady": 1134.6999999955297,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758749751
+      },
+      {
+        "loadTime": 1111.6000000014901,
+        "domReady": 1109.1000000014901,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758755279
+      },
+      {
+        "loadTime": 1068.3999999985099,
+        "domReady": 1065.7000000029802,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758760758
+      },
+      {
+        "loadTime": 1152.6000000014901,
+        "domReady": 1150,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758766325
+      },
+      {
+        "loadTime": 1052.6999999955297,
+        "domReady": 1049.8999999985099,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758771786
+      },
+      {
+        "loadTime": 1169.3000000044703,
+        "domReady": 1166.8000000044703,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758777374
+      },
+      {
+        "loadTime": 1161.7999999970198,
+        "domReady": 1158.7999999970198,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758782936
+      },
+      {
+        "loadTime": 1109.7999999970198,
+        "domReady": 1107,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758788464
+      },
+      {
+        "loadTime": 1114.5,
+        "domReady": 1111.8999999985099,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758794008
+      },
+      {
+        "loadTime": 1141.3000000044703,
+        "domReady": 1138.6000000014901,
+        "jsHeapSize": 10000000,
+        "jsHeapLimit": 3760000000,
+        "totalHeapSize": 10000000,
+        "resources": 3,
+        "url": "https://www.tommienotes.com/",
+        "timestamp": 1759758799574
+      }
+    ],
+    "startTime": 1759758482702
+  },
+  "timestamp": "2025-10-06T13:53:21.581Z"
+}

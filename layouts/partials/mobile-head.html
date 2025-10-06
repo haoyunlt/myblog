@@ -42,18 +42,30 @@
         button,a,.post-entry{-webkit-tap-highlight-color:rgba(0,0,0,0.1);touch-action:manipulation}
     </style>
     
+    {{- /* Service Worker 注销脚本 - 最高优先级，确保旧的 SW 被清理 */ -}}
+    <script src="{{ "js/unregister-sw.js" | relURL }}"></script>
+    
+    {{- /* Bugly 崩溃上报 - 异步加载避免阻塞 */ -}}
+    <script src="{{ "js/bugly-report.js" | relURL }}" async></script>
+    
+    {{- /* 错误处理器 - 异步加载避免阻塞 */ -}}
+    <script src="{{ "js/mobile-error-handler.js" | relURL }}" async></script>
+    
+    {{- /* 参数验证器 - 异步加载 */ -}}
+    <script src="{{ "js/mobile-param-validator.js" | relURL }}" async></script>
+    
     {{- /* 字体预加载 - 移动端关键 */ -}}
     <link rel="preload" href="{{ "fonts/inter/inter-regular.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
     <link rel="preload" href="{{ "fonts/inter/inter-bold.woff2" | relURL }}" as="font" type="font/woff2" crossorigin>
     
     {{- /* 关键CSS预加载 */ -}}
     <link rel="preload" href="{{ "css/stylesheet.css" | relURL }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
-    <link rel="preload" href="{{ "css/mobile-performance.css" | relURL }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
+    <link rel="preload" href="{{ "css/extended/mobile-performance.css" | relURL }}" as="style" onload="this.onload=null;this.rel='stylesheet'">
     
     {{- /* CSS回退 */ -}}
     <noscript>
         <link rel="stylesheet" href="{{ "css/stylesheet.css" | relURL }}">
-        <link rel="stylesheet" href="{{ "css/mobile-performance.css" | relURL }}">
+        <link rel="stylesheet" href="{{ "css/extended/mobile-performance.css" | relURL }}">
     </noscript>
     
     {{- /* 标题和描述 */ -}}
@@ -124,35 +136,114 @@
     <a href="#main-content" class="skip-link" style="position:absolute;top:-40px;left:0;background:#2563eb;color:white;padding:8px 16px;text-decoration:none;transition:top 0.3s;z-index:10001">跳转到主要内容</a>
     
     <script>
-        // 页面加载进度
+        // 页面加载进度 - 增强版
         (function(){
-            var indicator = document.getElementById('loading-indicator');
-            var progress = 0;
-            var interval = setInterval(function(){
-                progress += Math.random() * 10;
-                if(progress >= 90){
-                    progress = 90;
-                    clearInterval(interval);
-                }
-                indicator.style.transform = 'scaleX(' + (progress/100) + ')';
-            }, 100);
+            'use strict';
             
-            window.addEventListener('load', function(){
-                indicator.style.transform = 'scaleX(1)';
-                setTimeout(function(){
-                    indicator.style.opacity = '0';
-                    setTimeout(function(){
-                        indicator.remove();
-                    }, 300);
-                }, 200);
-            });
+            // 获取调试对象（如果可用）
+            var debug = window.MobileDebug || {
+                debug: function(msg, data) { console.log('[Mobile-Head Debug]', msg, data || ''); },
+                info: function(msg, data) { console.log('[Mobile-Head Info]', msg, data || ''); },
+                warn: function(msg, data) { console.warn('[Mobile-Head Warn]', msg, data || ''); },
+                error: function(msg, err) { console.error('[Mobile-Head Error]', msg, err || ''); },
+                log: function(msg, data) { console.log('[Mobile-Head]', msg, data || ''); }
+            };
+            
+            try {
+                debug.log('初始化移动端头部组件');
+                
+                var indicator = document.getElementById('loading-indicator');
+                if (!indicator) {
+                    debug.warn('找不到loading-indicator元素');
+                    return;
+                }
+                
+                var progress = 0;
+                var interval = setInterval(function(){
+                    try {
+                        progress += Math.random() * 10;
+                        if(progress >= 90){
+                            progress = 90;
+                            clearInterval(interval);
+                            debug.debug('加载进度达到90%');
+                        }
+                        indicator.style.transform = 'scaleX(' + (progress/100) + ')';
+                    } catch (e) {
+                        debug.error('更新加载进度失败', e);
+                        clearInterval(interval);
+                    }
+                }, 100);
+                
+                window.addEventListener('load', function(){
+                    try {
+                        debug.log('页面加载完成，完成进度条动画');
+                        indicator.style.transform = 'scaleX(1)';
+                        
+                        setTimeout(function(){
+                            try {
+                                indicator.style.opacity = '0';
+                                setTimeout(function(){
+                                    try {
+                                        indicator.remove();
+                                        debug.log('加载指示器已移除');
+                                    } catch (e) {
+                                        debug.warn('移除加载指示器失败', e);
+                                    }
+                                }, 300);
+                            } catch (e) {
+                                debug.warn('隐藏加载指示器失败', e);
+                            }
+                        }, 200);
+                    } catch (e) {
+                        debug.error('页面加载完成处理失败', e);
+                    }
+                });
+                
+                debug.log('加载进度指示器初始化成功');
+            } catch (e) {
+                console.error('加载进度指示器初始化失败:', e);
+            }
         })();
         
-        // 跳过链接显示
-        document.querySelector('.skip-link').addEventListener('focus', function(){
-            this.style.top = '0';
-        });
-        document.querySelector('.skip-link').addEventListener('blur', function(){
-            this.style.top = '-40px';
-        });
+        // 跳过链接显示 - 增强版
+        (function(){
+            'use strict';
+            
+            var debug = window.MobileDebug || {
+                debug: function(msg) { console.log('[Skip-Link]', msg); },
+                error: function(msg, err) { console.error('[Skip-Link Error]', msg, err); }
+            };
+            
+            try {
+                debug.debug('初始化跳过链接');
+                
+                var skipLink = document.querySelector('.skip-link');
+                if (!skipLink) {
+                    debug.error('找不到skip-link元素');
+                    return;
+                }
+                
+                skipLink.addEventListener('focus', function(){
+                    try {
+                        this.style.top = '0';
+                        debug.debug('跳过链接已显示');
+                    } catch (e) {
+                        debug.error('显示跳过链接失败', e);
+                    }
+                });
+                
+                skipLink.addEventListener('blur', function(){
+                    try {
+                        this.style.top = '-40px';
+                        debug.debug('跳过链接已隐藏');
+                    } catch (e) {
+                        debug.error('隐藏跳过链接失败', e);
+                    }
+                });
+                
+                debug.debug('跳过链接初始化成功');
+            } catch (e) {
+                console.error('跳过链接初始化失败:', e);
+            }
+        })();
     </script>

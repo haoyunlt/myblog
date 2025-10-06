@@ -1,0 +1,616 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移动端Chrome崩溃诊断工具</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+        }
+        
+        .header h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+        }
+        
+        .header p {
+            opacity: 0.9;
+            font-size: 14px;
+        }
+        
+        .content {
+            padding: 30px;
+        }
+        
+        .section {
+            margin-bottom: 30px;
+            padding: 20px;
+            background: #f8f9fa;
+            border-radius: 10px;
+            border-left: 4px solid #007bff;
+        }
+        
+        .section h3 {
+            color: #333;
+            margin-bottom: 15px;
+            font-size: 18px;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            font-weight: 500;
+            color: #555;
+        }
+        
+        .metric-value {
+            font-weight: 600;
+            padding: 4px 12px;
+            border-radius: 20px;
+            font-size: 12px;
+        }
+        
+        .status-good {
+            background: #d4edda;
+            color: #155724;
+        }
+        
+        .status-warning {
+            background: #fff3cd;
+            color: #856404;
+        }
+        
+        .status-danger {
+            background: #f8d7da;
+            color: #721c24;
+        }
+        
+        .actions {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 20px;
+        }
+        
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 25px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-block;
+            text-align: center;
+        }
+        
+        .btn-primary {
+            background: #007bff;
+            color: white;
+        }
+        
+        .btn-success {
+            background: #28a745;
+            color: white;
+        }
+        
+        .btn-warning {
+            background: #ffc107;
+            color: #212529;
+        }
+        
+        .btn-danger {
+            background: #dc3545;
+            color: white;
+        }
+        
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
+        }
+        
+        .log-container {
+            background: #1e1e1e;
+            color: #f8f8f2;
+            padding: 20px;
+            border-radius: 10px;
+            font-family: 'Courier New', monospace;
+            font-size: 12px;
+            max-height: 300px;
+            overflow-y: auto;
+            margin-top: 20px;
+        }
+        
+        .log-entry {
+            margin-bottom: 5px;
+            padding: 5px 0;
+        }
+        
+        .log-error {
+            color: #ff6b6b;
+        }
+        
+        .log-warning {
+            color: #ffd93d;
+        }
+        
+        .log-info {
+            color: #4ecdc4;
+        }
+        
+        .log-debug {
+            color: #a8e6cf;
+        }
+        
+        .progress-bar {
+            width: 100%;
+            height: 8px;
+            background: #e9ecef;
+            border-radius: 4px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(90deg, #28a745, #20c997);
+            transition: width 0.3s ease;
+        }
+        
+        .alert {
+            padding: 15px;
+            border-radius: 8px;
+            margin: 15px 0;
+            border-left: 4px solid;
+        }
+        
+        .alert-info {
+            background: #d1ecf1;
+            border-color: #17a2b8;
+            color: #0c5460;
+        }
+        
+        .alert-warning {
+            background: #fff3cd;
+            border-color: #ffc107;
+            color: #856404;
+        }
+        
+        .alert-danger {
+            background: #f8d7da;
+            border-color: #dc3545;
+            color: #721c24;
+        }
+        
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 15px;
+            margin: 20px 0;
+        }
+        
+        .stat-card {
+            background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+        }
+        
+        .stat-value {
+            font-size: 24px;
+            font-weight: bold;
+            color: #007bff;
+            margin-bottom: 5px;
+        }
+        
+        .stat-label {
+            color: #666;
+            font-size: 14px;
+        }
+        
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 10px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .actions {
+                flex-direction: column;
+            }
+            
+            .btn {
+                width: 100%;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🔧 移动端Chrome崩溃诊断工具</h1>
+            <p>实时监控和诊断移动端Chrome崩溃问题</p>
+        </div>
+        
+        <div class="content">
+            <!-- 系统状态 -->
+            <div class="section">
+                <h3>📊 系统状态</h3>
+                <div class="stats-grid">
+                    <div class="stat-card">
+                        <div class="stat-value" id="memory-usage">--</div>
+                        <div class="stat-label">内存使用率</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="image-count">--</div>
+                        <div class="stat-label">图片数量</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="dom-nodes">--</div>
+                        <div class="stat-label">DOM节点</div>
+                    </div>
+                    <div class="stat-card">
+                        <div class="stat-value" id="error-count">--</div>
+                        <div class="stat-label">错误数量</div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 崩溃指标 -->
+            <div class="section">
+                <h3>⚠️ 崩溃风险指标</h3>
+                <div id="crash-indicators">
+                    <div class="metric">
+                        <span class="metric-label">内存使用率</span>
+                        <span class="metric-value status-good" id="memory-status">正常</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">图片数量</span>
+                        <span class="metric-value status-good" id="images-status">正常</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">DOM复杂度</span>
+                        <span class="metric-value status-good" id="dom-status">正常</span>
+                    </div>
+                    <div class="metric">
+                        <span class="metric-label">JavaScript错误</span>
+                        <span class="metric-value status-good" id="errors-status">正常</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 操作按钮 -->
+            <div class="section">
+                <h3>🛠️ 诊断操作</h3>
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="runDiagnostic()">🔍 运行诊断</button>
+                    <button class="btn btn-success" onclick="optimizePerformance()">⚡ 性能优化</button>
+                    <button class="btn btn-warning" onclick="emergencyCleanup()">🧹 紧急清理</button>
+                    <button class="btn btn-danger" onclick="resetSystem()">🔄 重置系统</button>
+                </div>
+            </div>
+            
+            <!-- 实时日志 -->
+            <div class="section">
+                <h3>📝 实时日志</h3>
+                <div class="log-container" id="log-container">
+                    <div class="log-entry log-info">系统启动中...</div>
+                </div>
+                <div class="actions">
+                    <button class="btn btn-primary" onclick="clearLogs()">🗑️ 清空日志</button>
+                    <button class="btn btn-success" onclick="exportLogs()">💾 导出日志</button>
+                </div>
+            </div>
+            
+            <!-- 建议和警告 -->
+            <div id="alerts-container"></div>
+        </div>
+    </div>
+    
+    <!-- 引入诊断脚本 -->
+    <script src="/mobile-crash-diagnostic.js"></script>
+    
+    <script>
+        // 诊断工具界面逻辑
+        class MobileCrashDiagnosticUI {
+            constructor() {
+                this.logContainer = document.getElementById('log-container');
+                this.alertsContainer = document.getElementById('alerts-container');
+                this.init();
+            }
+            
+            init() {
+                this.addLog('系统初始化完成', 'info');
+                this.startMonitoring();
+                this.updateStats();
+            }
+            
+            startMonitoring() {
+                // 每5秒更新一次状态
+                setInterval(() => {
+                    this.updateStats();
+                    this.checkAlerts();
+                }, 5000);
+            }
+            
+            updateStats() {
+                try {
+                    // 更新内存使用率
+                    if (performance.memory) {
+                        const memoryUsage = (performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit) * 100;
+                        document.getElementById('memory-usage').textContent = memoryUsage.toFixed(1) + '%';
+                        
+                        const memoryStatus = document.getElementById('memory-status');
+                        if (memoryUsage > 80) {
+                            memoryStatus.textContent = '危险';
+                            memoryStatus.className = 'metric-value status-danger';
+                        } else if (memoryUsage > 60) {
+                            memoryStatus.textContent = '警告';
+                            memoryStatus.className = 'metric-value status-warning';
+                        } else {
+                            memoryStatus.textContent = '正常';
+                            memoryStatus.className = 'metric-value status-good';
+                        }
+                    }
+                    
+                    // 更新图片数量
+                    const imageCount = document.querySelectorAll('img').length;
+                    document.getElementById('image-count').textContent = imageCount;
+                    
+                    const imagesStatus = document.getElementById('images-status');
+                    if (imageCount > 100) {
+                        imagesStatus.textContent = '过多';
+                        imagesStatus.className = 'metric-value status-danger';
+                    } else if (imageCount > 50) {
+                        imagesStatus.textContent = '较多';
+                        imagesStatus.className = 'metric-value status-warning';
+                    } else {
+                        imagesStatus.textContent = '正常';
+                        imagesStatus.className = 'metric-value status-good';
+                    }
+                    
+                    // 更新DOM节点数量
+                    const domNodes = document.querySelectorAll('*').length;
+                    document.getElementById('dom-nodes').textContent = domNodes;
+                    
+                    const domStatus = document.getElementById('dom-status');
+                    if (domNodes > 2000) {
+                        domStatus.textContent = '复杂';
+                        domStatus.className = 'metric-value status-danger';
+                    } else if (domNodes > 1000) {
+                        domStatus.textContent = '较多';
+                        domStatus.className = 'metric-value status-warning';
+                    } else {
+                        domStatus.textContent = '正常';
+                        domStatus.className = 'metric-value status-good';
+                    }
+                    
+                    // 更新错误数量
+                    const errorCount = window.MobileDebug?.errors?.length || 0;
+                    document.getElementById('error-count').textContent = errorCount;
+                    
+                    const errorsStatus = document.getElementById('errors-status');
+                    if (errorCount > 10) {
+                        errorsStatus.textContent = '过多';
+                        errorsStatus.className = 'metric-value status-danger';
+                    } else if (errorCount > 5) {
+                        errorsStatus.textContent = '较多';
+                        errorsStatus.className = 'metric-value status-warning';
+                    } else {
+                        errorsStatus.textContent = '正常';
+                        errorsStatus.className = 'metric-value status-good';
+                    }
+                    
+                } catch (e) {
+                    this.addLog('更新统计信息失败: ' + e.message, 'error');
+                }
+            }
+            
+            checkAlerts() {
+                this.alertsContainer.innerHTML = '';
+                
+                // 检查内存使用
+                if (performance.memory) {
+                    const memoryUsage = (performance.memory.usedJSHeapSize / performance.memory.jsHeapSizeLimit) * 100;
+                    if (memoryUsage > 80) {
+                        this.addAlert('内存使用率过高，可能导致崩溃！', 'danger');
+                    } else if (memoryUsage > 60) {
+                        this.addAlert('内存使用率较高，建议清理资源', 'warning');
+                    }
+                }
+                
+                // 检查图片数量
+                const imageCount = document.querySelectorAll('img').length;
+                if (imageCount > 100) {
+                    this.addAlert('图片数量过多，建议启用懒加载', 'warning');
+                }
+                
+                // 检查错误数量
+                const errorCount = window.MobileDebug?.errors?.length || 0;
+                if (errorCount > 10) {
+                    this.addAlert('JavaScript错误过多，可能影响稳定性', 'danger');
+                }
+            }
+            
+            addAlert(message, type) {
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type}`;
+                alert.textContent = message;
+                this.alertsContainer.appendChild(alert);
+            }
+            
+            addLog(message, type = 'info') {
+                const logEntry = document.createElement('div');
+                logEntry.className = `log-entry log-${type}`;
+                logEntry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+                this.logContainer.appendChild(logEntry);
+                this.logContainer.scrollTop = this.logContainer.scrollHeight;
+            }
+        }
+        
+        // 全局函数
+        function runDiagnostic() {
+            ui.addLog('开始运行诊断...', 'info');
+            
+            if (window.MobileCrashDiagnostic) {
+                const report = window.getCrashReport();
+                ui.addLog('诊断完成: ' + JSON.stringify(report), 'info');
+            } else {
+                ui.addLog('诊断系统未加载', 'error');
+            }
+        }
+        
+        function optimizePerformance() {
+            ui.addLog('开始性能优化...', 'info');
+            
+            // 清理图片
+            const images = document.querySelectorAll('img');
+            let cleanedCount = 0;
+            images.forEach((img, index) => {
+                if (index > 50 && !isInViewport(img)) {
+                    img.src = '';
+                    img.dataset.optimized = 'true';
+                    cleanedCount++;
+                }
+            });
+            
+            ui.addLog(`清理了 ${cleanedCount} 张图片`, 'info');
+            
+            // 清理DOM
+            const hiddenElements = document.querySelectorAll('[style*="display: none"]');
+            hiddenElements.forEach(el => {
+                if (!el.dataset.important) {
+                    el.remove();
+                }
+            });
+            
+            ui.addLog(`清理了 ${hiddenElements.length} 个隐藏元素`, 'info');
+            
+            // 强制垃圾回收
+            if (window.gc) {
+                window.gc();
+                ui.addLog('执行了垃圾回收', 'info');
+            }
+        }
+        
+        function emergencyCleanup() {
+            ui.addLog('执行紧急清理...', 'warning');
+            
+            // 清理所有非关键图片
+            const images = document.querySelectorAll('img');
+            images.forEach(img => {
+                if (!img.dataset.important) {
+                    img.src = '';
+                    img.dataset.emergencyCleaned = 'true';
+                }
+            });
+            
+            // 清理所有隐藏元素
+            const hiddenElements = document.querySelectorAll('[style*="display: none"]');
+            hiddenElements.forEach(el => {
+                if (!el.dataset.important) {
+                    el.remove();
+                }
+            });
+            
+            // 清理事件监听器
+            // 这里可以添加具体的清理逻辑
+            
+            ui.addLog('紧急清理完成', 'info');
+        }
+        
+        function resetSystem() {
+            ui.addLog('重置系统...', 'warning');
+            
+            // 清理所有日志
+            if (window.clearDebugLogs) {
+                window.clearDebugLogs();
+            }
+            
+            // 重新加载页面
+            location.reload();
+        }
+        
+        function clearLogs() {
+            document.getElementById('log-container').innerHTML = '';
+            ui.addLog('日志已清空', 'info');
+        }
+        
+        function exportLogs() {
+            const logs = document.getElementById('log-container').innerText;
+            const blob = new Blob([logs], { type: 'text/plain' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `mobile-crash-logs-${Date.now()}.txt`;
+            a.click();
+            URL.revokeObjectURL(url);
+            
+            ui.addLog('日志已导出', 'info');
+        }
+        
+        function isInViewport(element) {
+            const rect = element.getBoundingClientRect();
+            return (
+                rect.top >= 0 &&
+                rect.left >= 0 &&
+                rect.bottom <= window.innerHeight &&
+                rect.right <= window.innerWidth
+            );
+        }
+        
+        // 初始化UI
+        const ui = new MobileCrashDiagnosticUI();
+        
+        // 监听错误
+        window.addEventListener('error', (e) => {
+            ui.addLog('JavaScript错误: ' + e.message, 'error');
+        });
+        
+        // 监听未处理的Promise拒绝
+        window.addEventListener('unhandledrejection', (e) => {
+            ui.addLog('未处理的Promise拒绝: ' + e.reason, 'error');
+        });
+    </script>
+</body>
+</html>

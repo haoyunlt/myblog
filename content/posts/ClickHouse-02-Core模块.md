@@ -66,7 +66,7 @@ flowchart TB
         end
         
         subgraph Types["类型系统"]
-            Types[Types.h<br/>基础类型定义]
+            TypesHeader[Types.h<br/>基础类型定义]
             NamesAndTypes[NamesAndTypes<br/>名称与类型对]
         end
         
@@ -87,12 +87,12 @@ flowchart TB
     end
     
     Block --> ColumnWithTypeAndName
-    ColumnWithTypeAndName --> Types
+    ColumnWithTypeAndName --> TypesHeader
     Block --> BlockInfo
-    Settings --> Types
+    Settings --> TypesHeader
     
     Columns[Columns模块] -.实现.-> ColumnWithTypeAndName
-    DataTypes[DataTypes模块] -.实现.-> Types
+    DataTypes[DataTypes模块] -.实现.-> TypesHeader
     Processors[Processors模块] -.使用.-> Block
     Storages[Storages模块] -.使用.-> Block
     Functions[Functions模块] -.使用.-> Block

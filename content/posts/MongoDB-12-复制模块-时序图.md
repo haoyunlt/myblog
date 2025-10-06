@@ -305,10 +305,14 @@ sequenceDiagram
             Secondary2-->>Primary: appliedOpTime
             
             alt 从节点已追上
+                Primary->>Primary: 追上主节点，继续步退
                 break 退出等待循环
-            else 超时未追上
+            end
+            
+            Note over Primary: 检查超时
+            alt 超时未追上
                 Primary-->>Client: stepDown失败(从节点未追上)
-                break
+                break 退出步退流程
             end
         end
     end

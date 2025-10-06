@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移动端调试控制台</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        .header {
+            background: #2d2d30;
+            padding: 12px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        
+        .header h1 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #4ec9b0;
+        }
+        
+        .stats {
+            display: flex;
+            gap: 12px;
+            font-size: 12px;
+        }
+        
+        .stat {
+            background: #3e3e42;
+            padding: 4px 8px;
+            border-radius: 4px;
+        }
+        
+        .stat.error { color: #f48771; }
+        .stat.warn { color: #dcdcaa; }
+        .stat.info { color: #4fc1ff; }
+        
+        .controls {
+            display: flex;
+            gap: 8px;
+            width: 100%;
+            margin-top: 8px;
+        }
+        
+        .btn {
+            flex: 1;
+            padding: 8px 12px;
+            border: none;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .btn-primary {
+            background: #0e639c;
+            color: white;
+        }
+        
+        .btn-primary:active {
+            background: #1177bb;
+        }
+        
+        .btn-danger {
+            background: #c72e0f;
+            color: white;
+        }
+        
+        .btn-danger:active {
+            background: #e03e1f;
+        }
+        
+        .btn-success {
+            background: #13a10e;
+            color: white;
+        }
+        
+        .btn-success:active {
+            background: #16b612;
+        }
+        
+        .filters {
+            display: flex;
+            gap: 8px;
+            margin-bottom: 10px;
+            flex-wrap: wrap;
+        }
+        
+        .filter-btn {
+            padding: 6px 12px;
+            border: 1px solid #3e3e42;
+            background: #252526;
+            color: #d4d4d4;
+            border-radius: 4px;
+            font-size: 12px;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+        
+        .filter-btn.active {
+            background: #0e639c;
+            border-color: #0e639c;
+            color: white;
+        }
+        
+        .logs-container {
+            background: #1e1e1e;
+            border: 1px solid #3e3e42;
+            border-radius: 6px;
+            max-height: calc(100vh - 200px);
+            overflow-y: auto;
+        }
+        
+        .log-entry {
+            padding: 8px 12px;
+            border-bottom: 1px solid #2d2d30;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 12px;
+            line-height: 1.5;
+        }
+        
+        .log-entry:last-child {
+            border-bottom: none;
+        }
+        
+        .log-entry.DEBUG { background: #1e1e1e; }
+        .log-entry.INFO { background: #1a2332; }
+        .log-entry.WARN { background: #2a2817; }
+        .log-entry.ERROR { background: #2d1e1e; }
+        .log-entry.FATAL { background: #3d1414; }
+        
+        .log-time {
+            color: #858585;
+            margin-right: 8px;
+        }
+        
+        .log-level {
+            display: inline-block;
+            padding: 2px 6px;
+            border-radius: 3px;
+            font-size: 10px;
+            font-weight: 600;
+            margin-right: 8px;
+        }
+        
+        .log-level.DEBUG { background: #666; color: white; }
+        .log-level.INFO { background: #4fc1ff; color: black; }
+        .log-level.WARN { background: #dcdcaa; color: black; }
+        .log-level.ERROR { background: #f48771; color: black; }
+        .log-level.FATAL { background: #f14c4c; color: white; }
+        
+        .log-message {
+            color: #d4d4d4;
+        }
+        
+        .log-data {
+            color: #b5cea8;
+            margin-top: 4px;
+            padding-left: 20px;
+            font-size: 11px;
+            white-space: pre-wrap;
+            word-break: break-all;
+        }
+        
+        .log-error {
+            color: #f48771;
+            margin-top: 4px;
+            padding-left: 20px;
+            font-size: 11px;
+        }
+        
+        .empty-state {
+            text-align: center;
+            padding: 40px 20px;
+            color: #858585;
+        }
+        
+        .context-info {
+            background: #2d2d30;
+            padding: 10px;
+            border-radius: 6px;
+            margin-bottom: 10px;
+            font-size: 11px;
+        }
+        
+        .context-info pre {
+            margin-top: 6px;
+            padding: 8px;
+            background: #1e1e1e;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>📱 移动端调试控制台</h1>
+        <div class="stats">
+            <div class="stat info">日志: <span id="logCount">0</span></div>
+            <div class="stat warn">警告: <span id="warnCount">0</span></div>
+            <div class="stat error">错误: <span id="errorCount">0</span></div>
+        </div>
+        <div class="controls">
+            <button class="btn btn-primary" onclick="refreshLogs()">🔄 刷新</button>
+            <button class="btn btn-danger" onclick="clearLogs()">🗑️ 清空</button>
+            <button class="btn btn-success" onclick="exportLogs()">💾 导出</button>
+        </div>
+    </div>
+    
+    <div class="context-info" id="contextInfo"></div>
+    
+    <div class="filters">
+        <button class="filter-btn active" data-level="ALL" onclick="filterLogs('ALL')">全部</button>
+        <button class="filter-btn" data-level="DEBUG" onclick="filterLogs('DEBUG')">调试</button>
+        <button class="filter-btn" data-level="INFO" onclick="filterLogs('INFO')">信息</button>
+        <button class="filter-btn" data-level="WARN" onclick="filterLogs('WARN')">警告</button>
+        <button class="filter-btn" data-level="ERROR" onclick="filterLogs('ERROR')">错误</button>
+        <button class="filter-btn" data-level="FATAL" onclick="filterLogs('FATAL')">致命</button>
+    </div>
+    
+    <div class="logs-container" id="logsContainer">
+        <div class="empty-state">正在加载日志...</div>
+    </div>
+    
+    <script>
+        let currentFilter = 'ALL';
+        let allLogs = [];
+        
+        function formatTime(timestamp) {
+            const date = new Date(timestamp);
+            return date.toLocaleTimeString('zh-CN', { hour12: false });
+        }
+        
+        function formatData(data) {
+            if (!data) return '';
+            try {
+                return JSON.stringify(data, null, 2);
+            } catch (e) {
+                return String(data);
+            }
+        }
+        
+        function loadLogs() {
+            try {
+                // 从localStorage加载所有日志
+                const logs = JSON.parse(localStorage.getItem('mobile_debug_logs') || '[]');
+                const warnings = JSON.parse(localStorage.getItem('mobile_debug_warnings') || '[]');
+                const errors = JSON.parse(localStorage.getItem('mobile_debug_errors') || '[]');
+                
+                // 合并并排序
+                allLogs = [...logs, ...warnings, ...errors].sort((a, b) => 
+                    new Date(b.time) - new Date(a.time)
+                );
+                
+                return allLogs;
+            } catch (e) {
+                console.error('加载日志失败:', e);
+                return [];
+            }
+        }
+        
+        function displayLogs(logs) {
+            const container = document.getElementById('logsContainer');
+            
+            if (!logs || logs.length === 0) {
+                container.innerHTML = '<div class="empty-state">暂无日志</div>';
+                return;
+            }
+            
+            container.innerHTML = logs.map(log => {
+                const dataHtml = log.data ? 
+                    `<div class="log-data">${formatData(log.data)}</div>` : '';
+                
+                const errorHtml = log.error ? 
+                    `<div class="log-error">❌ ${log.error.message}${log.error.stack ? '\n' + log.error.stack : ''}</div>` : '';
+                
+                return `
+                    <div class="log-entry ${log.level}">
+                        <span class="log-time">${formatTime(log.time)}</span>
+                        <span class="log-level ${log.level}">${log.level}</span>
+                        <span class="log-message">${log.message}</span>
+                        ${dataHtml}
+                        ${errorHtml}
+                    </div>
+                `;
+            }).join('');
+            
+            updateStats(logs);
+        }
+        
+        function updateStats(logs) {
+            const logCount = logs.filter(l => l.level === 'INFO' || l.level === 'DEBUG').length;
+            const warnCount = logs.filter(l => l.level === 'WARN').length;
+            const errorCount = logs.filter(l => l.level === 'ERROR' || l.level === 'FATAL').length;
+            
+            document.getElementById('logCount').textContent = logCount;
+            document.getElementById('warnCount').textContent = warnCount;
+            document.getElementById('errorCount').textContent = errorCount;
+        }
+        
+        function displayContext() {
+            const contextInfo = document.getElementById('contextInfo');
+            const context = {
+                userAgent: navigator.userAgent,
+                viewport: `${window.innerWidth}x${window.innerHeight}`,
+                url: window.location.href,
+                online: navigator.onLine,
+                language: navigator.language,
+                platform: navigator.platform,
+                memory: performance.memory ? {
+                    used: Math.round(performance.memory.usedJSHeapSize / 1048576) + 'MB',
+                    total: Math.round(performance.memory.totalJSHeapSize / 1048576) + 'MB'
+                } : 'N/A'
+            };
+            
+            contextInfo.innerHTML = `
+                <strong>📊 系统信息</strong>
+                <pre>${JSON.stringify(context, null, 2)}</pre>
+            `;
+        }
+        
+        function filterLogs(level) {
+            currentFilter = level;
+            
+            // 更新按钮状态
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.level === level);
+            });
+            
+            // 过滤日志
+            const filtered = level === 'ALL' ? 
+                allLogs : 
+                allLogs.filter(log => log.level === level);
+            
+            displayLogs(filtered);
+        }
+        
+        function refreshLogs() {
+            const logs = loadLogs();
+            filterLogs(currentFilter);
+            displayContext();
+        }
+        
+        function clearLogs() {
+            if (confirm('确定要清空所有日志吗？')) {
+                localStorage.removeItem('mobile_debug_logs');
+                localStorage.removeItem('mobile_debug_warnings');
+                localStorage.removeItem('mobile_debug_errors');
+                allLogs = [];
+                displayLogs([]);
+                updateStats([]);
+            }
+        }
+        
+        function exportLogs() {
+            const report = {
+                timestamp: new Date().toISOString(),
+                logs: allLogs,
+                context: {
+                    userAgent: navigator.userAgent,
+                    viewport: `${window.innerWidth}x${window.innerHeight}`,
+                    url: window.location.href
+                }
+            };
+            
+            const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `debug-report-${Date.now()}.json`;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+        
+        // 初始化
+        refreshLogs();
+        
+        // 自动刷新
+        setInterval(refreshLogs, 3000);
+    </script>
+</body>
+</html>

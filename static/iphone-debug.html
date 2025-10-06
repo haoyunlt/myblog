@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no">
+    <title>iPhone调试工具 - Tommie Notes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+            color: white;
+        }
+        
+        .container {
+            max-width: 600px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.1);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            padding: 30px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 28px;
+            font-weight: 700;
+        }
+        
+        .debug-section {
+            background: rgba(255, 255, 255, 0.1);
+            border-radius: 15px;
+            padding: 20px;
+            margin-bottom: 20px;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .debug-section h2 {
+            font-size: 20px;
+            margin-bottom: 15px;
+            color: #ffd700;
+        }
+        
+        .info-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        
+        .info-item:last-child {
+            border-bottom: none;
+        }
+        
+        .info-label {
+            font-weight: 600;
+            color: #e0e0e0;
+        }
+        
+        .info-value {
+            color: #fff;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        
+        .test-button {
+            background: linear-gradient(45deg, #ff6b6b, #ee5a24);
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 25px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            margin: 10px 5px;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.2);
+        }
+        
+        .test-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.3);
+        }
+        
+        .test-button:active {
+            transform: translateY(0);
+        }
+        
+        .console-output {
+            background: rgba(0, 0, 0, 0.3);
+            border-radius: 10px;
+            padding: 15px;
+            margin-top: 15px;
+            font-family: 'Courier New', monospace;
+            font-size: 14px;
+            max-height: 200px;
+            overflow-y: auto;
+            border: 1px solid rgba(255, 255, 255, 0.2);
+        }
+        
+        .error {
+            color: #ff6b6b;
+        }
+        
+        .success {
+            color: #51cf66;
+        }
+        
+        .warning {
+            color: #ffd43b;
+        }
+        
+        .info {
+            color: #74c0fc;
+        }
+        
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+        
+        .status-online {
+            background: #51cf66;
+            box-shadow: 0 0 10px rgba(81, 207, 102, 0.5);
+        }
+        
+        .status-offline {
+            background: #ff6b6b;
+            box-shadow: 0 0 10px rgba(255, 107, 107, 0.5);
+        }
+        
+        .network-info {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .network-item {
+            background: rgba(255, 255, 255, 0.05);
+            padding: 10px;
+            border-radius: 8px;
+            text-align: center;
+        }
+        
+        .network-value {
+            font-size: 18px;
+            font-weight: 700;
+            color: #ffd700;
+        }
+        
+        .network-label {
+            font-size: 12px;
+            color: #ccc;
+            margin-top: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📱 iPhone调试工具</h1>
+        
+        <!-- 设备信息 -->
+        <div class="debug-section">
+            <h2>🔍 设备信息</h2>
+            <div class="info-item">
+                <span class="info-label">User Agent:</span>
+                <span class="info-value" id="userAgent">检测中...</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">屏幕尺寸:</span>
+                <span class="info-value" id="screenSize">检测中...</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">设备像素比:</span>
+                <span class="info-value" id="devicePixelRatio">检测中...</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">视口尺寸:</span>
+                <span class="info-value" id="viewportSize">检测中...</span>
+            </div>
+            <div class="info-item">
+                <span class="info-label">操作系统:</span>
+                <span class="info-value" id="osInfo">检测中...</span>
+            </div>
+        </div>
+        
+        <!-- 网络信息 -->
+        <div class="debug-section">
+            <h2>🌐 网络状态</h2>
+            <div class="info-item">
+                <span class="info-label">连接状态:</span>
+                <span class="info-value">
+                    <span class="status-indicator" id="connectionStatus"></span>
+                    <span id="connectionText">检测中...</span>
+                </span>
+            </div>
+            <div class="network-info">
+                <div class="network-item">
+                    <div class="network-value" id="connectionType">-</div>
+                    <div class="network-label">连接类型</div>
+                </div>
+                <div class="network-item">
+                    <div class="network-value" id="effectiveType">-</div>
+                    <div class="network-label">网络质量</div>
+                </div>
+            </div>
+        </div>
+        
+        <!-- 调试工具 -->
+        <div class="debug-section">
+            <h2>🛠️ 调试工具</h2>
+            <button class="test-button" onclick="testConsole()">测试控制台</button>
+            <button class="test-button" onclick="testNetwork()">测试网络</button>
+            <button class="test-button" onclick="testPerformance()">性能测试</button>
+            <button class="test-button" onclick="clearConsole()">清除日志</button>
+            
+            <div class="console-output" id="consoleOutput">
+                <div class="info">📱 iPhone调试工具已启动</div>
+                <div class="info">💡 提示：在Safari中打开此页面，然后通过Mac的Safari开发者工具进行深度调试</div>
+            </div>
+        </div>
+        
+        <!-- 开发者工具说明 -->
+        <div class="debug-section">
+            <h2>📖 如何开启iPhone开发者工具</h2>
+            <div style="line-height: 1.6; font-size: 14px;">
+                <div class="info">1️⃣ <strong>启用Safari Web检查器：</strong></div>
+                <div style="margin: 10px 0; padding-left: 20px;">
+                    设置 → Safari → 高级 → 开启"Web检查器"
+                </div>
+                
+                <div class="info">2️⃣ <strong>连接Mac调试：</strong></div>
+                <div style="margin: 10px 0; padding-left: 20px;">
+                    USB连接 → Mac Safari → 开发菜单 → 选择设备
+                </div>
+                
+                <div class="info">3️⃣ <strong>Chrome远程调试：</strong></div>
+                <div style="margin: 10px 0; padding-left: 20px;">
+                    PC Chrome → chrome://inspect → 选择设备
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // 设备信息检测
+        function detectDeviceInfo() {
+            document.getElementById('userAgent').textContent = navigator.userAgent;
+            document.getElementById('screenSize').textContent = `${screen.width} × ${screen.height}`;
+            document.getElementById('devicePixelRatio').textContent = window.devicePixelRatio;
+            document.getElementById('viewportSize').textContent = `${window.innerWidth} × ${window.innerHeight}`;
+            
+            // 检测操作系统
+            const userAgent = navigator.userAgent;
+            let os = 'Unknown';
+            if (userAgent.includes('iPhone')) os = 'iOS';
+            else if (userAgent.includes('Android')) os = 'Android';
+            else if (userAgent.includes('Windows')) os = 'Windows';
+            else if (userAgent.includes('Mac')) os = 'macOS';
+            document.getElementById('osInfo').textContent = os;
+        }
+        
+        // 网络状态检测
+        function detectNetworkInfo() {
+            const connection = navigator.connection || navigator.mozConnection || navigator.webkitConnection;
+            
+            if (connection) {
+                document.getElementById('connectionType').textContent = connection.type || 'unknown';
+                document.getElementById('effectiveType').textContent = connection.effectiveType || 'unknown';
+                
+                const statusIndicator = document.getElementById('connectionStatus');
+                const statusText = document.getElementById('connectionText');
+                
+                if (navigator.onLine) {
+                    statusIndicator.className = 'status-indicator status-online';
+                    statusText.textContent = '在线';
+                } else {
+                    statusIndicator.className = 'status-indicator status-offline';
+                    statusText.textContent = '离线';
+                }
+            } else {
+                document.getElementById('connectionType').textContent = '不支持';
+                document.getElementById('effectiveType').textContent = '不支持';
+            }
+        }
+        
+        // 控制台测试
+        function testConsole() {
+            const output = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            output.innerHTML += `<div class="info">[${timestamp}] 控制台测试开始</div>`;
+            output.innerHTML += `<div class="success">[${timestamp}] ✅ 控制台功能正常</div>`;
+            output.innerHTML += `<div class="warning">[${timestamp}] ⚠️ 如需深度调试，请使用Safari Web检查器</div>`;
+            
+            // 滚动到底部
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // 网络测试
+        function testNetwork() {
+            const output = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            output.innerHTML += `<div class="info">[${timestamp}] 网络测试开始</div>`;
+            
+            // 测试网络连接
+            const startTime = Date.now();
+            fetch('/css/extended/mobile-performance.css', { cache: 'no-cache' })
+                .then(response => {
+                    const endTime = Date.now();
+                    const duration = endTime - startTime;
+                    
+                    if (response.ok) {
+                        output.innerHTML += `<div class="success">[${timestamp}] ✅ 网络连接正常 (${duration}ms)</div>`;
+                    } else {
+                        output.innerHTML += `<div class="error">[${timestamp}] ❌ 网络请求失败: ${response.status}</div>`;
+                    }
+                })
+                .catch(error => {
+                    output.innerHTML += `<div class="error">[${timestamp}] ❌ 网络错误: ${error.message}</div>`;
+                });
+            
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // 性能测试
+        function testPerformance() {
+            const output = document.getElementById('consoleOutput');
+            const timestamp = new Date().toLocaleTimeString();
+            
+            output.innerHTML += `<div class="info">[${timestamp}] 性能测试开始</div>`;
+            
+            if (performance && performance.now) {
+                const loadTime = performance.now();
+                output.innerHTML += `<div class="success">[${timestamp}] ✅ 页面加载时间: ${Math.round(loadTime)}ms</div>`;
+            }
+            
+            if (performance && performance.memory) {
+                const memory = performance.memory;
+                const usedMB = Math.round(memory.usedJSHeapSize / 1024 / 1024);
+                const totalMB = Math.round(memory.totalJSHeapSize / 1024 / 1024);
+                output.innerHTML += `<div class="info">[${timestamp}] 💾 内存使用: ${usedMB}MB / ${totalMB}MB</div>`;
+            }
+            
+            output.scrollTop = output.scrollHeight;
+        }
+        
+        // 清除控制台
+        function clearConsole() {
+            document.getElementById('consoleOutput').innerHTML = '<div class="info">📱 控制台已清除</div>';
+        }
+        
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            detectDeviceInfo();
+            detectNetworkInfo();
+            
+            // 监听网络状态变化
+            window.addEventListener('online', function() {
+                const output = document.getElementById('consoleOutput');
+                const timestamp = new Date().toLocaleTimeString();
+                output.innerHTML += `<div class="success">[${timestamp}] 🌐 网络已连接</div>`;
+                output.scrollTop = output.scrollHeight;
+            });
+            
+            window.addEventListener('offline', function() {
+                const output = document.getElementById('consoleOutput');
+                const timestamp = new Date().toLocaleTimeString();
+                output.innerHTML += `<div class="error">[${timestamp}] ❌ 网络已断开</div>`;
+                output.scrollTop = output.scrollHeight;
+            });
+        });
+        
+        // 监听窗口大小变化
+        window.addEventListener('resize', function() {
+            document.getElementById('viewportSize').textContent = `${window.innerWidth} × ${window.innerHeight}`;
+        });
+    </script>
+</body>
+</html>

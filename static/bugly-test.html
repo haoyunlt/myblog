@@ -1,0 +1,414 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bugly 测试与诊断</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        
+        .card {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            margin-bottom: 20px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+        }
+        
+        h1 {
+            font-size: 24px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        h2 {
+            font-size: 18px;
+            margin-bottom: 15px;
+            color: #555;
+            border-left: 4px solid #409eff;
+            padding-left: 10px;
+        }
+        
+        .status {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+        }
+        
+        .status.success {
+            background: #f0f9ff;
+            color: #0c63e4;
+        }
+        
+        .status.error {
+            background: #fef0f0;
+            color: #f56c6c;
+        }
+        
+        .status.warning {
+            background: #fdf6ec;
+            color: #e6a23c;
+        }
+        
+        button {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin: 5px;
+            transition: all 0.3s;
+        }
+        
+        button.primary {
+            background: #409eff;
+            color: white;
+        }
+        
+        button.primary:hover {
+            background: #66b1ff;
+        }
+        
+        button.danger {
+            background: #f56c6c;
+            color: white;
+        }
+        
+        button.danger:hover {
+            background: #f78989;
+        }
+        
+        button.success {
+            background: #67c23a;
+            color: white;
+        }
+        
+        button.success:hover {
+            background: #85ce61;
+        }
+        
+        pre {
+            background: #f5f7fa;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 12px;
+            line-height: 1.6;
+        }
+        
+        .info {
+            padding: 15px;
+            background: #ecf5ff;
+            border-left: 4px solid #409eff;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        
+        .count {
+            font-size: 32px;
+            font-weight: bold;
+            color: #409eff;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="card">
+            <h1>🔧 Bugly 系统诊断</h1>
+            <p>检查 Bugly 错误报告系统的运行状态</p>
+        </div>
+        
+        <div class="card">
+            <h2>📊 系统状态</h2>
+            <div id="statusContainer"></div>
+        </div>
+        
+        <div class="card">
+            <h2>📝 本地存储数据</h2>
+            <div class="info">
+                当前报告数量: <span class="count" id="reportCount">0</span>
+            </div>
+            <div id="localDataContainer"></div>
+        </div>
+        
+        <div class="card">
+            <h2>🧪 测试工具</h2>
+            <p>点击下面的按钮测试错误报告功能：</p>
+            <div style="margin-top: 15px;">
+                <button class="danger" onclick="testJavaScriptError()">测试 JavaScript 错误</button>
+                <button class="danger" onclick="testResourceError()">测试资源错误</button>
+                <button class="danger" onclick="testPromiseRejection()">测试 Promise 拒绝</button>
+                <button class="primary" onclick="testCustomError()">测试自定义错误</button>
+                <button class="success" onclick="checkData()">刷新数据</button>
+            </div>
+        </div>
+        
+        <div class="card">
+            <h2>🔗 快速链接</h2>
+            <button class="primary" onclick="window.open('/bugly-dashboard.html', '_blank')">
+                📊 打开 Bugly 仪表板
+            </button>
+            <button class="success" onclick="exportData()">
+                📥 导出数据
+            </button>
+            <button class="danger" onclick="clearData()">
+                🗑️ 清除所有数据
+            </button>
+        </div>
+        
+        <div class="card">
+            <h2>💡 故障排查提示</h2>
+            <div class="info">
+                <strong>如果仪表板没有数据，可能的原因：</strong>
+                <ol style="margin-left: 20px; margin-top: 10px;">
+                    <li>你在桌面浏览器访问（Bugly 默认只在移动设备启用）</li>
+                    <li>没有发生任何错误（系统运行正常）</li>
+                    <li>bugly-report.js 脚本未正确加载</li>
+                    <li>localStorage 被清除或禁用</li>
+                </ol>
+                <p style="margin-top: 10px;"><strong>解决方案：</strong></p>
+                <ol style="margin-left: 20px; margin-top: 10px;">
+                    <li>使用移动设备访问或在开发者工具中启用移动模拟</li>
+                    <li>点击上方的测试按钮生成测试错误</li>
+                    <li>检查浏览器控制台确认脚本已加载</li>
+                    <li>确保浏览器允许 localStorage</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+    
+    <!-- 加载 Bugly 脚本 -->
+    <script src="/js/bugly-report.js"></script>
+    <script src="/js/mobile-error-handler.js"></script>
+    
+    <script>
+        // 诊断脚本
+        (function() {
+            'use strict';
+            
+            // 检查系统状态
+            function checkStatus() {
+                const statusContainer = document.getElementById('statusContainer');
+                const statuses = [];
+                
+                // 检查 Bugly Reporter
+                if (window.BuglyReporter) {
+                    statuses.push({
+                        type: 'success',
+                        message: '✅ BuglyReporter 已加载'
+                    });
+                } else {
+                    statuses.push({
+                        type: 'error',
+                        message: '❌ BuglyReporter 未加载（可能因为设备检测）'
+                    });
+                }
+                
+                // 检查错误处理器
+                if (window.MobileErrorHandler) {
+                    statuses.push({
+                        type: 'success',
+                        message: '✅ MobileErrorHandler 已加载'
+                    });
+                } else {
+                    statuses.push({
+                        type: 'warning',
+                        message: '⚠️ MobileErrorHandler 未加载'
+                    });
+                }
+                
+                // 检查 localStorage
+                try {
+                    localStorage.setItem('test', 'test');
+                    localStorage.removeItem('test');
+                    statuses.push({
+                        type: 'success',
+                        message: '✅ localStorage 可用'
+                    });
+                } catch (e) {
+                    statuses.push({
+                        type: 'error',
+                        message: '❌ localStorage 不可用: ' + e.message
+                    });
+                }
+                
+                // 检查设备类型
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                                 window.innerWidth <= 768;
+                statuses.push({
+                    type: isMobile ? 'success' : 'warning',
+                    message: isMobile ? '✅ 移动设备' : '⚠️ 桌面设备（Bugly 默认禁用）'
+                });
+                
+                // 检查报告函数
+                if (window.reportToBugly) {
+                    statuses.push({
+                        type: 'success',
+                        message: '✅ reportToBugly 函数可用'
+                    });
+                } else {
+                    statuses.push({
+                        type: 'error',
+                        message: '❌ reportToBugly 函数不可用'
+                    });
+                }
+                
+                // 渲染状态
+                statusContainer.innerHTML = statuses.map(status => 
+                    `<div class="status ${status.type}">${status.message}</div>`
+                ).join('');
+            }
+            
+            // 检查本地数据
+            function checkLocalData() {
+                try {
+                    const reports = JSON.parse(localStorage.getItem('bugly_reports') || '[]');
+                    const count = reports.length;
+                    
+                    document.getElementById('reportCount').textContent = count;
+                    
+                    const container = document.getElementById('localDataContainer');
+                    
+                    if (count === 0) {
+                        container.innerHTML = '<div class="status warning">⚠️ 没有报告数据</div>';
+                    } else {
+                        const latest = reports.slice(-5).reverse();
+                        container.innerHTML = `
+                            <div class="status success">找到 ${count} 条报告，显示最近 5 条：</div>
+                            <pre>${JSON.stringify(latest, null, 2)}</pre>
+                        `;
+                    }
+                } catch (e) {
+                    document.getElementById('localDataContainer').innerHTML = 
+                        `<div class="status error">❌ 读取失败: ${e.message}</div>`;
+                }
+            }
+            
+            // 测试 JavaScript 错误
+            window.testJavaScriptError = function() {
+                try {
+                    // 故意触发错误
+                    throw new Error('这是一个测试 JavaScript 错误');
+                } catch (e) {
+                    if (window.reportToBugly) {
+                        window.reportToBugly({
+                            message: '测试 JavaScript 错误',
+                            stack: e.stack,
+                            level: 'error'
+                        });
+                        alert('✅ JavaScript 错误已报告！刷新页面查看数据。');
+                    } else {
+                        alert('❌ reportToBugly 函数不可用。Bugly 可能未在此设备上启用。');
+                    }
+                }
+            };
+            
+            // 测试资源错误
+            window.testResourceError = function() {
+                const img = document.createElement('img');
+                img.src = '/non-existent-image-' + Date.now() + '.jpg';
+                img.style.display = 'none';
+                document.body.appendChild(img);
+                alert('✅ 资源错误已触发！等待 2 秒后刷新页面查看数据。');
+            };
+            
+            // 测试 Promise 拒绝
+            window.testPromiseRejection = function() {
+                Promise.reject(new Error('这是一个测试 Promise 拒绝')).catch(e => {
+                    if (window.reportToBugly) {
+                        window.reportToBugly({
+                            message: '测试 Promise 拒绝',
+                            stack: e.stack,
+                            level: 'error'
+                        });
+                    }
+                });
+                alert('✅ Promise 拒绝已触发！刷新页面查看数据。');
+            };
+            
+            // 测试自定义错误
+            window.testCustomError = function() {
+                if (window.reportToBugly) {
+                    window.reportToBugly({
+                        message: '这是一个自定义测试错误',
+                        level: 'info',
+                        extra: {
+                            test: true,
+                            timestamp: Date.now(),
+                            userAgent: navigator.userAgent
+                        }
+                    });
+                    alert('✅ 自定义错误已报告！刷新页面查看数据。');
+                } else {
+                    alert('❌ reportToBugly 函数不可用');
+                }
+            };
+            
+            // 刷新数据
+            window.checkData = function() {
+                checkStatus();
+                checkLocalData();
+                alert('✅ 数据已刷新！');
+            };
+            
+            // 导出数据
+            window.exportData = function() {
+                try {
+                    const reports = localStorage.getItem('bugly_reports') || '[]';
+                    const blob = new Blob([reports], { type: 'application/json' });
+                    const url = URL.createObjectURL(blob);
+                    const a = document.createElement('a');
+                    a.href = url;
+                    a.download = `bugly-reports-${Date.now()}.json`;
+                    a.click();
+                    URL.revokeObjectURL(url);
+                } catch (e) {
+                    alert('导出失败: ' + e.message);
+                }
+            };
+            
+            // 清除数据
+            window.clearData = function() {
+                if (confirm('确定要清除所有报告数据吗？此操作不可恢复。')) {
+                    try {
+                        localStorage.removeItem('bugly_reports');
+                        localStorage.removeItem('mobile_error_handler_errors');
+                        alert('✅ 数据已清除！');
+                        checkData();
+                    } catch (e) {
+                        alert('清除失败: ' + e.message);
+                    }
+                }
+            };
+            
+            // 页面加载时检查
+            window.addEventListener('load', function() {
+                setTimeout(function() {
+                    checkStatus();
+                    checkLocalData();
+                }, 500);
+            });
+            
+        })();
+    </script>
+</body>
+</html>
+

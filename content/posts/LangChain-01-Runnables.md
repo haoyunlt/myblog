@@ -829,52 +829,52 @@ classDiagram
 
     class OnChainStart {
         +event: "on_chain_start"
-        +data: {"input": Any}
+        +data: Object  %% {"input": Any}
     }
 
     class OnChainStream {
         +event: "on_chain_stream"
-        +data: {"chunk": Any}
+        +data: Object  %% {"chunk": Any}
     }
 
     class OnChainEnd {
         +event: "on_chain_end"
-        +data: {"output": Any}
+        +data: Object  %% {"output": Any}
     }
 
     class OnLLMStart {
         +event: "on_llm_start"
-        +data: {"input": Any}
+        +data: Object  %% {"input": Any}
     }
 
     class OnLLMStream {
         +event: "on_llm_stream"
-        +data: {"chunk": BaseMessageChunk}
+        +data: Object  %% {"chunk": BaseMessageChunk}
     }
 
     class OnLLMEnd {
         +event: "on_llm_end"
-        +data: {"output": Any}
+        +data: Object  %% {"output": Any}
     }
 
     class OnToolStart {
         +event: "on_tool_start"
-        +data: {"input": Any}
+        +data: Object  %% {"input": Any}
     }
 
     class OnToolEnd {
         +event: "on_tool_end"
-        +data: {"output": Any}
+        +data: Object  %% {"output": Any}
     }
 
     class OnRetrieverStart {
         +event: "on_retriever_start"
-        +data: {"input": Any}
+        +data: Object  %% {"input": Any}
     }
 
     class OnRetrieverEnd {
         +event: "on_retriever_end"
-        +data: {"output": List[Document]}
+        +data: Object  %% {"output": List[Document]}
     }
 
     StreamEvent <|-- OnChainStart

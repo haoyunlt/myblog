@@ -1,0 +1,17 @@
+{
+  "name": "myblog-mobile-test",
+  "version": "1.0.0",
+  "description": "移动端崩溃压力测试",
+  "scripts": {
+    "test:mobile": "node test-mobile-crash.js",
+    "test:mobile:quick": "node test-mobile-crash.js --quick",
+    "install:playwright": "npm install && npx playwright install chromium"
+  },
+  "keywords": ["playwright", "mobile", "testing"],
+  "author": "lintao",
+  "license": "MIT",
+  "devDependencies": {
+    "playwright": "^1.40.0"
+  }
+}
+

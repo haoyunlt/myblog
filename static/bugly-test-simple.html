@@ -1,0 +1,268 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bugly 连接测试</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+        }
+        
+        .container {
+            background: white;
+            border-radius: 20px;
+            padding: 40px 30px;
+            box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+            max-width: 500px;
+            width: 100%;
+        }
+        
+        h1 {
+            color: #667eea;
+            font-size: 28px;
+            margin-bottom: 30px;
+            text-align: center;
+        }
+        
+        .status {
+            padding: 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            font-size: 16px;
+        }
+        
+        .success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+        
+        .info {
+            background: #d1ecf1;
+            color: #0c5460;
+            border: 1px solid #bee5eb;
+        }
+        
+        .info-item {
+            margin: 10px 0;
+            padding: 15px;
+            background: #f8f9fa;
+            border-radius: 8px;
+            font-size: 14px;
+        }
+        
+        .label {
+            font-weight: bold;
+            color: #495057;
+            display: inline-block;
+            min-width: 120px;
+        }
+        
+        .value {
+            color: #667eea;
+            font-family: monospace;
+        }
+        
+        .btn {
+            display: block;
+            width: 100%;
+            padding: 15px;
+            background: #667eea;
+            color: white;
+            border: none;
+            border-radius: 10px;
+            font-size: 16px;
+            font-weight: bold;
+            cursor: pointer;
+            margin-top: 20px;
+            transition: all 0.3s ease;
+        }
+        
+        .btn:hover {
+            background: #5568d3;
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+        }
+        
+        @media (max-width: 600px) {
+            .container {
+                padding: 30px 20px;
+            }
+            
+            h1 {
+                font-size: 24px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Bugly 连接测试</h1>
+        
+        <div class="status success">
+            ✅ 页面加载成功！
+        </div>
+        
+        <div class="status info">
+            如果您能看到此页面，说明：
+            <ul style="margin: 10px 0 0 20px;">
+                <li>服务器连接正常</li>
+                <li>HTTPS 证书有效</li>
+                <li>网络连接正常</li>
+            </ul>
+        </div>
+        
+        <div class="info-item">
+            <span class="label">访问时间：</span>
+            <span class="value" id="timestamp"></span>
+        </div>
+        
+        <div class="info-item">
+            <span class="label">用户代理：</span>
+            <div class="value" id="userAgent" style="word-break: break-all; margin-top: 5px;"></div>
+        </div>
+        
+        <div class="info-item">
+            <span class="label">设备类型：</span>
+            <span class="value" id="deviceType"></span>
+        </div>
+        
+        <div class="info-item">
+            <span class="label">屏幕尺寸：</span>
+            <span class="value" id="screenSize"></span>
+        </div>
+        
+        <div class="info-item">
+            <span class="label">在线状态：</span>
+            <span class="value" id="onlineStatus"></span>
+        </div>
+        
+        <div class="info-item">
+            <span class="label">localStorage：</span>
+            <span class="value" id="localStorageStatus"></span>
+        </div>
+        
+        <button class="btn" onclick="location.href='/bugly-dashboard.html'">
+            📊 前往 Bugly Dashboard
+        </button>
+        
+        <button class="btn" onclick="testLocalStorage()" style="background: #28a745;">
+            🧪 测试 localStorage
+        </button>
+        
+        <button class="btn" onclick="clearServiceWorker()" style="background: #dc3545;">
+            🗑️ 清除 Service Worker
+        </button>
+    </div>
+    
+    <script>
+        // 显示系统信息
+        document.getElementById('timestamp').textContent = new Date().toLocaleString('zh-CN');
+        document.getElementById('userAgent').textContent = navigator.userAgent;
+        
+        // 检测设备类型
+        const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+        document.getElementById('deviceType').textContent = isMobile ? '移动设备' : '桌面设备';
+        
+        // 显示屏幕尺寸
+        document.getElementById('screenSize').textContent = `${window.innerWidth} × ${window.innerHeight}`;
+        
+        // 显示在线状态
+        document.getElementById('onlineStatus').textContent = navigator.onLine ? '在线' : '离线';
+        
+        // 检查 localStorage
+        try {
+            localStorage.setItem('test', 'test');
+            localStorage.removeItem('test');
+            document.getElementById('localStorageStatus').textContent = '可用 ✅';
+        } catch (e) {
+            document.getElementById('localStorageStatus').textContent = '不可用 ❌ (' + e.message + ')';
+        }
+        
+        // 测试 localStorage
+        function testLocalStorage() {
+            try {
+                const testData = {
+                    timestamp: Date.now(),
+                    message: 'Bugly 测试数据',
+                    deviceType: isMobile ? 'mobile' : 'desktop'
+                };
+                
+                localStorage.setItem('bugly_test', JSON.stringify(testData));
+                const retrieved = JSON.parse(localStorage.getItem('bugly_test'));
+                
+                if (retrieved && retrieved.message === testData.message) {
+                    alert('✅ localStorage 测试成功！\n\n' + JSON.stringify(retrieved, null, 2));
+                } else {
+                    alert('❌ localStorage 测试失败：数据不匹配');
+                }
+            } catch (e) {
+                alert('❌ localStorage 测试失败：\n' + e.message);
+            }
+        }
+        
+        // 清除 Service Worker
+        async function clearServiceWorker() {
+            try {
+                if ('serviceWorker' in navigator) {
+                    const registrations = await navigator.serviceWorker.getRegistrations();
+                    
+                    if (registrations.length === 0) {
+                        alert('ℹ️ 没有找到 Service Worker');
+                        return;
+                    }
+                    
+                    let count = 0;
+                    for (const registration of registrations) {
+                        await registration.unregister();
+                        count++;
+                    }
+                    
+                    alert(`✅ 成功注销 ${count} 个 Service Worker\n\n请刷新页面以生效`);
+                    
+                    // 清除所有缓存
+                    if ('caches' in window) {
+                        const cacheNames = await caches.keys();
+                        for (const cacheName of cacheNames) {
+                            await caches.delete(cacheName);
+                        }
+                        console.log('✅ 已清除所有缓存');
+                    }
+                    
+                } else {
+                    alert('ℹ️ 此浏览器不支持 Service Worker');
+                }
+            } catch (e) {
+                alert('❌ 清除 Service Worker 失败：\n' + e.message);
+            }
+        }
+        
+        // 监听在线/离线状态变化
+        window.addEventListener('online', () => {
+            document.getElementById('onlineStatus').textContent = '在线';
+        });
+        
+        window.addEventListener('offline', () => {
+            document.getElementById('onlineStatus').textContent = '离线';
+        });
+    </script>
+</body>
+</html>
+

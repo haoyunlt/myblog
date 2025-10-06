@@ -122,17 +122,20 @@ optimize_css() {
     find "$SITE_DIR" -name "*.css" -type f | while read -r css_file; do
         local original_size=$(stat -f%z "$css_file" 2>/dev/null || stat --format=%s "$css_file" 2>/dev/null)
         
-        # 使用clean-css优化
-        cleancss --level 2 --source-map "$css_file" > "${css_file}.tmp"
-        
-        if [ -s "${css_file}.tmp" ]; then
-            mv "${css_file}.tmp" "$css_file"
-            local optimized_size=$(stat -f%z "$css_file" 2>/dev/null || stat --format=%s "$css_file" 2>/dev/null)
-            local savings=$((original_size - optimized_size))
-            log_success "CSS优化: $(basename "$css_file") - 节省 ${savings} 字节"
+        # 使用clean-css优化（简化版本）
+        if cleancss "$css_file" > "${css_file}.tmp" 2>/dev/null; then
+            if [ -s "${css_file}.tmp" ]; then
+                mv "${css_file}.tmp" "$css_file"
+                local optimized_size=$(stat -f%z "$css_file" 2>/dev/null || stat --format=%s "$css_file" 2>/dev/null)
+                local savings=$((original_size - optimized_size))
+                log_success "CSS优化: $(basename "$css_file") - 节省 ${savings} 字节"
+            else
+                rm -f "${css_file}.tmp"
+                log_warning "CSS优化失败: $(basename "$css_file")"
+            fi
         else
             rm -f "${css_file}.tmp"
-            log_warning "CSS优化失败: $(basename "$css_file")"
+            log_warning "CSS优化跳过: $(basename "$css_file")"
         fi
     done
 }
@@ -153,7 +156,6 @@ optimize_js() {
         terser "$js_file" \
                --compress sequences=true,dead_code=true,conditionals=true,booleans=true,unused=true,if_return=true,join_vars=true,drop_console=true \
                --mangle \
-               --source-map "url=$(basename "$js_file").map" \
                --output "${js_file}.tmp"
         
         if [ -s "${js_file}.tmp" ]; then

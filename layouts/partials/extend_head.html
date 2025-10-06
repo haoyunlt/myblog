@@ -1,6 +1,378 @@
 {{- /* 扩展头部 - 添加Mermaid支持和其他功能 */ -}}
 {{- /* 利用PaperMod主题的extend_head机制 */ -}}
 
+{{- /* 移动端性能优化CSS - 关键渲染路径 */ -}}
+<link rel="stylesheet" href="/css/extended/mobile-performance.css" media="screen and (max-width: 768px)">
+
+{{- /* 移动端调试系统 - 增强版 */ -}}
+<script>
+(function() {
+    'use strict';
+    
+    // 增强的移动端调试工具
+    window.MobileDebug = {
+        logs: [],
+        errors: [],
+        warnings: [],
+        performance: [],
+        maxLogs: 200,
+        maxErrors: 100,
+        
+        // 日志级别
+        levels: {
+            DEBUG: 'DEBUG',
+            INFO: 'INFO',
+            WARN: 'WARN',
+            ERROR: 'ERROR',
+            FATAL: 'FATAL'
+        },
+        
+        // 通用日志方法
+        _log: function(level, message, data, error) {
+            try {
+                const entry = {
+                    time: new Date().toISOString(),
+                    timestamp: Date.now(),
+                    level: level,
+                    message: message,
+                    data: data || null,
+                    error: error ? {
+                        message: error.message || error.toString(),
+                        stack: error.stack || '',
+                        name: error.name || 'Error'
+                    } : null,
+                    context: {
+                        userAgent: navigator.userAgent,
+                        viewport: window.innerWidth + 'x' + window.innerHeight,
+                        url: window.location.href,
+                        pathname: window.location.pathname,
+                        referrer: document.referrer || 'direct',
+                        online: navigator.onLine,
+                        cookieEnabled: navigator.cookieEnabled,
+                        language: navigator.language,
+                        platform: navigator.platform,
+                        memory: performance.memory ? {
+                            used: Math.round(performance.memory.usedJSHeapSize / 1048576) + 'MB',
+                            total: Math.round(performance.memory.totalJSHeapSize / 1048576) + 'MB',
+                            limit: Math.round(performance.memory.jsHeapSizeLimit / 1048576) + 'MB'
+                        } : 'N/A'
+                    }
+                };
+                
+                // 根据级别存储
+                if (level === this.levels.ERROR || level === this.levels.FATAL) {
+                    this.errors.push(entry);
+                    console.error(`[${level}]`, message, data || '', error || '');
+                } else if (level === this.levels.WARN) {
+                    this.warnings.push(entry);
+                    console.warn(`[${level}]`, message, data || '');
+                } else {
+                    this.logs.push(entry);
+                    console.log(`[${level}]`, message, data || '');
+                }
+                
+                // 限制数组大小
+                if (this.logs.length > this.maxLogs) {
+                    this.logs.splice(0, this.logs.length - this.maxLogs);
+                }
+                if (this.errors.length > this.maxErrors) {
+                    this.errors.splice(0, this.errors.length - this.maxErrors);
+                }
+                if (this.warnings.length > this.maxErrors) {
+                    this.warnings.splice(0, this.warnings.length - this.maxErrors);
+                }
+                
+                // 持久化存储
+                this._persistToStorage(level, entry);
+                
+                return entry;
+            } catch (e) {
+                // 最后的安全网：即使日志系统失败也不能让页面崩溃
+                console.error('调试系统内部错误:', e);
+            }
+        },
+        
+        // 持久化到localStorage
+        _persistToStorage: function(level, entry) {
+            try {
+                const key = level === this.levels.ERROR || level === this.levels.FATAL 
+                    ? 'mobile_debug_errors' 
+                    : level === this.levels.WARN
+                    ? 'mobile_debug_warnings'
+                    : 'mobile_debug_logs';
+                
+                const stored = JSON.parse(localStorage.getItem(key) || '[]');
+                stored.push(entry);
+                
+                const limit = key === 'mobile_debug_errors' ? 100 : 200;
+                if (stored.length > limit) {
+                    stored.splice(0, stored.length - limit);
+                }
+                
+                localStorage.setItem(key, JSON.stringify(stored));
+            } catch (e) {
+                // localStorage可能被禁用或已满
+                console.warn('无法持久化日志:', e.message);
+            }
+        },
+        
+        // 公开的日志方法
+        debug: function(message, data) {
+            return this._log(this.levels.DEBUG, message, data);
+        },
+        
+        log: function(message, data) {
+            return this._log(this.levels.INFO, message, data);
+        },
+        
+        info: function(message, data) {
+            return this._log(this.levels.INFO, message, data);
+        },
+        
+        warn: function(message, data) {
+            return this._log(this.levels.WARN, message, data);
+        },
+        
+        error: function(message, errorOrData, additionalData) {
+            const error = errorOrData instanceof Error ? errorOrData : null;
+            const data = error ? additionalData : errorOrData;
+            return this._log(this.levels.ERROR, message, data, error);
+        },
+        
+        fatal: function(message, errorOrData, additionalData) {
+            const error = errorOrData instanceof Error ? errorOrData : null;
+            const data = error ? additionalData : errorOrData;
+            return this._log(this.levels.FATAL, message, data, error);
+        },
+        
+        // 性能监控
+        perf: function(name, duration, details) {
+            try {
+                const entry = {
+                    time: new Date().toISOString(),
+                    name: name,
+                    duration: duration,
+                    details: details || null
+                };
+                
+                this.performance.push(entry);
+                console.log(`[PERF] ${name}: ${duration.toFixed(2)}ms`, details || '');
+                
+                if (this.performance.length > 100) {
+                    this.performance.splice(0, this.performance.length - 100);
+                }
+            } catch (e) {
+                console.error('性能日志失败:', e);
+            }
+        },
+        
+        // 性能计时器
+        startTimer: function(name) {
+            try {
+                const key = `_timer_${name}`;
+                this[key] = performance.now();
+                this.debug(`计时器启动: ${name}`);
+            } catch (e) {
+                this.error('启动计时器失败', e);
+            }
+        },
+        
+        endTimer: function(name, details) {
+            try {
+                const key = `_timer_${name}`;
+                if (this[key]) {
+                    const duration = performance.now() - this[key];
+                    this.perf(name, duration, details);
+                    delete this[key];
+                    return duration;
+                } else {
+                    this.warn(`计时器不存在: ${name}`);
+                }
+            } catch (e) {
+                this.error('结束计时器失败', e);
+            }
+        },
+        
+        // 生成完整报告
+        getReport: function() {
+            try {
+                return {
+                    timestamp: new Date().toISOString(),
+                    summary: {
+                        totalLogs: this.logs.length,
+                        totalWarnings: this.warnings.length,
+                        totalErrors: this.errors.length,
+                        totalPerf: this.performance.length
+                    },
+                    context: {
+                        userAgent: navigator.userAgent,
+                        url: window.location.href,
+                        viewport: window.innerWidth + 'x' + window.innerHeight,
+                        online: navigator.onLine,
+                        connection: navigator.connection ? {
+                            effectiveType: navigator.connection.effectiveType,
+                            downlink: navigator.connection.downlink,
+                            rtt: navigator.connection.rtt
+                        } : 'N/A',
+                        memory: performance.memory ? {
+                            used: Math.round(performance.memory.usedJSHeapSize / 1048576) + 'MB',
+                            total: Math.round(performance.memory.totalJSHeapSize / 1048576) + 'MB'
+                        } : 'N/A'
+                    },
+                    logs: this.logs.slice(-50),
+                    warnings: this.warnings.slice(-20),
+                    errors: this.errors,
+                    performance: this.performance.slice(-20),
+                    stored: {
+                        logs: JSON.parse(localStorage.getItem('mobile_debug_logs') || '[]'),
+                        warnings: JSON.parse(localStorage.getItem('mobile_debug_warnings') || '[]'),
+                        errors: JSON.parse(localStorage.getItem('mobile_debug_errors') || '[]')
+                    }
+                };
+            } catch (e) {
+                console.error('生成报告失败:', e);
+                return { error: e.message };
+            }
+        },
+        
+        // 清空日志
+        clear: function() {
+            try {
+                this.logs = [];
+                this.warnings = [];
+                this.errors = [];
+                this.performance = [];
+                localStorage.removeItem('mobile_debug_logs');
+                localStorage.removeItem('mobile_debug_warnings');
+                localStorage.removeItem('mobile_debug_errors');
+                console.log('调试日志已清空');
+            } catch (e) {
+                console.error('清空日志失败:', e);
+            }
+        }
+    };
+    
+    const debug = window.MobileDebug;
+    
+    try {
+        debug.log('🚀 移动端调试系统启动 v2.0');
+        debug.info('设备信息', {
+            mobile: /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent),
+            userAgent: navigator.userAgent,
+            viewport: window.innerWidth + 'x' + window.innerHeight,
+            pixelRatio: window.devicePixelRatio,
+            colorDepth: screen.colorDepth,
+            platform: navigator.platform
+        });
+        
+        // 全局错误捕获
+        window.addEventListener('error', function(e) {
+            try {
+                debug.error('全局JavaScript错误', {
+                    message: e.message,
+                    filename: e.filename,
+                    lineno: e.lineno,
+                    colno: e.colno,
+                    error: e.error
+                });
+            } catch (err) {
+                console.error('错误处理器失败:', err);
+            }
+        });
+        
+        window.addEventListener('unhandledrejection', function(e) {
+            try {
+                debug.error('未捕获的Promise拒绝', e.reason);
+            } catch (err) {
+                console.error('Promise错误处理器失败:', err);
+            }
+        });
+        
+        // 页面加载监控
+        window.addEventListener('load', function() {
+            try {
+                debug.log('页面加载完成');
+                
+                // 性能指标
+                if (window.performance && window.performance.timing) {
+                    const timing = window.performance.timing;
+                    const metrics = {
+                        DNS查询: timing.domainLookupEnd - timing.domainLookupStart,
+                        TCP连接: timing.connectEnd - timing.connectStart,
+                        请求响应: timing.responseEnd - timing.requestStart,
+                        DOM解析: timing.domInteractive - timing.domLoading,
+                        DOM完成: timing.domComplete - timing.domLoading,
+                        页面加载: timing.loadEventEnd - timing.navigationStart
+                    };
+                    debug.info('页面性能指标', metrics);
+                }
+            } catch (e) {
+                debug.error('页面加载监控失败', e);
+            }
+        });
+        
+        // 资源加载错误监控
+        window.addEventListener('error', function(e) {
+            try {
+                if (e.target !== window) {
+                    debug.warn('资源加载失败', {
+                        tagName: e.target.tagName,
+                        src: e.target.src || e.target.href,
+                        currentSrc: e.target.currentSrc
+                    });
+                }
+            } catch (err) {
+                console.error('资源错误监控失败:', err);
+            }
+        }, true);
+        
+        // 添加全局调试函数
+        window.getDebugReport = function() {
+            try {
+                const report = debug.getReport();
+                console.group('📱 移动端调试报告');
+                console.log(JSON.stringify(report, null, 2));
+                console.groupEnd();
+                return report;
+            } catch (e) {
+                console.error('生成报告失败:', e);
+                return null;
+            }
+        };
+        
+        window.clearDebugLogs = function() {
+            debug.clear();
+        };
+        
+        // 导出日志到文件
+        window.exportDebugReport = function() {
+            try {
+                const report = debug.getReport();
+                const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `debug-report-${Date.now()}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                debug.log('调试报告已导出');
+            } catch (e) {
+                debug.error('导出报告失败', e);
+            }
+        };
+        
+        debug.log('调试系统初始化完成', {
+            functions: ['getDebugReport()', 'clearDebugLogs()', 'exportDebugReport()']
+        });
+        
+    } catch (e) {
+        console.error('调试系统初始化失败:', e);
+    }
+})();
+</script>
+
 {{- /* Mermaid图表支持 - 自动检测和渲染 */ -}}
 {{- $hasMermaid := false -}}
 {{- if .Params.mermaid -}}
@@ -18,109 +390,197 @@
 <script>
 // 等待页面完全加载
 window.addEventListener('load', function() {
-    // 初始化Mermaid
-    mermaid.initialize({
-        startOnLoad: false,
-        theme: 'default',
-        flowchart: { useMaxWidth: true },
-        sequence: { useMaxWidth: true },
-        gantt: { useMaxWidth: true },
-        pie: { useMaxWidth: true },
-        state: { useMaxWidth: true },
-        class: { useMaxWidth: true }
-    });
+    const debug = window.MobileDebug;
     
-    // 查找并转换所有mermaid代码块（包括fallback类型和错误识别的类型）
-    const codeBlocks = document.querySelectorAll('pre code');
+    // 检测是否为移动设备
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     window.innerWidth <= 768;
     
-    // 过滤出真正的mermaid代码块 - 增强检测逻辑
-    const mermaidBlocks = Array.from(codeBlocks).filter(function(codeElement) {
-        const content = codeElement.textContent.trim();
-        const classList = codeElement.classList;
+    try {
+        debug.startTimer('mermaid-initialization');
+        debug.log('开始初始化Mermaid图表系统');
         
-        // 检查类名或内容特征
-        const hasMermaidClass = classList.contains('language-mermaid');
-        
-        // 增强的内容特征检测
-        const mermaidPatterns = [
-            /^graph\s+(TB|TD|BT|RL|LR)/,  // flowchart patterns
-            /^sequenceDiagram/,
-            /^classDiagram/,
-            /^stateDiagram/,
-            /^pie\s+title/,
-            /^gantt/,
-            /^flowchart\s+(TB|TD|BT|RL|LR)/,
-            /participant\s+\w+/,  // sequence diagram participants
-            /class\s+\w+\s*\{/,   // class definitions
-            /\w+\s*-->\s*\w+/,    // flowchart arrows
-            /\w+\s*->>\s*\w+/,    // sequence arrows
-            /\w+\s*<\|\-\-\s*\w+/, // inheritance arrows
-            /subgraph\s+/,        // subgraphs
-            /%%.*classDef/,       // mermaid comments with styles
-            /fill:#[0-9a-fA-F]{6}/, // color definitions
-        ];
-        
-        const hasValidMermaidContent = mermaidPatterns.some(pattern => pattern.test(content));
-        
-        const isFallbackWithMermaid = (classList.contains('language-fallback') || 
-                                      classList.contains('language-gdscript3') || 
-                                      classList.contains('language-gdscript')) && hasValidMermaidContent;
-        
-        const shouldProcess = hasMermaidClass || isFallbackWithMermaid;
-        
-        // 调试日志
-        if (shouldProcess) {
-            console.log(`发现Mermaid代码块 - 类名: ${Array.from(classList).join(', ')}, 内容开头: ${content.substring(0, 50)}...`);
+        // 检查Mermaid是否加载
+        if (typeof mermaid === 'undefined') {
+            debug.error('Mermaid库未加载');
+            return;
         }
         
-        return shouldProcess;
-    });
-    
-    console.log('找到Mermaid代码块数量:', mermaidBlocks.length);
-    mermaidBlocks.forEach((block, index) => {
-        console.log(`Mermaid块 ${index + 1}:`, block.textContent.substring(0, 100) + '...');
-    });
-    
-    mermaidBlocks.forEach(function(codeElement, index) {
-        const pre = codeElement.closest('pre');
-        const mermaidCode = codeElement.textContent.trim();
+        // 初始化Mermaid - 移动端使用简化配置
+        mermaid.initialize({
+            startOnLoad: false,
+            theme: 'default',
+            flowchart: { useMaxWidth: true, htmlLabels: !isMobile }, // 移动端禁用HTML标签
+            sequence: { useMaxWidth: true, mirrorActors: !isMobile },
+            gantt: { useMaxWidth: true },
+            pie: { useMaxWidth: true },
+            state: { useMaxWidth: true },
+            class: { useMaxWidth: true },
+            securityLevel: 'loose',
+            maxTextSize: isMobile ? 50000 : 100000 // 移动端限制文本大小
+        });
         
-        // 创建mermaid容器
-        const container = document.createElement('div');
-        container.className = 'mermaid-container';
-        container.style.textAlign = 'center';
-        container.style.margin = '2rem 0';
-        container.style.padding = '1rem';
-        container.style.border = '1px solid #e5e7eb';
-        container.style.borderRadius = '8px';
+        debug.log('Mermaid配置初始化成功（移动端: ' + isMobile + '）');
+    } catch (e) {
+        debug.error('Mermaid初始化失败', e);
+        return;
+    }
+    
+    // 查找并转换所有mermaid代码块（包括fallback类型和错误识别的类型）
+    let codeBlocks, mermaidBlocks;
+    
+    try {
+        debug.debug('开始查找Mermaid代码块');
+        codeBlocks = document.querySelectorAll('pre code');
+        debug.log(`找到${codeBlocks.length}个代码块`);
+    } catch (e) {
+        debug.error('查找代码块失败', e);
+        return;
+    }
+    
+    // 过滤出真正的mermaid代码块 - 增强检测逻辑
+    try {
+        mermaidBlocks = Array.from(codeBlocks).filter(function(codeElement) {
+            try {
+                const content = codeElement.textContent.trim();
+                const classList = codeElement.classList;
+                
+                // 检查类名或内容特征
+                const hasMermaidClass = classList.contains('language-mermaid');
+                
+                // 增强的内容特征检测
+                const mermaidPatterns = [
+                    /^graph\s+(TB|TD|BT|RL|LR)/,  // flowchart patterns
+                    /^sequenceDiagram/,
+                    /^classDiagram/,
+                    /^stateDiagram/,
+                    /^pie\s+title/,
+                    /^gantt/,
+                    /^flowchart\s+(TB|TD|BT|RL|LR)/,
+                    /participant\s+\w+/,  // sequence diagram participants
+                    /class\s+\w+\s*\{/,   // class definitions
+                    /\w+\s*-->\s*\w+/,    // flowchart arrows
+                    /\w+\s*->>\s*\w+/,    // sequence arrows
+                    /\w+\s*<\|\-\-\s*\w+/, // inheritance arrows
+                    /subgraph\s+/,        // subgraphs
+                    /%%.*classDef/,       // mermaid comments with styles
+                    /fill:#[0-9a-fA-F]{6}/, // color definitions
+                ];
+                
+                const hasValidMermaidContent = mermaidPatterns.some(pattern => pattern.test(content));
+                
+                const isFallbackWithMermaid = (classList.contains('language-fallback') || 
+                                              classList.contains('language-gdscript3') || 
+                                              classList.contains('language-gdscript')) && hasValidMermaidContent;
+                
+                const shouldProcess = hasMermaidClass || isFallbackWithMermaid;
+                
+                // 调试日志
+                if (shouldProcess) {
+                    debug.debug(`发现Mermaid代码块`, {
+                        classes: Array.from(classList).join(', '),
+                        contentPreview: content.substring(0, 50)
+                    });
+                }
+                
+                return shouldProcess;
+            } catch (e) {
+                debug.warn('过滤代码块时出错', e);
+                return false;
+            }
+        });
         
-        // 创建缩放控制按钮
+        debug.log(`识别到${mermaidBlocks.length}个Mermaid代码块`);
+        mermaidBlocks.forEach((block, index) => {
+            try {
+                debug.debug(`Mermaid块 ${index + 1}`, {
+                    contentPreview: block.textContent.substring(0, 100)
+                });
+            } catch (e) {
+                debug.warn(`记录Mermaid块 ${index + 1} 信息失败`, e);
+            }
+        });
+    } catch (e) {
+        debug.error('过滤Mermaid代码块失败', e);
+        return;
+    }
+    
+    // 移动端限制Mermaid图表数量
+    const maxMermaidBlocks = isMobile ? 10 : mermaidBlocks.length;
+    const blocksToProcess = Array.from(mermaidBlocks).slice(0, maxMermaidBlocks);
+    
+    if (isMobile && mermaidBlocks.length > maxMermaidBlocks) {
+        debug.warn(`移动端限制：仅渲染前 ${maxMermaidBlocks} 个图表（共 ${mermaidBlocks.length} 个）`);
+    }
+    
+    blocksToProcess.forEach(function(codeElement, index) {
+        try {
+            debug.startTimer(`mermaid-block-${index}`);
+            debug.debug(`处理Mermaid块 ${index + 1}/${blocksToProcess.length}`);
+            
+            const pre = codeElement.closest('pre');
+            if (!pre) {
+                debug.warn(`Mermaid块 ${index + 1}: 找不到父级pre元素`);
+                return;
+            }
+            
+            const mermaidCode = codeElement.textContent.trim();
+            if (!mermaidCode) {
+                debug.warn(`Mermaid块 ${index + 1}: 代码内容为空`);
+                return;
+            }
+            
+            // 移动端：限制代码长度
+            if (isMobile && mermaidCode.length > 5000) {
+                debug.warn(`Mermaid块 ${index + 1}: 代码过长 (${mermaidCode.length}字符)，跳过`);
+                return;
+            }
+            
+            debug.debug(`Mermaid块 ${index + 1}: 代码长度 ${mermaidCode.length}`);
+            
+            // 创建mermaid容器
+            const container = document.createElement('div');
+            container.className = 'mermaid-container';
+            container.style.textAlign = 'center';
+            container.style.margin = '2rem 0';
+            container.style.padding = '1rem';
+            container.style.border = '1px solid #e5e7eb';
+            container.style.borderRadius = '8px';
+        
+        // 移动端：简化控制按钮，仅保留全屏
         const zoomControls = document.createElement('div');
         zoomControls.className = 'mermaid-zoom-controls';
         
-        const zoomInBtn = document.createElement('button');
-        zoomInBtn.className = 'mermaid-zoom-btn';
-        zoomInBtn.innerHTML = '+';
-        zoomInBtn.title = '放大';
+        let zoomInBtn, zoomOutBtn, resetBtn;
         
-        const zoomOutBtn = document.createElement('button');
-        zoomOutBtn.className = 'mermaid-zoom-btn';
-        zoomOutBtn.innerHTML = '−';
-        zoomOutBtn.title = '缩小';
+        if (!isMobile) {
+            // 桌面端：完整的缩放控制
+            zoomInBtn = document.createElement('button');
+            zoomInBtn.className = 'mermaid-zoom-btn';
+            zoomInBtn.innerHTML = '+';
+            zoomInBtn.title = '放大';
+            
+            zoomOutBtn = document.createElement('button');
+            zoomOutBtn.className = 'mermaid-zoom-btn';
+            zoomOutBtn.innerHTML = '−';
+            zoomOutBtn.title = '缩小';
+            
+            resetBtn = document.createElement('button');
+            resetBtn.className = 'mermaid-zoom-btn';
+            resetBtn.innerHTML = '⌂';
+            resetBtn.title = '重置';
+            
+            zoomControls.appendChild(zoomInBtn);
+            zoomControls.appendChild(zoomOutBtn);
+            zoomControls.appendChild(resetBtn);
+        }
         
-        const resetBtn = document.createElement('button');
-        resetBtn.className = 'mermaid-zoom-btn';
-        resetBtn.innerHTML = '⌂';
-        resetBtn.title = '重置';
-        
+        // 全屏按钮（移动端和桌面端都有）
         const fullscreenBtn = document.createElement('button');
         fullscreenBtn.className = 'mermaid-zoom-btn';
         fullscreenBtn.innerHTML = '⛶';
         fullscreenBtn.title = '全屏';
         
-        zoomControls.appendChild(zoomInBtn);
-        zoomControls.appendChild(zoomOutBtn);
-        zoomControls.appendChild(resetBtn);
         zoomControls.appendChild(fullscreenBtn);
         
         // 创建缩放包装器
@@ -135,7 +595,7 @@ window.addEventListener('load', function() {
         container.appendChild(zoomControls);
         container.appendChild(zoomWrapper);
         
-        // 添加缩放功能
+        // 添加缩放功能（仅桌面端）
         let currentScale = 1;
         const minScale = 0.5;
         const maxScale = 3;
@@ -146,9 +606,12 @@ window.addEventListener('load', function() {
             zoomWrapper.style.transform = `scale(${currentScale})`;
         }
         
-        zoomInBtn.addEventListener('click', () => updateScale(currentScale + scaleStep));
-        zoomOutBtn.addEventListener('click', () => updateScale(currentScale - scaleStep));
-        resetBtn.addEventListener('click', () => updateScale(1));
+        // 桌面端：添加缩放按钮事件
+        if (!isMobile) {
+            zoomInBtn.addEventListener('click', () => updateScale(currentScale + scaleStep));
+            zoomOutBtn.addEventListener('click', () => updateScale(currentScale - scaleStep));
+            resetBtn.addEventListener('click', () => updateScale(1));
+        }
         
         // 全屏功能
         fullscreenBtn.addEventListener('click', () => {
@@ -165,77 +628,63 @@ window.addEventListener('load', function() {
             }
         });
         
-        // 鼠标滚轮缩放 - 降低敏感度
-        let wheelTimeout;
-        container.addEventListener('wheel', (e) => {
-            e.preventDefault();
-            
-            // 降低缩放敏感度
-            if (wheelTimeout) return;
-            wheelTimeout = setTimeout(() => wheelTimeout = null, 150);
-            
-            const delta = e.deltaY > 0 ? -scaleStep * 0.5 : scaleStep * 0.5;
-            updateScale(currentScale + delta);
-        });
-        
-        // 双击重置
-        container.addEventListener('dblclick', () => updateScale(1));
-        
-        // 拖拽功能
-        let isDragging = false;
-        let startX, startY, translateX = 0, translateY = 0;
-        
-        container.addEventListener('mousedown', (e) => {
-            if (e.target.classList.contains('mermaid-zoom-btn')) return;
-            isDragging = true;
-            startX = e.clientX - translateX;
-            startY = e.clientY - translateY;
-            container.style.cursor = 'grabbing';
-            e.preventDefault();
-        });
-        
-        document.addEventListener('mousemove', (e) => {
-            if (!isDragging) return;
-            e.preventDefault();
-            translateX = e.clientX - startX;
-            translateY = e.clientY - startY;
-            zoomWrapper.style.transform = `scale(${currentScale}) translate(${translateX}px, ${translateY}px)`;
-        });
-        
-        document.addEventListener('mouseup', () => {
-            if (isDragging) {
-                isDragging = false;
-                container.style.cursor = 'grab';
-            }
-        });
-        
-        // 触摸拖拽支持
-        let touchStartX, touchStartY;
-        
-        container.addEventListener('touchstart', (e) => {
-            if (e.touches.length === 1) {
-                const touch = e.touches[0];
-                touchStartX = touch.clientX - translateX;
-                touchStartY = touch.clientY - translateY;
-            }
-        });
-        
-        container.addEventListener('touchmove', (e) => {
-            if (e.touches.length === 1) {
+        // 桌面端：鼠标滚轮缩放和拖拽功能
+        if (!isMobile) {
+            // 鼠标滚轮缩放 - 降低敏感度
+            let wheelTimeout;
+            container.addEventListener('wheel', (e) => {
                 e.preventDefault();
-                const touch = e.touches[0];
-                translateX = touch.clientX - touchStartX;
-                translateY = touch.clientY - touchStartY;
+                
+                // 降低缩放敏感度
+                if (wheelTimeout) return;
+                wheelTimeout = setTimeout(() => wheelTimeout = null, 150);
+                
+                const delta = e.deltaY > 0 ? -scaleStep * 0.5 : scaleStep * 0.5;
+                updateScale(currentScale + delta);
+            }, { passive: false });
+            
+            // 双击重置
+            container.addEventListener('dblclick', () => updateScale(1));
+            
+            // 拖拽功能
+            let isDragging = false;
+            let startX, startY, translateX = 0, translateY = 0;
+            
+            container.addEventListener('mousedown', (e) => {
+                if (e.target.classList.contains('mermaid-zoom-btn')) return;
+                isDragging = true;
+                startX = e.clientX - translateX;
+                startY = e.clientY - translateY;
+                container.style.cursor = 'grabbing';
+                e.preventDefault();
+            });
+            
+            document.addEventListener('mousemove', (e) => {
+                if (!isDragging) return;
+                e.preventDefault();
+                translateX = e.clientX - startX;
+                translateY = e.clientY - startY;
                 zoomWrapper.style.transform = `scale(${currentScale}) translate(${translateX}px, ${translateY}px)`;
-            }
-        });
-        
-        // 重置时也重置位置
-        resetBtn.addEventListener('click', () => {
-            updateScale(1);
-            translateX = translateY = 0;
-            zoomWrapper.style.transform = `scale(1)`;
-        });
+            });
+            
+            document.addEventListener('mouseup', () => {
+                if (isDragging) {
+                    isDragging = false;
+                    container.style.cursor = 'grab';
+                }
+            });
+            
+            // 重置时也重置位置
+            resetBtn.addEventListener('click', () => {
+                updateScale(1);
+                translateX = translateY = 0;
+                zoomWrapper.style.transform = `scale(1)`;
+            });
+        }
+        // 移动端：仅支持触摸缩放（使用原生缩放）
+        else {
+            container.style.touchAction = 'pinch-zoom';
+        }
         
         // ESC键退出全屏
         document.addEventListener('keydown', (e) => {
@@ -247,31 +696,85 @@ window.addEventListener('load', function() {
             }
         });
         
-        // 替换原来的pre元素
-        pre.parentNode.replaceChild(container, pre);
+            // 替换原来的pre元素
+            try {
+                pre.parentNode.replaceChild(container, pre);
+                debug.debug(`Mermaid块 ${index + 1}: DOM替换成功`);
+            } catch (e) {
+                debug.error(`Mermaid块 ${index + 1}: DOM替换失败`, e);
+            }
+            
+        } catch (e) {
+            debug.error(`处理Mermaid块 ${index + 1} 失败`, e, {
+                blockIndex: index,
+                totalBlocks: mermaidBlocks.length
+            });
+        } finally {
+            try {
+                debug.endTimer(`mermaid-block-${index}`);
+            } catch (e) {
+                // 忽略计时器错误
+            }
+        }
     });
     
     // 渲染所有mermaid图表
     setTimeout(function() {
-        const mermaidElements = document.querySelectorAll('.mermaid');
-        
-        if (mermaidElements.length > 0) {
-            mermaid.run().then(function() {
-                // 确保SVG响应式
-                document.querySelectorAll('.mermaid svg').forEach(function(svg) {
-                    svg.style.maxWidth = '100%';
-                    svg.style.height = 'auto';
-                    // 修复移动端Chrome SVG显示问题
-                    svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
-                    svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
-                    svg.style.display = 'block';
-                    svg.style.margin = '0 auto';
+        try {
+            debug.startTimer('mermaid-rendering');
+            debug.log('开始渲染Mermaid图表');
+            
+            const mermaidElements = document.querySelectorAll('.mermaid');
+            debug.log(`找到${mermaidElements.length}个待渲染的Mermaid元素`);
+            
+            if (mermaidElements.length > 0) {
+                mermaid.run().then(function() {
+                    try {
+                        debug.log('Mermaid渲染完成，开始优化SVG');
+                        
+                        // 确保SVG响应式
+                        const svgElements = document.querySelectorAll('.mermaid svg');
+                        debug.log(`优化${svgElements.length}个SVG元素`);
+                        
+                        svgElements.forEach(function(svg, idx) {
+                            try {
+                                svg.style.maxWidth = '100%';
+                                svg.style.height = 'auto';
+                                // 修复移动端Chrome SVG显示问题
+                                svg.setAttribute('xmlns', 'http://www.w3.org/2000/svg');
+                                svg.setAttribute('xmlns:xlink', 'http://www.w3.org/1999/xlink');
+                                svg.style.display = 'block';
+                                svg.style.margin = '0 auto';
+                                
+                                debug.debug(`SVG ${idx + 1}/${svgElements.length} 优化完成`);
+                            } catch (e) {
+                                debug.warn(`优化SVG ${idx + 1} 失败`, e);
+                            }
+                        });
+                        
+                        debug.log('所有SVG优化完成');
+                        debug.endTimer('mermaid-rendering', { svgCount: svgElements.length });
+                    } catch (e) {
+                        debug.error('SVG优化过程失败', e);
+                    }
+                }).catch(function(error) {
+                    debug.error('Mermaid渲染失败', error);
+                    debug.endTimer('mermaid-rendering');
                 });
-            }).catch(function(error) {
-                console.error('Mermaid渲染失败:', error);
-            });
+            } else {
+                debug.warn('没有找到需要渲染的Mermaid元素');
+            }
+        } catch (e) {
+            debug.error('Mermaid渲染启动失败', e);
         }
     }, 100);
+    
+    try {
+        debug.endTimer('mermaid-initialization');
+        debug.log('Mermaid图表系统初始化完成');
+    } catch (e) {
+        // 忽略
+    }
 });
 </script>
 {{- end -}}
@@ -301,12 +804,25 @@ document.addEventListener("DOMContentLoaded", function() {
 {{- /* 目录交互功能 */ -}}
 <script>
 document.addEventListener('DOMContentLoaded', function() {
-    const toc = document.querySelector('.toc');
-    if (!toc) return;
+    const debug = window.MobileDebug;
+    
+    try {
+        debug.startTimer('toc-initialization');
+        debug.log('开始初始化目录交互功能');
+        
+        const toc = document.querySelector('.toc');
+        if (!toc) {
+            debug.debug('页面没有目录元素');
+            return;
+        }
+        
+        debug.log('找到目录元素');
 
-    // 获取所有标题和目录链接
-    const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
-    const tocLinks = toc.querySelectorAll('a');
+        // 获取所有标题和目录链接
+        const headings = document.querySelectorAll('h1, h2, h3, h4, h5, h6');
+        const tocLinks = toc.querySelectorAll('a');
+        
+        debug.log(`找到${headings.length}个标题，${tocLinks.length}个目录链接`);
     
     // 创建目录切换按钮（移动端）
     const tocToggle = document.createElement('button');
@@ -755,16 +1271,50 @@ document.addEventListener('DOMContentLoaded', function() {
         el.classList.add('hover-glow');
     });
 
-    // 平滑滚动增强
+    // 平滑滚动增强 - 修复URL编码选择器问题
     document.querySelectorAll('a[href^="#"]').forEach(anchor => {
         anchor.addEventListener('click', function (e) {
             e.preventDefault();
-            const target = document.querySelector(this.getAttribute('href'));
-            if (target) {
-                target.scrollIntoView({
-                    behavior: 'smooth',
-                    block: 'start'
-                });
+            try {
+                const href = this.getAttribute('href');
+                if (!href || href === '#') return;
+                
+                // 提取ID（去掉#号）
+                const id = href.substring(1);
+                
+                // 先尝试解码URL（处理中文等编码字符）
+                let decodedId = id;
+                try {
+                    decodedId = decodeURIComponent(id);
+                } catch (decodeError) {
+                    // 解码失败，使用原始ID
+                }
+                
+                // 优先使用getElementById（不受URL编码影响）
+                let target = document.getElementById(decodedId);
+                
+                // 如果找不到，尝试使用原始ID
+                if (!target && id !== decodedId) {
+                    target = document.getElementById(id);
+                }
+                
+                // 最后使用querySelector with CSS.escape（如果支持）
+                if (!target && typeof CSS !== 'undefined' && CSS.escape) {
+                    try {
+                        target = document.querySelector('#' + CSS.escape(decodedId));
+                    } catch (e) {
+                        // 忽略选择器错误
+                    }
+                }
+                
+                if (target) {
+                    target.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'start'
+                    });
+                }
+            } catch (e) {
+                console.error('[ScrollEnhance] 平滑滚动失败', e);
             }
         });
     });
@@ -801,8 +1351,20 @@ document.addEventListener('DOMContentLoaded', function() {
     }
 
     // 性能优化：减少动画在低性能设备上的影响
-    if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
-        document.documentElement.style.setProperty('--animation-duration', '0.1s');
+    try {
+        if (navigator.hardwareConcurrency && navigator.hardwareConcurrency < 4) {
+            document.documentElement.style.setProperty('--animation-duration', '0.1s');
+            debug.log(`检测到低性能设备(${navigator.hardwareConcurrency}核心)，已降低动画复杂度`);
+        }
+    } catch (e) {
+        debug.warn('性能优化设置失败', e);
+    }
+    
+    debug.endTimer('toc-initialization');
+    debug.log('目录和页面增强功能初始化完成');
+    
+    } catch (e) {
+        debug.error('DOMContentLoaded处理失败', e);
     }
 });
 </script>
@@ -810,20 +1372,55 @@ document.addEventListener('DOMContentLoaded', function() {
 {{- /* 引入图片修复脚本 */ -}}
 {{- partial "image-fix.html" . -}}
 
-{{- /* 图片交互增强脚本 */ -}}
+{{- /* 图片交互增强脚本 - 移动端优化版 */ -}}
 <script>
-// 普通图片的交互增强
+// 普通图片的交互增强 - 移动端仅启用简单预览
 (function() {
     'use strict';
     
+    const debug = window.MobileDebug;
+    
+    // 检测是否为移动设备
+    const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) ||
+                     window.innerWidth <= 768;
+    
     function enhanceRegularImages() {
-        // 为所有content区域中的图片添加交互功能
-        const contentImages = document.querySelectorAll('.post-content img, .page-content img, article img');
-        
-        contentImages.forEach(function(img) {
-            // 跳过已经处理过的图片
-            if (img.classList.contains('image-enhanced')) return;
-            img.classList.add('image-enhanced');
+        try {
+            debug.startTimer('image-enhancement');
+            debug.log('开始增强图片交互功能');
+            
+            // 移动端不添加复杂的交互功能，仅添加点击全屏查看
+            const contentImages = document.querySelectorAll('.post-content img, .page-content img, article img');
+            debug.log(`找到${contentImages.length}个内容图片`);
+            
+            let enhancedCount = 0;
+            const maxEnhance = isMobile ? 20 : 50; // 移动端限制增强数量
+            
+            contentImages.forEach(function(img, index) {
+                try {
+                    // 跳过已经处理过的图片
+                    if (img.classList.contains('image-enhanced')) {
+                        debug.debug(`图片 ${index + 1} 已处理，跳过`);
+                        return;
+                    }
+                    
+                    // 超过限制则跳过
+                    if (enhancedCount >= maxEnhance) {
+                        debug.debug(`已达到增强限制 ${maxEnhance}，跳过剩余图片`);
+                        return;
+                    }
+                    
+                    img.classList.add('image-enhanced');
+                    enhancedCount++;
+                    
+                    // 移动端：仅添加点击全屏功能
+                    if (isMobile) {
+                        img.style.cursor = 'pointer';
+                        img.addEventListener('click', function() {
+                            showFullscreen(this.src, this.alt);
+                        }, { passive: true, once: false });
+                        return;
+                    }
             
             // 创建图片容器
             const container = document.createElement('div');
@@ -988,7 +1585,21 @@ document.addEventListener('DOMContentLoaded', function() {
                 translateX = translateY = 0;
                 updateTransform();
             });
-        });
+            
+                } catch (e) {
+                    debug.warn(`增强图片 ${index + 1} 失败`, e, {
+                        src: img.src,
+                        alt: img.alt
+                    });
+                }
+            });
+            
+            debug.log(`图片增强完成，成功: ${enhancedCount}/${contentImages.length}`);
+            debug.endTimer('image-enhancement', { enhanced: enhancedCount, total: contentImages.length });
+            
+        } catch (e) {
+            debug.error('图片增强功能失败', e);
+        }
     }
     
     function createControlButton(text, title) {
@@ -1026,31 +1637,34 @@ document.addEventListener('DOMContentLoaded', function() {
     }
     
     function showFullscreen(src, alt) {
-        const overlay = document.createElement('div');
-        overlay.style.cssText = `
-            position: fixed;
-            top: 0;
-            left: 0;
-            width: 100vw;
-            height: 100vh;
-            background: rgba(0, 0, 0, 0.9);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            z-index: 9999;
-            cursor: pointer;
-        `;
-        
-        const img = document.createElement('img');
-        img.src = src;
-        img.alt = alt;
-        img.style.cssText = `
-            max-width: 90%;
-            max-height: 90%;
-            object-fit: contain;
-            border-radius: 8px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
-        `;
+        try {
+            debug.debug('显示全屏图片', { src, alt });
+            
+            const overlay = document.createElement('div');
+            overlay.style.cssText = `
+                position: fixed;
+                top: 0;
+                left: 0;
+                width: 100vw;
+                height: 100vh;
+                background: rgba(0, 0, 0, 0.9);
+                display: flex;
+                align-items: center;
+                justify-content: center;
+                z-index: 9999;
+                cursor: pointer;
+            `;
+            
+            const img = document.createElement('img');
+            img.src = src;
+            img.alt = alt;
+            img.style.cssText = `
+                max-width: 90%;
+                max-height: 90%;
+                object-fit: contain;
+                border-radius: 8px;
+                box-shadow: 0 20px 40px rgba(0, 0, 0, 0.5);
+            `;
         
         const closeBtn = document.createElement('button');
         closeBtn.innerHTML = '✕';
@@ -1091,34 +1705,85 @@ document.addEventListener('DOMContentLoaded', function() {
                 document.removeEventListener('keydown', escHandler);
             }
         });
+        
+        debug.debug('全屏图片显示成功');
+        
+        } catch (e) {
+            debug.error('显示全屏图片失败', e);
+        }
+    }
+    
+    // 初始化函数：包含图片增强和MutationObserver设置
+    function initImageEnhancements() {
+        try {
+            // 首先增强现有图片
+            enhanceRegularImages();
+            
+            // 桌面端：设置MutationObserver监听新增图片
+            if (!isMobile) {
+                try {
+                    // 确保document.body存在
+                    if (!document.body) {
+                        debug.warn('document.body不存在，跳过MutationObserver');
+                        return;
+                    }
+                    
+                    let observerTimeout;
+                    const observer = new MutationObserver(function(mutations) {
+                        try {
+                            // 使用防抖避免频繁触发
+                            clearTimeout(observerTimeout);
+                            observerTimeout = setTimeout(function() {
+                                const hasNewImages = mutations.some(function(mutation) {
+                                    return mutation.type === 'childList' && 
+                                           Array.from(mutation.addedNodes).some(function(node) {
+                                               return node.nodeType === 1 && 
+                                                      (node.tagName === 'IMG' || node.querySelector('img'));
+                                           });
+                                });
+                                
+                                if (hasNewImages) {
+                                    debug.debug('检测到新图片，准备增强');
+                                    enhanceRegularImages();
+                                }
+                            }, 500);
+                        } catch (e) {
+                            debug.error('MutationObserver回调失败', e);
+                        }
+                    });
+                    
+                    // 再次确认document.body存在
+                    if (document.body) {
+                        observer.observe(document.body, {
+                            childList: true,
+                            subtree: true
+                        });
+                        debug.log('图片动态监控已启动（仅桌面端）');
+                    } else {
+                        debug.warn('document.body在观察时不存在');
+                    }
+                } catch (e) {
+                    debug.error('启动图片动态监控失败', e);
+                }
+            } else {
+                debug.log('移动端跳过MutationObserver，避免性能问题');
+            }
+        } catch (e) {
+            debug.error('初始化图片增强功能失败', e);
+        }
     }
     
     // 页面加载完成后运行
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', enhanceRegularImages);
-    } else {
-        enhanceRegularImages();
+    try {
+        if (document.readyState === 'loading') {
+            debug.debug('等待DOMContentLoaded后启动图片增强');
+            document.addEventListener('DOMContentLoaded', initImageEnhancements);
+        } else {
+            debug.debug('DOM已就绪，立即启动图片增强');
+            initImageEnhancements();
+        }
+    } catch (e) {
+        debug.error('启动图片增强失败', e);
     }
-    
-    // 监听动态内容变化
-    const observer = new MutationObserver(function(mutations) {
-        mutations.forEach(function(mutation) {
-            if (mutation.type === 'childList') {
-                mutation.addedNodes.forEach(function(node) {
-                    if (node.nodeType === 1) {
-                        const images = node.tagName === 'IMG' ? [node] : node.querySelectorAll('img');
-                        images.forEach(function() {
-                            setTimeout(enhanceRegularImages, 100);
-                        });
-                    }
-                });
-            }
-        });
-    });
-    
-    observer.observe(document.body, {
-        childList: true,
-        subtree: true
-    });
 })();
 </script>
