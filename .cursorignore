@@ -1,0 +1,54 @@
+# Hugo 构建产物
+public/
+resources/
+
+# Node.js 依赖
+node_modules/
+package-lock.json
+
+# 第三方主题（通常不需要 AI 分析）
+themes/
+
+# 测试和临时文件
+test-results/
+*.log
+*.tmp
+
+# 静态资源（二进制文件）
+*.png
+*.jpg
+*.jpeg
+*.gif
+*.ico
+*.webp
+*.svg
+*.woff
+*.woff2
+*.ttf
+*.eot
+
+# 压缩和优化后的文件
+*.min.js
+*.min.css
+
+# 备份文件
+*.backup
+*~
+
+# 系统文件
+.DS_Store
+Thumbs.db
+
+# 编辑器和 IDE 文件
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# 部署和构建相关
+.vercel/
+.netlify/
+
+# Git 相关
+.git/
+
