@@ -34,7 +34,7 @@
   {{- end }}
   
   <div class="categories-grid">
-    {{- $categoryOrder := slice "ai应用" "dify" "langchain" "langgraph"  "autogpt" "autogen" "openaiagent"  "eino" "githubmcpserver" "metagpt" "pgvector" "milvus" "vllm" "tensorrt" "pytorch" "tensorflow" "python" "golang"  "kubernetes" "docker" "mongodb" "mysql" "elasticsearch"  "kafka" "kitex" "kratos" "fastapi" "grpc"  "nginx" "flink" "pulsar"  "etcd" "istio" "envoy"  "clickhouse" "rocksdb"  "ceph"  "leveldb" "netpoll" "ray" "qwenagent" "minio"}}
+    {{- $categoryOrder := slice "ai应用" "voicehelper" "dify" "langchain" "langgraph"  "autogpt" "autogen" "openaiagent"  "eino" "githubmcpserver" "metagpt" "pgvector" "milvus" "vllm" "tensorrt" "pytorch" "tensorflow" "python" "golang"  "kubernetes" "docker" "mongodb" "mysql" "elasticsearch"  "kafka" "kitex" "kratos" "fastapi" "grpc"  "nginx" "flink" "pulsar"  "etcd" "istio" "envoy"  "clickhouse" "rocksdb"  "ceph"  "leveldb" "netpoll" "ray" "qwenagent" "minio" "voicehelper"}}
     {{- range $categoryOrder }}
       {{- $category := . }}
       {{- $posts := index $categories $category }}
@@ -49,7 +49,7 @@
       </div>
       <div class="category-description">
         {{- if eq $category "ai应用" }}
-        <p>🎤 智能语音助手系统 - Home Assistant、LiveKit、VoiceHelper、fastchat实时语音处理技术栈</p>
+        <p>🎤 智能语音助手系统 - Home Assistant、LiveKit、fastchat实时语音处理技术栈</p>
         {{- else if eq $category "dify" }}
           <p>🤖 Dify低代码LLM应用开发平台 - 工作流引擎架构与核心模块源码深度剖析</p>
         {{- else if eq $category "autogpt" }}
@@ -130,6 +130,8 @@
           <p>🌐 字节跳动NetPoll - 高性能网络库与epoll事件驱动架构优化</p>
         {{- else if eq $category "kratos" }}
           <p>🤖 Kratos微服务框架 - 微服务治理与分布式系统架构设计</p>
+        {{- else if eq $category "voicehelper" }}
+          <p>🤖 VoiceHelper - 语音助手框架与实时语音处理技术栈</p>
         {{- else }}
           <p>📖 {{ $category }} 相关技术文档和源码分析</p>
         {{- end }}

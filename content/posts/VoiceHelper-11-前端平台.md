@@ -11,7 +11,6 @@ tags:
   - React Native
   - 多平台开发
 categories:
-  - AI应用
   - VoiceHelper
   - 前端架构
 description: "源码剖析 - VoiceHelper 7 个前端平台架构设计"

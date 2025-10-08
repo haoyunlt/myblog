@@ -7,14 +7,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1, shrink-to-fit=no, viewport-fit=cover">
     <meta http-equiv="X-UA-Compatible" content="IE=edge">
     
-    {{- /* DNS预解析 - 提升外部资源加载速度 */ -}}
-    <link rel="dns-prefetch" href="//fonts.googleapis.com">
-    <link rel="dns-prefetch" href="//fonts.gstatic.com">
-    <link rel="dns-prefetch" href="//cdn.jsdelivr.net">
-    
-    {{- /* 预连接关键域名 */ -}}
-    <link rel="preconnect" href="https://fonts.googleapis.com" crossorigin>
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    {{- /* DNS预解析优化已移除 - 所有资源现在从本地加载 */ -}}
     
     {{- /* 关键CSS内联 - 避免阻塞渲染 */ -}}
     <style>

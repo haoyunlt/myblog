@@ -10,7 +10,6 @@ tags:
   - 开发指南
   - 实战经验
 categories:
-  - AI应用
   - VoiceHelper
   - 最佳实践
 description: "源码剖析 - VoiceHelper 框架使用与最佳实践指南"

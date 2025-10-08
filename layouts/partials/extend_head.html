@@ -1,6 +1,14 @@
 {{- /* 扩展头部 - 添加Mermaid支持和其他功能 */ -}}
 {{- /* 利用PaperMod主题的extend_head机制 */ -}}
 
+{{- /* 防止HTML被缓存 - 确保用户始终获取最新版本 */ -}}
+<meta http-equiv="Cache-Control" content="no-cache, no-store, must-revalidate">
+<meta http-equiv="Pragma" content="no-cache">
+<meta http-equiv="Expires" content="0">
+
+{{- /* 内存泄漏紧急修复补丁 - 必须最先加载 */ -}}
+<script src="{{ "js/memory-leak-fix.js" | relURL }}"></script>
+
 {{- /* 移动端性能优化CSS - 关键渲染路径 */ -}}
 <link rel="stylesheet" href="/css/extended/mobile-performance.css" media="screen and (max-width: 768px)">
 
@@ -386,7 +394,7 @@
 {{- end -}}
 
 {{- if $hasMermaid -}}
-<script src="https://cdn.jsdelivr.net/npm/mermaid@10.9.1/dist/mermaid.min.js"></script>
+<script src="{{ "js/mermaid.min.js" | relURL }}"></script>
 <script>
 // 等待页面完全加载
 window.addEventListener('load', function() {
@@ -781,9 +789,9 @@ window.addEventListener('load', function() {
 
 {{- /* 数学公式支持 (KaTeX) */ -}}
 {{- if or .Params.math (and .Site.Params.math (ne .Params.math false)) -}}
-<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.css">
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/katex.min.js"></script>
-<script defer src="https://cdn.jsdelivr.net/npm/katex@0.16.8/dist/contrib/auto-render.min.js"></script>
+<link rel="stylesheet" href="{{ "css/katex.min.css" | relURL }}">
+<script defer src="{{ "js/katex.min.js" | relURL }}"></script>
+<script defer src="{{ "js/katex-auto-render.min.js" | relURL }}"></script>
 <script>
 document.addEventListener("DOMContentLoaded", function() {
     renderMathInElement(document.body, {

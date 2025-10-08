@@ -10,7 +10,6 @@ tags:
   - 分布式系统
   - Kubernetes
 categories:
-  - AI应用
   - VoiceHelper
   - 系统架构
 description: "源码剖析 - VoiceHelper 微服务架构设计与实现"

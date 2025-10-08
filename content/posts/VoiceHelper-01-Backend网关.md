@@ -10,7 +10,6 @@ tags:
   - Gin框架
   - API网关
 categories:
-  - AI应用
   - VoiceHelper
   - Web框架
 description: "源码剖析 - VoiceHelper Backend 网关层设计与实现"

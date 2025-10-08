@@ -10,7 +10,6 @@ tags:
   - 模型路由
   - 降级策略
 categories:
-  - AI应用
   - VoiceHelper
   - AI框架
 description: "源码剖析 - VoiceHelper LLM 智能路由与成本优化"

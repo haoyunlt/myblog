@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>本地资源测试</title>
+    <link rel="stylesheet" href="/css/katex.min.css">
+    <style>
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            padding: 20px;
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        .test-item {
+            background: #f5f7fa;
+            padding: 15px;
+            margin: 15px 0;
+            border-radius: 8px;
+            border-left: 4px solid #409eff;
+        }
+        .status {
+            padding: 10px;
+            border-radius: 4px;
+            margin: 10px 0;
+        }
+        .success { background: #f0f9ff; color: #0c63e4; }
+        .error { background: #fef0f0; color: #f56c6c; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 4px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🔧 本地资源加载测试</h1>
+    <p>验证所有第三方资源是否成功从本地加载</p>
+    
+    <div class="test-item">
+        <h2>📊 Mermaid.js 测试</h2>
+        <div id="mermaid-status" class="status">检测中...</div>
+        <div class="mermaid">
+            graph TD
+                A[CDN资源] --> B[本地资源]
+                B --> C[加载成功]
+        </div>
+    </div>
+    
+    <div class="test-item">
+        <h2>🧮 KaTeX 数学公式测试</h2>
+        <div id="katex-status" class="status">检测中...</div>
+        <p>行内公式: $E = mc^2$</p>
+        <p>块级公式:</p>
+        $$\int_{-\infty}^{\infty} e^{-x^2} dx = \sqrt{\pi}$$
+    </div>
+    
+    <div class="test-item">
+        <h2>📋 资源加载状态</h2>
+        <div id="resource-status"></div>
+    </div>
+    
+    <script src="/js/mermaid.min.js"></script>
+    <script src="/js/katex.min.js"></script>
+    <script src="/js/katex-auto-render.min.js"></script>
+    
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const mermaidStatus = document.getElementById('mermaid-status');
+            const katexStatus = document.getElementById('katex-status');
+            const resourceStatus = document.getElementById('resource-status');
+            
+            let statusHTML = '<h3>资源检测结果:</h3>';
+            
+            // 检测 Mermaid
+            if (typeof mermaid !== 'undefined') {
+                mermaidStatus.className = 'status success';
+                mermaidStatus.textContent = '✅ Mermaid.js 加载成功';
+                statusHTML += '<div class="status success">✅ Mermaid.js: /js/mermaid.min.js</div>';
+                
+                // 初始化 Mermaid
+                mermaid.initialize({ startOnLoad: true });
+            } else {
+                mermaidStatus.className = 'status error';
+                mermaidStatus.textContent = '❌ Mermaid.js 加载失败';
+                statusHTML += '<div class="status error">❌ Mermaid.js: 加载失败</div>';
+            }
+            
+            // 检测 KaTeX
+            if (typeof katex !== 'undefined') {
+                katexStatus.className = 'status success';
+                katexStatus.textContent = '✅ KaTeX 加载成功';
+                statusHTML += '<div class="status success">✅ KaTeX CSS: /css/katex.min.css</div>';
+                statusHTML += '<div class="status success">✅ KaTeX JS: /js/katex.min.js</div>';
+                
+                // 检测 auto-render
+                if (typeof renderMathInElement !== 'undefined') {
+                    statusHTML += '<div class="status success">✅ KaTeX Auto-render: /js/katex-auto-render.min.js</div>';
+                    // 渲染数学公式
+                    renderMathInElement(document.body, {
+                        delimiters: [
+                            {left: '$$', right: '$$', display: true},
+                            {left: '$', right: '$', display: false}
+                        ]
+                    });
+                } else {
+                    statusHTML += '<div class="status error">❌ KaTeX Auto-render: 加载失败</div>';
+                }
+            } else {
+                katexStatus.className = 'status error';
+                katexStatus.textContent = '❌ KaTeX 加载失败';
+                statusHTML += '<div class="status error">❌ KaTeX: 加载失败</div>';
+            }
+            
+            // 检测网络请求
+            statusHTML += '<h3>网络请求检测:</h3>';
+            const resources = [
+                '/js/mermaid.min.js',
+                '/css/katex.min.css', 
+                '/js/katex.min.js',
+                '/js/katex-auto-render.min.js'
+            ];
+            
+            resources.forEach(resource => {
+                fetch(resource)
+                    .then(response => {
+                        if (response.ok) {
+                            statusHTML += `<div class="status success">✅ ${resource} (${response.status})</div>`;
+                        } else {
+                            statusHTML += `<div class="status error">❌ ${resource} (${response.status})</div>`;
+                        }
+                        resourceStatus.innerHTML = statusHTML;
+                    })
+                    .catch(error => {
+                        statusHTML += `<div class="status error">❌ ${resource} (网络错误)</div>`;
+                        resourceStatus.innerHTML = statusHTML;
+                    });
+            });
+            
+            statusHTML += '<div class="status">🔄 检测网络请求中...</div>';
+            resourceStatus.innerHTML = statusHTML;
+        });
+    </script>
+</body>
+</html>

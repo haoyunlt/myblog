@@ -1,0 +1,621 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>移动端高级调试工具 - Tommie Notes</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: #f5f7fa;
+            padding: 10px;
+            font-size: 14px;
+        }
+        
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 15px;
+            border-radius: 8px;
+            margin-bottom: 10px;
+        }
+        
+        .header h1 {
+            font-size: 18px;
+            margin-bottom: 5px;
+        }
+        
+        .header p {
+            font-size: 12px;
+            opacity: 0.9;
+        }
+        
+        .card {
+            background: white;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 10px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        
+        .card h2 {
+            font-size: 16px;
+            margin-bottom: 10px;
+            color: #333;
+            border-left: 4px solid #667eea;
+            padding-left: 10px;
+        }
+        
+        .metric {
+            display: flex;
+            justify-content: space-between;
+            padding: 8px 0;
+            border-bottom: 1px solid #f0f0f0;
+        }
+        
+        .metric:last-child {
+            border-bottom: none;
+        }
+        
+        .metric-label {
+            color: #666;
+            font-size: 13px;
+        }
+        
+        .metric-value {
+            font-weight: bold;
+            font-size: 13px;
+        }
+        
+        .metric-value.good {
+            color: #67c23a;
+        }
+        
+        .metric-value.warning {
+            color: #e6a23c;
+        }
+        
+        .metric-value.danger {
+            color: #f56c6c;
+        }
+        
+        button {
+            background: #667eea;
+            color: white;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 6px;
+            font-size: 14px;
+            margin: 5px 5px 5px 0;
+            cursor: pointer;
+            width: calc(50% - 5px);
+        }
+        
+        button:active {
+            opacity: 0.8;
+        }
+        
+        .btn-danger {
+            background: #f56c6c;
+        }
+        
+        .btn-success {
+            background: #67c23a;
+        }
+        
+        .btn-warning {
+            background: #e6a23c;
+        }
+        
+        .log {
+            background: #f5f5f5;
+            border-radius: 4px;
+            padding: 10px;
+            max-height: 200px;
+            overflow-y: auto;
+            font-size: 11px;
+            font-family: monospace;
+            margin-top: 10px;
+        }
+        
+        .log-entry {
+            padding: 3px 0;
+            word-break: break-all;
+        }
+        
+        .log-entry.error {
+            color: #f56c6c;
+        }
+        
+        .log-entry.warn {
+            color: #e6a23c;
+        }
+        
+        .log-entry.info {
+            color: #409eff;
+        }
+        
+        .alert {
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 10px;
+            font-size: 12px;
+        }
+        
+        .alert-danger {
+            background: #fef0f0;
+            color: #f56c6c;
+            border-left: 4px solid #f56c6c;
+        }
+        
+        .alert-warning {
+            background: #fdf6ec;
+            color: #e6a23c;
+            border-left: 4px solid #e6a23c;
+        }
+        
+        .alert-info {
+            background: #ecf5ff;
+            color: #409eff;
+            border-left: 4px solid #409eff;
+        }
+        
+        .progress-bar {
+            height: 4px;
+            background: #e0e0e0;
+            border-radius: 2px;
+            overflow: hidden;
+            margin: 10px 0;
+        }
+        
+        .progress-fill {
+            height: 100%;
+            background: #667eea;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>🔧 移动端高级调试工具</h1>
+        <p>实时监控内存、性能、错误和资源加载</p>
+    </div>
+    
+    <div id="alerts"></div>
+    
+    <!-- 系统状态 -->
+    <div class="card">
+        <h2>📊 系统状态</h2>
+        <div class="metric">
+            <span class="metric-label">设备类型</span>
+            <span class="metric-value" id="deviceType">-</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">内存使用</span>
+            <span class="metric-value" id="memoryUsage">-</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">页面加载次数</span>
+            <span class="metric-value" id="pageLoadCount">-</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">运行时长</span>
+            <span class="metric-value" id="uptime">-</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">网络状态</span>
+            <span class="metric-value" id="networkStatus">-</span>
+        </div>
+    </div>
+    
+    <!-- 资源统计 -->
+    <div class="card">
+        <h2>📦 资源加载统计</h2>
+        <div class="metric">
+            <span class="metric-label">总资源数</span>
+            <span class="metric-value" id="totalResources">-</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">加载失败</span>
+            <span class="metric-value" id="failedResources">-</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">总传输大小</span>
+            <span class="metric-value" id="transferSize">-</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">DOM节点数</span>
+            <span class="metric-value" id="domNodes">-</span>
+        </div>
+    </div>
+    
+    <!-- 性能指标 -->
+    <div class="card">
+        <h2>⚡ 性能指标</h2>
+        <div class="metric">
+            <span class="metric-label">首次绘制(FCP)</span>
+            <span class="metric-value" id="fcp">-</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">最大内容绘制(LCP)</span>
+            <span class="metric-value" id="lcp">-</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">首次输入延迟(FID)</span>
+            <span class="metric-value" id="fid">-</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">累积布局偏移(CLS)</span>
+            <span class="metric-value" id="cls">-</span>
+        </div>
+    </div>
+    
+    <!-- 错误统计 -->
+    <div class="card">
+        <h2>🐛 错误统计</h2>
+        <div class="metric">
+            <span class="metric-label">JavaScript错误</span>
+            <span class="metric-value" id="jsErrors">0</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">Promise拒绝</span>
+            <span class="metric-value" id="promiseErrors">0</span>
+        </div>
+        <div class="metric">
+            <span class="metric-label">资源错误</span>
+            <span class="metric-value" id="resourceErrors">0</span>
+        </div>
+        <div id="errorLog" class="log" style="display: none;"></div>
+    </div>
+    
+    <!-- 控制面板 -->
+    <div class="card">
+        <h2>🎛️ 控制面板</h2>
+        <button onclick="refreshData()">🔄 刷新数据</button>
+        <button onclick="testMemoryLeak()" class="btn-warning">⚠️ 压力测试</button>
+        <button onclick="clearAllCache()" class="btn-danger">🗑️ 清除缓存</button>
+        <button onclick="exportReport()" class="btn-success">📤 导出报告</button>
+        <button onclick="goToHome()">🏠 返回首页</button>
+        <button onclick="forceGC()" class="btn-warning">♻️ 强制GC</button>
+    </div>
+    
+    <!-- 实时日志 -->
+    <div class="card">
+        <h2>📝 实时日志</h2>
+        <div id="realtimeLog" class="log"></div>
+    </div>
+    
+    <script>
+        (function() {
+            'use strict';
+            
+            let startTime = Date.now();
+            let pageLoadCount = parseInt(localStorage.getItem('pageLoadCount') || '0') + 1;
+            localStorage.setItem('pageLoadCount', pageLoadCount);
+            
+            let errorCounts = {
+                js: 0,
+                promise: 0,
+                resource: 0
+            };
+            
+            let logs = [];
+            
+            function log(message, type = 'info') {
+                const timestamp = new Date().toLocaleTimeString();
+                const entry = `[${timestamp}] ${message}`;
+                logs.push({ timestamp, message, type });
+                
+                const logDiv = document.getElementById('realtimeLog');
+                const entryDiv = document.createElement('div');
+                entryDiv.className = `log-entry ${type}`;
+                entryDiv.textContent = entry;
+                logDiv.appendChild(entryDiv);
+                logDiv.scrollTop = logDiv.scrollHeight;
+                
+                // 保持日志数量在100条以内
+                if (logDiv.children.length > 100) {
+                    logDiv.removeChild(logDiv.firstChild);
+                }
+                
+                console.log(`[Debug] ${entry}`);
+            }
+            
+            function showAlert(message, type = 'info') {
+                const alertsDiv = document.getElementById('alerts');
+                const alert = document.createElement('div');
+                alert.className = `alert alert-${type}`;
+                alert.textContent = message;
+                alertsDiv.appendChild(alert);
+                
+                setTimeout(() => {
+                    alert.remove();
+                }, 5000);
+            }
+            
+            function formatBytes(bytes) {
+                if (bytes === 0) return '0 B';
+                const k = 1024;
+                const sizes = ['B', 'KB', 'MB', 'GB'];
+                const i = Math.floor(Math.log(bytes) / Math.log(k));
+                return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+            }
+            
+            function formatTime(ms) {
+                if (ms < 1000) return ms + 'ms';
+                return (ms / 1000).toFixed(2) + 's';
+            }
+            
+            function getMemoryStatus(used, limit) {
+                const percentage = (used / limit) * 100;
+                if (percentage > 90) return 'danger';
+                if (percentage > 70) return 'warning';
+                return 'good';
+            }
+            
+            function updateMetrics() {
+                // 设备信息
+                const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent);
+                document.getElementById('deviceType').textContent = isMobile ? '移动设备' : '桌面设备';
+                
+                // 内存使用
+                if (performance.memory) {
+                    const used = performance.memory.usedJSHeapSize;
+                    const limit = performance.memory.jsHeapSizeLimit;
+                    const status = getMemoryStatus(used, limit);
+                    const memElem = document.getElementById('memoryUsage');
+                    memElem.textContent = `${formatBytes(used)} / ${formatBytes(limit)}`;
+                    memElem.className = `metric-value ${status}`;
+                    
+                    if (status === 'danger') {
+                        showAlert('⚠️ 内存使用率超过90%，可能即将崩溃！', 'danger');
+                        log('内存警告：使用率超过90%', 'error');
+                    }
+                } else {
+                    document.getElementById('memoryUsage').textContent = '不支持';
+                }
+                
+                // 页面加载次数
+                const countElem = document.getElementById('pageLoadCount');
+                countElem.textContent = pageLoadCount;
+                if (pageLoadCount > 5) {
+                    countElem.className = 'metric-value warning';
+                    if (pageLoadCount > 10) {
+                        countElem.className = 'metric-value danger';
+                        showAlert(`⚠️ 页面已刷新${pageLoadCount}次，请注意崩溃风险！`, 'warning');
+                    }
+                }
+                
+                // 运行时长
+                const uptime = Date.now() - startTime;
+                document.getElementById('uptime').textContent = formatTime(uptime);
+                
+                // 网络状态
+                const online = navigator.onLine;
+                const netElem = document.getElementById('networkStatus');
+                netElem.textContent = online ? '在线' : '离线';
+                netElem.className = `metric-value ${online ? 'good' : 'danger'}`;
+                
+                // 资源统计
+                const resources = performance.getEntriesByType('resource');
+                document.getElementById('totalResources').textContent = resources.length;
+                
+                const failed = resources.filter(r => r.transferSize === 0 && r.decodedBodySize === 0);
+                const failedElem = document.getElementById('failedResources');
+                failedElem.textContent = failed.length;
+                failedElem.className = failed.length > 0 ? 'metric-value danger' : 'metric-value good';
+                
+                const totalSize = resources.reduce((sum, r) => sum + (r.transferSize || 0), 0);
+                document.getElementById('transferSize').textContent = formatBytes(totalSize);
+                
+                // DOM节点数
+                const domNodes = document.getElementsByTagName('*').length;
+                const domElem = document.getElementById('domNodes');
+                domElem.textContent = domNodes;
+                if (domNodes > 3000) {
+                    domElem.className = 'metric-value warning';
+                }
+                if (domNodes > 5000) {
+                    domElem.className = 'metric-value danger';
+                    showAlert('⚠️ DOM节点数过多，可能影响性能！', 'warning');
+                }
+                
+                // 性能指标
+                const navigation = performance.getEntriesByType('navigation')[0];
+                if (navigation) {
+                    // FCP
+                    const paint = performance.getEntriesByType('paint');
+                    const fcp = paint.find(p => p.name === 'first-contentful-paint');
+                    if (fcp) {
+                        document.getElementById('fcp').textContent = formatTime(fcp.startTime);
+                    }
+                }
+                
+                // 错误统计
+                document.getElementById('jsErrors').textContent = errorCounts.js;
+                document.getElementById('promiseErrors').textContent = errorCounts.promise;
+                document.getElementById('resourceErrors').textContent = errorCounts.resource;
+                
+                const totalErrors = errorCounts.js + errorCounts.promise + errorCounts.resource;
+                if (totalErrors > 0) {
+                    document.getElementById('errorLog').style.display = 'block';
+                }
+            }
+            
+            // 监听错误
+            window.addEventListener('error', function(event) {
+                if (event.target !== window) {
+                    // 资源错误
+                    errorCounts.resource++;
+                    const errorMsg = `资源错误: ${event.target.tagName} - ${event.target.src || event.target.href}`;
+                    log(errorMsg, 'error');
+                    
+                    const errorLog = document.getElementById('errorLog');
+                    const entry = document.createElement('div');
+                    entry.className = 'log-entry error';
+                    entry.textContent = errorMsg;
+                    errorLog.appendChild(entry);
+                } else {
+                    // JavaScript错误
+                    errorCounts.js++;
+                    const errorMsg = `JS错误: ${event.message} at ${event.filename}:${event.lineno}`;
+                    log(errorMsg, 'error');
+                    
+                    const errorLog = document.getElementById('errorLog');
+                    const entry = document.createElement('div');
+                    entry.className = 'log-entry error';
+                    entry.textContent = errorMsg;
+                    errorLog.appendChild(entry);
+                    
+                    if (errorCounts.js > 5) {
+                        showAlert('🚨 JavaScript错误频繁，页面可能不稳定！', 'danger');
+                    }
+                }
+                updateMetrics();
+            }, true);
+            
+            window.addEventListener('unhandledrejection', function(event) {
+                errorCounts.promise++;
+                const errorMsg = `Promise拒绝: ${event.reason}`;
+                log(errorMsg, 'error');
+                
+                const errorLog = document.getElementById('errorLog');
+                const entry = document.createElement('div');
+                entry.className = 'log-entry error';
+                entry.textContent = errorMsg;
+                errorLog.appendChild(entry);
+                
+                updateMetrics();
+            });
+            
+            // 刷新数据
+            window.refreshData = function() {
+                updateMetrics();
+                showAlert('✅ 数据已刷新', 'info');
+                log('手动刷新数据');
+            };
+            
+            // 压力测试
+            window.testMemoryLeak = function() {
+                log('开始压力测试...', 'warn');
+                showAlert('⚠️ 开始压力测试，监控内存变化...', 'warning');
+                
+                let arrays = [];
+                for (let i = 0; i < 100; i++) {
+                    arrays.push(new Array(10000).fill(Math.random()));
+                }
+                
+                setTimeout(() => {
+                    updateMetrics();
+                    log('压力测试完成', 'info');
+                }, 1000);
+            };
+            
+            // 清除缓存
+            window.clearAllCache = function() {
+                if (confirm('确定要清除所有缓存吗？这将刷新页面。')) {
+                    localStorage.clear();
+                    sessionStorage.clear();
+                    window.location.href = '/clear-cache.html?auto=1';
+                }
+            };
+            
+            // 导出报告
+            window.exportReport = function() {
+                const report = {
+                    timestamp: new Date().toISOString(),
+                    deviceInfo: {
+                        userAgent: navigator.userAgent,
+                        viewport: `${window.innerWidth}x${window.innerHeight}`,
+                        online: navigator.onLine
+                    },
+                    memory: performance.memory ? {
+                        used: performance.memory.usedJSHeapSize,
+                        total: performance.memory.totalJSHeapSize,
+                        limit: performance.memory.jsHeapSizeLimit
+                    } : null,
+                    metrics: {
+                        pageLoadCount: pageLoadCount,
+                        uptime: Date.now() - startTime,
+                        domNodes: document.getElementsByTagName('*').length,
+                        resources: performance.getEntriesByType('resource').length
+                    },
+                    errors: errorCounts,
+                    logs: logs
+                };
+                
+                const blob = new Blob([JSON.stringify(report, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `mobile-debug-report-${Date.now()}.json`;
+                a.click();
+                URL.revokeObjectURL(url);
+                
+                log('调试报告已导出');
+                showAlert('✅ 调试报告已下载', 'info');
+            };
+            
+            // 返回首页
+            window.goToHome = function() {
+                window.location.href = '/?debug=1';
+            };
+            
+            // 强制垃圾回收
+            window.forceGC = function() {
+                if (window.gc) {
+                    window.gc();
+                    showAlert('✅ 已触发垃圾回收', 'info');
+                    log('手动触发垃圾回收');
+                } else {
+                    showAlert('⚠️ 浏览器不支持手动GC', 'warning');
+                    log('浏览器不支持手动垃圾回收', 'warn');
+                }
+                setTimeout(updateMetrics, 500);
+            };
+            
+            // 初始化
+            window.addEventListener('load', function() {
+                log('调试工具初始化完成');
+                updateMetrics();
+                
+                // 每3秒更新一次
+                setInterval(updateMetrics, 3000);
+                
+                // 内存监控
+                if (performance.memory) {
+                    setInterval(() => {
+                        const used = performance.memory.usedJSHeapSize;
+                        const limit = performance.memory.jsHeapSizeLimit;
+                        const percentage = (used / limit) * 100;
+                        
+                        if (percentage > 95) {
+                            showAlert('🚨 内存使用超过95%！即将崩溃！', 'danger');
+                            log('严重内存警告：使用率' + percentage.toFixed(2) + '%', 'error');
+                        }
+                    }, 5000);
+                }
+            });
+            
+            // 监控页面可见性
+            document.addEventListener('visibilitychange', function() {
+                if (document.hidden) {
+                    log('页面进入后台');
+                } else {
+                    log('页面回到前台');
+                    updateMetrics();
+                }
+            });
+            
+            log('调试工具加载完成，开始监控...');
+        })();
+    </script>
+</body>
+</html>
+

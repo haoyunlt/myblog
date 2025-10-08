@@ -10,7 +10,6 @@ tags:
   - 知识图谱
   - Neo4j
 categories:
-  - AI应用
   - VoiceHelper
   - AI框架
 description: "源码剖析 - VoiceHelper GraphRAG 知识图谱检索引擎"

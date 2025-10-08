@@ -10,7 +10,6 @@ tags:
   - FastAPI
   - 算法服务
 categories:
-  - AI应用
   - VoiceHelper
   - AI框架
 description: "源码剖析 - VoiceHelper 算法服务核心引擎实现"

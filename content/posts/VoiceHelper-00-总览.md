@@ -9,7 +9,6 @@ tags:
   - AI应用开发
   - 语音助手
 categories:
-  - AI应用
   - VoiceHelper
 description: "源码剖析 - VoiceHelper 多平台 AI 语音助手平台总览"
 author: "源码分析"

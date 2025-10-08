@@ -10,7 +10,6 @@ tags:
   - LangGraph
   - 智能协作
 categories:
-  - AI应用
   - VoiceHelper
   - AI框架
 description: "源码剖析 - VoiceHelper Multi-Agent 智能协作引擎"

@@ -78,8 +78,34 @@
         } else {
             console.log('[SW-Unregister] 浏览器不支持 Cache API');
         }
+    }).then(function() {
+        // 额外清理：清除可能导致冲突的存储数据
+        console.log('[SW-Unregister] 清理额外存储数据...');
+        
+        try {
+            // 清理特定的可能引起问题的 localStorage 键
+            const keysToRemove = ['bugly_reports', 'mobile_error_handler_errors'];
+            keysToRemove.forEach(function(key) {
+                if (localStorage.getItem(key)) {
+                    localStorage.removeItem(key);
+                    console.log('[SW-Unregister] ✓ 清除 localStorage: ' + key);
+                }
+            });
+        } catch (e) {
+            console.warn('[SW-Unregister] localStorage 清理警告:', e);
+        }
+        
+        console.log('[SW-Unregister] ✓ 所有清理工作完成');
     }).catch(function(error) {
         console.error('[SW-Unregister] 注销过程出错:', error);
+        
+        // 即使出错，也尝试强制刷新页面（仅在非无痕模式）
+        if (window.location.search.indexOf('cache_cleared') === -1) {
+            console.log('[SW-Unregister] 尝试强制刷新页面...');
+            setTimeout(function() {
+                window.location.href = window.location.pathname + '?cache_cleared=' + Date.now();
+            }, 2000);
+        }
     });
     
 })();

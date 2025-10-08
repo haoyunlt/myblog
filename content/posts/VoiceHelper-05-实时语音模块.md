@@ -11,7 +11,6 @@ tags:
   - WebSocket
   - 语音识别
 categories:
-  - AI应用
   - VoiceHelper
   - AI框架
 description: "源码剖析 - VoiceHelper 实时语音交互引擎"
