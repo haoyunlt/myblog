@@ -1,11 +1,12 @@
 ---
-title: "VoiceHelper源码剖析 - 03Document文档服务"
-date: 2025-10-10T03:00:00+08:00
+title: "VoiceHelper-03-Document文档服务"
+date: 2025-10-10T10:03:00+08:00
 draft: false
-tags: ["源码剖析", "VoiceHelper", "文档管理", "MinIO", "病毒扫描", "文本提取"]
+tags: ["VoiceHelper", "文档服务", "MinIO", "对象存储", "文档处理"]
 categories: ["VoiceHelper", "源码剖析"]
-description: "Document文档服务详解：文档上传下载、格式支持、MinIO对象存储、病毒扫描、文本提取分块、异步处理管道"
-weight: 4
+description: "VoiceHelper 文档服务详细设计，包含文档上传、格式转换、MinIO存储、异步处理管道、病毒扫描完整实现"
+series: ["VoiceHelper源码剖析"]
+weight: 3
 ---
 
 # VoiceHelper-03-Document文档服务
@@ -35,133 +36,1747 @@ Document文档服务是VoiceHelper项目中负责文档生命周期管理的核�
 - **元数据管理**：文档状态追踪、用户权限控制
 
 **非职责**：
-- ❌ 向量化处理（由GraphRAG服务负责）
-- ❌ 语义检索（由GraphRAG服务负责）
-- ❌ 用户认证（由Auth服务负责）
-- ❌ 实体提取与知识图谱构建（由GraphRAG服务负责）
+- 向量化处理（由GraphRAG服务负责）
+- 语义检索（由GraphRAG服务负责）
+- 用户认证（由Auth服务负责）
+- 实体提取与知识图谱构建（由GraphRAG服务负责）
 
-### 1.2 模块架构
+### 1.2 整体服务架构
 
 ```mermaid
 flowchart TB
-    subgraph API["HTTP API层"]
-        Handler[DocumentHandler]
+    subgraph Client["客户端层"]
+        WebApp[Web应用]
+        Mobile[移动端]
+        Gateway[API Gateway]
     end
     
-    subgraph Service["业务逻辑层"]
-        DocSvc[DocumentService]
-        StorageSvc[StorageService]
-        ProcSvc[DocumentProcessor]
-        VirusSvc[VirusScanner]
+    subgraph APILayer["API层 - DocumentHandler"]
+        Upload[Upload上传接口]
+        Get[GetDocument获取接口]
+        List[ListDocuments列表接口]
+        Update[UpdateDocument更新接口]
+        Delete[DeleteDocument删除接口]
+        Download[DownloadDocument下载接口]
     end
     
-    subgraph Repo["数据访问层"]
-        DocRepo[DocumentRepository]
+    subgraph ServiceLayer["业务逻辑层"]
+        DocService[DocumentService<br/>文档服务核心]
+        StorageService[StorageService<br/>存储服务抽象]
+        Processor[DocumentProcessor<br/>文档处理器]
+        Scanner[VirusScanner<br/>病毒扫描器]
     end
     
-    subgraph Storage["存储层"]
-        PG[(PostgreSQL)]
-        MinIO[(MinIO)]
-        Local[Local FS]
+    subgraph DataLayer["数据访问层"]
+        DocRepo[DocumentRepository<br/>文档仓储接口]
     end
     
-    subgraph External["外部系统"]
-        ClamAV[ClamAV]
-        GraphRAG[GraphRAG服务]
+    subgraph StorageBackend["存储后端"]
+        direction LR
+        PG[(PostgreSQL<br/>元数据存储)]
+        MinIO[(MinIO<br/>对象存储)]
+        LocalFS[本地文件系统]
     end
     
-    Handler --> DocSvc
-    Handler --> StorageSvc
+    subgraph ExternalServices["外部服务"]
+        ClamAV[ClamAV<br/>病毒扫描引擎]
+        Consul[Consul<br/>服务注册发现]
+        GraphRAG[GraphRAG服务<br/>向量化处理]
+    end
     
-    DocSvc --> DocRepo
-    DocSvc --> StorageSvc
-    DocSvc --> ProcSvc
-    DocSvc --> VirusSvc
+    subgraph WorkerPool["异步处理"]
+        Worker1[Worker 1]
+        Worker2[Worker 2]
+        WorkerN[Worker N]
+    end
     
+    %% 客户端到API层
+    WebApp --> Gateway
+    Mobile --> Gateway
+    Gateway --> Upload
+    Gateway --> Get
+    Gateway --> List
+    Gateway --> Update
+    Gateway --> Delete
+    Gateway --> Download
+    
+    %% API层到Service层
+    Upload --> DocService
+    Upload --> StorageService
+    Get --> DocService
+    List --> DocService
+    Update --> DocService
+    Delete --> DocService
+    Download --> DocService
+    Download --> StorageService
+    
+    %% Service层内部依赖
+    DocService --> DocRepo
+    DocService --> StorageService
+    DocService --> Processor
+    DocService --> Scanner
+    DocService --> Worker1
+    DocService --> Worker2
+    DocService --> WorkerN
+    
+    Processor --> StorageService
+    
+    %% 数据访问层到存储
     DocRepo --> PG
     
-    StorageSvc --> MinIO
-    StorageSvc --> Local
+    %% 存储服务到存储后端
+    StorageService --> MinIO
+    StorageService --> LocalFS
     
-    VirusSvc --> ClamAV
+    %% 外部服务依赖
+    Scanner --> ClamAV
+    DocService -.异步通知.-> GraphRAG
+    DocService --> Consul
     
-    ProcSvc -.通知.-> GraphRAG
+    %% 样式定义
+    classDef clientStyle fill:#e1f5ff,stroke:#01579b,stroke-width:2px
+    classDef apiStyle fill:#fff3e0,stroke:#e65100,stroke-width:2px
+    classDef serviceStyle fill:#f3e5f5,stroke:#4a148c,stroke-width:2px
+    classDef dataStyle fill:#e8f5e9,stroke:#1b5e20,stroke-width:2px
+    classDef storageStyle fill:#fce4ec,stroke:#880e4f,stroke-width:2px
+    classDef externalStyle fill:#fff9c4,stroke:#f57f17,stroke-width:2px
+    
+    class WebApp,Mobile,Gateway clientStyle
+    class Upload,Get,List,Update,Delete,Download apiStyle
+    class DocService,StorageService,Processor,Scanner serviceStyle
+    class DocRepo dataStyle
+    class PG,MinIO,LocalFS storageStyle
+    class ClamAV,Consul,GraphRAG externalStyle
 ```
 
-**架构说明**：
-1. **三层架构**：Handler层处理HTTP请求、Service层实现业务逻辑、Repository层管理数据持久化
-2. **存储抽象**：StorageService统一封装本地存储和MinIO，支持运行时切换
-3. **管道处理**：DocumentProcessor实现文档格式转换和文本分块
-4. **安全扫描**：VirusScanner集成ClamAV，支持Mock模式
-5. **异步处理**：Worker Pool限制并发，防止资源耗尽
+**架构层次说明**：
 
-### 1.3 数据流
+#### 1. 客户端层
+- **Web应用/移动端**：前端应用通过Gateway访问文档服务
+- **API Gateway**：统一入口，提供路由、认证、限流等功能
+
+#### 2. API层（DocumentHandler）
+提供6个核心RESTful接口：
+- **Upload**：文档上传接口，支持multipart/form-data
+- **GetDocument**：根据ID获取单个文档详情
+- **ListDocuments**：分页列表查询，支持状态过滤
+- **UpdateDocument**：更新文档元数据（标题、状态等）
+- **DeleteDocument**：软删除文档
+- **DownloadDocument**：下载原始文档文件
+
+#### 3. 业务逻辑层（Service Layer）
+- **DocumentService**：文档服务核心，协调所有业务逻辑
+  - 文档生命周期管理（创建、查询、更新、删除）
+  - 异步处理调度（Worker Pool管理）
+  - 状态机转换控制
+  
+- **StorageService**：存储服务抽象层
+  - 统一封装MinIO和本地文件系统
+  - 支持运行时动态切换存储类型
+  - 提供Upload/Download/Delete/GetPresignedURL接口
+  
+- **DocumentProcessor**：文档处理器
+  - 文本提取（PDF、HTML、TXT、MD）
+  - 文本分块（Chunking）
+  - 支持1000字符/chunk，200字符overlap
+  
+- **VirusScanner**：病毒扫描器
+  - 集成ClamAV病毒引擎
+  - 支持Mock模式（开发/测试）
+  - 文件隔离与报告
+
+#### 4. 数据访问层（Repository）
+- **DocumentRepository**：文档仓储接口
+  - CRUD操作抽象
+  - 复杂查询（分页、过滤、排序）
+  - 软删除支持
+
+#### 5. 存储后端
+- **PostgreSQL**：元数据存储（文档记录、状态、权限）
+- **MinIO**：对象存储（文档文件）
+- **本地文件系统**：备用存储方案
+
+#### 6. 外部服务
+- **ClamAV**：病毒扫描引擎
+- **Consul**：服务注册与发现
+- **GraphRAG**：向量化处理服务（异步通知）
+
+#### 7. 异步处理（Worker Pool）
+- 使用Goroutine实现并发处理
+- Channel控制最大并发数（默认10）
+- 防止资源耗尽和雪崩效应
+
+**架构特点**：
+1. **分层清晰**：Handler → Service → Repository → Storage，职责分离
+2. **存储抽象**：StorageService统一封装多种存储后端
+3. **异步处理**：上传接口立即返回，后台异步处理文档
+4. **并发控制**：Worker Pool限制并发数，保护系统稳定性
+5. **可扩展性**：易于添加新的文档格式和存储后端
+
+### 1.3 完整数据流与时序图
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Client
-    participant Handler
-    participant DocService
-    participant StorageService
-    participant VirusScanner
-    participant DocumentProcessor
-    participant Repository
-    participant MinIO
-    participant PostgreSQL
-    participant GraphRAG
+    participant C as 客户端
+    participant G as API Gateway
+    participant H as DocumentHandler
+    participant DS as DocumentService
+    participant SS as StorageService
+    participant DR as DocumentRepository
+    participant M as MinIO
+    participant PG as PostgreSQL
     
-    Client->>Handler: POST /documents (multipart/form-data)
-    Handler->>Handler: 读取文件内容
-    Handler->>StorageService: Upload(fileName, content)
-    StorageService->>MinIO: PutObject
-    MinIO-->>StorageService: fileURL
-    StorageService-->>Handler: fileURL
+    rect rgb(200, 230, 255)
+    Note over C,PG: 同步阶段：文件上传与元数据创建
+    C->>G: POST /api/v1/documents<br/>(multipart/form-data)
+    G->>G: 认证与鉴权
+    G->>H: 转发请求
     
-    Handler->>Repository: Create(document)
-    Repository->>PostgreSQL: INSERT document
-    PostgreSQL-->>Repository: OK
-    Repository-->>Handler: document
+    H->>H: 1. 从FormData读取文件
+    H->>H: 2. 生成documentID (UUID)
+    H->>H: 3. 读取文件内容到内存
     
-    Handler->>DocService: ProcessDocumentAsync(documentID)
-    Handler-->>Client: 201 Created (document)
+    H->>SS: Upload(fileName, content)
+    SS->>SS: 判断存储类型<br/>(minio/local)
     
-    Note over DocService: 异步处理开始（Goroutine）
+    alt MinIO存储
+        SS->>M: PutObject(bucket, fileName, content)
+        M-->>SS: success
+        SS-->>H: fileURL (minio://bucket/filename)
+    else 本地存储
+        SS->>SS: WriteFile(basePath/fileName)
+        SS-->>H: filePath (./data/documents/filename)
+    end
     
-    DocService->>Repository: UpdateStatus("processing")
-    DocService->>StorageService: Download(filePath)
-    StorageService->>MinIO: GetObject
-    MinIO-->>StorageService: fileContent
-    StorageService-->>DocService: fileContent
+    H->>H: 4. 构造Document对象<br/>(status=uploaded)
+    H->>DS: CreateDocument(ctx, document)
+    DS->>DR: Create(ctx, document)
+    DR->>PG: INSERT INTO documents
+    PG-->>DR: OK
+    DR-->>DS: document
+    DS-->>H: nil (success)
     
-    DocService->>VirusScanner: ScanFile(filePath, content)
-    VirusScanner->>VirusScanner: 病毒检测
-    alt 发现病毒
-        VirusScanner->>VirusScanner: Quarantine file
-        VirusScanner-->>DocService: IsClean=false
-        DocService->>Repository: UpdateStatus("infected")
-    else 文件安全
-        VirusScanner-->>DocService: IsClean=true
-        DocService->>DocumentProcessor: ProcessDocument
-        DocumentProcessor->>DocumentProcessor: 提取文本
-        DocumentProcessor->>DocumentProcessor: 分块处理
-        DocumentProcessor-->>DocService: ProcessedDocument
-        DocService->>Repository: UpdateStatus("completed")
-        DocService-.异步通知.->GraphRAG: 文档已就绪
+    H->>DS: ProcessDocumentAsync(ctx, documentID)
+    Note over DS: 启动Goroutine<br/>加入Worker Pool
+    
+    H-->>G: 201 Created<br/>{code: 201, data: document}
+    G-->>C: 201 Created
+    end
+    
+    rect rgb(255, 240, 240)
+    Note over DS,PG: 异步阶段：文档处理管道
+    
+    DS->>DS: Worker Pool获取令牌<br/>(限制并发数)
+    
+    DS->>DR: UpdateStatus(documentID, "processing")
+    DR->>PG: UPDATE status='processing'
+    PG-->>DR: OK
+    
+    DS->>SS: Download(ctx, filePath)
+    
+    alt MinIO存储
+        SS->>M: GetObject(bucket, fileName)
+        M-->>SS: fileContent
+    else 本地存储
+        SS->>SS: ReadFile(filePath)
+    end
+    
+    SS-->>DS: fileContent ([]byte)
+    
+    participant VS as VirusScanner
+    DS->>VS: ScanFile(ctx, filePath, fileContent)
+    
+    alt 启用ClamAV
+        VS->>VS: 创建临时文件
+        VS->>VS: 写入文件内容
+        VS->>VS: 调用clamdscan命令
+        
+        alt 发现病毒
+            VS->>VS: 隔离文件到quarantine目录
+            VS-->>DS: ScanResult{IsClean: false, VirusFound: "xxx"}
+            DS->>DR: UpdateStatus(documentID, "infected")
+            DR->>PG: UPDATE status='infected'
+            DS->>DS: 释放Worker Pool令牌
+            DS->>DS: 结束处理
+        end
+    else Mock扫描器
+        VS->>VS: 检查文件名是否包含"virus"
+        VS-->>DS: ScanResult{IsClean: true}
+    end
+    
+    VS-->>DS: ScanResult{IsClean: true}
+    
+    participant DP as DocumentProcessor
+    DS->>DP: ProcessDocument(ctx, filePath, fileType)
+    
+    DP->>SS: Download(ctx, filePath)
+    SS-->>DP: fileContent
+    
+    DP->>DP: extractText(fileContent, fileType)
+    
+    alt PDF文件
+        DP->>DP: extractTextFromPDF()<br/>使用pdf.NewReader
+    else HTML文件
+        DP->>DP: extractTextFromHTML()<br/>移除标签
+    else TXT/MD文件
+        DP->>DP: string(fileContent)
+    end
+    
+    DP->>DP: splitTextIntoChunks(text)<br/>按段落分割<br/>1000字符/chunk<br/>200字符overlap
+    
+    DP-->>DS: ProcessedDocument{<br/>FullText, Chunks, ChunkCount}
+    
+    DS->>DS: 保存处理结果<br/>(可扩展：保存到向量数据库)
+    
+    DS->>DR: UpdateStatus(documentID, "completed")
+    DR->>PG: UPDATE status='completed'<br/>UPDATE processed_at
+    PG-->>DR: OK
+    
+    DS-.异步通知.->GraphRAG: 文档处理完成<br/>documentID, chunks
+    
+    DS->>DS: 释放Worker Pool令牌
     end
 ```
 
-**数据流说明**：
-1. **同步阶段**（步骤1-8）：文件上传到MinIO，元数据保存到PostgreSQL，立即返回客户端
-2. **异步阶段**（步骤9-18）：Worker Pool中异步执行病毒扫描、文本提取、分块处理
-3. **状态追踪**：uploaded → processing → completed/failed/infected
-4. **错误容忍**：任何步骤失败都会更新状态为failed，保证状态一致性
+**数据流详细说明**：
+
+#### 阶段一：同步上传阶段（步骤1-16）
+**目标**：快速响应客户端，将文件保存到存储系统
+
+1. **步骤1-3**：客户端请求到达
+   - 客户端发送multipart/form-data请求
+   - Gateway进行认证鉴权（JWT验证）
+   - 转发到DocumentHandler
+
+2. **步骤4-6**：Handler层预处理
+   - 从FormData读取上传的文件
+   - 生成全局唯一的documentID（UUID v4）
+   - 将文件内容读取到内存（io.ReadAll）
+
+3. **步骤7-12**：文件持久化
+   - 调用StorageService.Upload()
+   - 根据配置选择MinIO或本地存储
+   - MinIO模式：上传到对象存储bucket
+   - 本地模式：写入文件系统指定目录
+   - 返回文件URL或路径
+
+4. **步骤13-15**：元数据持久化
+   - 构造Document对象（status=uploaded）
+   - DocumentService调用Repository.Create()
+   - Repository执行PostgreSQL INSERT操作
+   - 保存文档元数据（ID、用户、文件信息、状态等）
+
+5. **步骤16-18**：启动异步处理
+   - 调用ProcessDocumentAsync()启动Goroutine
+   - Goroutine尝试获取Worker Pool令牌（限制并发）
+   - 立即返回201 Created给客户端
+   - **关键点**：此时客户端已收到响应，后续处理在后台进行
+
+#### 阶段二：异步处理阶段（步骤19-48）
+**目标**：病毒扫描、文本提取、分块处理
+
+6. **步骤19-22**：Worker Pool控制
+   - Goroutine尝试获取Worker Pool令牌
+   - 如果已有10个Worker在处理，则阻塞等待
+   - 获取令牌后更新状态为"processing"
+
+7. **步骤23-28**：文件下载
+   - 从存储系统下载文件内容
+   - MinIO模式：调用GetObject API
+   - 本地模式：直接读取文件
+   - 获取文件的字节数组
+
+8. **步骤29-38**：病毒扫描
+   - 调用VirusScanner.ScanFile()
+   - **ClamAV模式**：
+     - 创建临时文件
+     - 写入文件内容
+     - 调用clamdscan命令行工具
+     - 解析扫描结果（返回码：0=clean, 1=virus, 2=error）
+     - 如果发现病毒：隔离文件、更新状态为"infected"、结束处理
+   - **Mock模式**：
+     - 检查文件名是否包含"virus"或"malware"
+     - 用于开发和测试环境
+
+9. **步骤39-43**：文本提取
+   - DocumentProcessor根据fileType选择提取方法
+   - **PDF**：使用ledongthuc/pdf库逐页提取文本
+   - **HTML**：移除script/style标签，提取纯文本
+   - **TXT/MD**：直接读取文件内容
+   - **DOCX**：（TODO：待实现）
+
+10. **步骤44**：文本分块
+    - 按段落分割文本（双换行符\n\n）
+    - 每个chunk最多1000字符
+    - chunk之间重叠200字符（保持上下文连贯性）
+    - 生成TextChunk数组（包含Index、Content、Start、End）
+
+11. **步骤45-50**：保存结果与通知
+    - ProcessedDocument包含FullText和Chunks
+    - 更新数据库状态为"completed"
+    - 更新processed_at时间戳
+    - 异步通知GraphRAG服务（文档已就绪，可进行向量化）
+    - 释放Worker Pool令牌
+
+**状态机转换**：
+```
+uploaded → processing → completed (正常流程)
+uploaded → processing → infected (发现病毒)
+uploaded → processing → failed   (处理失败)
+```
+
+**错误处理机制**：
+- 任何步骤失败都会捕获错误
+- 更新文档状态为"failed"
+- 确保Worker Pool令牌被释放（defer机制）
+- 记录详细错误日志便于排查
+
+**性能优化点**：
+1. **异步处理**：上传接口快速响应（<200ms），处理在后台进行
+2. **并发控制**：Worker Pool限制并发数，防止系统过载
+3. **分块处理**：大文档分块处理，支持流式向量化
+4. **存储抽象**：灵活切换存储后端，支持降级
 
 ---
 
-## 二、对外API规格
+## 二、模块交互与调用链路分析
 
-### 2.1 API列表
+本章节从上游接口开始，自上而下详细分析每个API路径所涉及的模块调用链路、关键代码实现和内部时序图。
+
+### 2.1 服务初始化流程
+
+#### 2.1.1 初始化时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Main as main()
+    participant DB as Database
+    participant Repo as Repository
+    participant SS as StorageService
+    participant DP as DocumentProcessor
+    participant VS as VirusScanner
+    participant DS as DocumentService
+    participant H as Handler
+    participant Router as Gin Router
+    participant Consul as Consul Registry
+    
+    Main->>Main: 加载.env环境变量
+    
+    Main->>DB: initDatabase()
+    DB->>DB: 构造PostgreSQL DSN
+    DB->>DB: gorm.Open(postgres)
+    DB->>DB: 配置连接池<br/>(MaxIdle=10, MaxOpen=100)
+    DB-->>Main: *gorm.DB
+    
+    Main->>DB: AutoMigrate(&model.Document{})
+    DB->>DB: CREATE TABLE IF NOT EXISTS
+    DB-->>Main: OK
+    
+    Main->>Repo: NewDocumentRepository(db)
+    Repo-->>Main: DocumentRepository
+    
+    Main->>SS: NewStorageService(storageType)
+    SS->>SS: 读取STORAGE_TYPE配置
+    
+    alt storageType == "minio"
+        SS->>SS: initMinIO()
+        SS->>SS: 创建MinIO客户端
+        SS->>SS: 检查/创建bucket
+        SS-->>Main: StorageService (MinIO模式)
+    else storageType == "local"
+        SS->>SS: 创建本地目录
+        SS-->>Main: StorageService (本地模式)
+    end
+    
+    Main->>DP: NewDocumentProcessor(storageService)
+    DP->>DP: 设置maxChunkSize=1000
+    DP->>DP: 设置chunkOverlap=200
+    DP-->>Main: DocumentProcessor
+    
+    Main->>VS: NewVirusScanner()
+    VS->>VS: 读取VIRUS_SCAN_ENABLED配置
+    VS->>VS: 读取VIRUS_SCANNER_TYPE配置
+    VS->>VS: 创建隔离目录
+    VS-->>Main: VirusScanner
+    
+    Main->>DS: NewDocumentService(repo, storage, processor, scanner, 10)
+    DS->>DS: 创建Worker Pool Channel<br/>(容量=10)
+    DS-->>Main: DocumentService
+    
+    Main->>H: NewDocumentHandler(service, storage)
+    H-->>Main: DocumentHandler
+    
+    Main->>Router: gin.Default()
+    Router-->>Main: *gin.Engine
+    
+    Main->>Router: 注册路由<br/>POST /api/v1/documents<br/>GET /api/v1/documents<br/>GET /api/v1/documents/:id<br/>等
+    
+    Main->>Consul: NewConsulRegistry(config)
+    Consul->>Consul: 创建Consul客户端
+    Consul-->>Main: ConsulRegistry
+    
+    Main->>Consul: Register()
+    Consul->>Consul: 注册服务<br/>(ServiceName, Host, Port, HealthCheck)
+    Consul-->>Main: OK
+    
+    Main->>Main: 启动HTTP Server (port 8082)
+    Main->>Main: 等待终止信号
+```
+
+**初始化流程说明**：
+
+1. **环境变量加载**（步骤1）
+   - 使用godotenv加载.env文件
+   - 读取数据库、存储、扫描等配置
+
+2. **数据库初始化**（步骤2-6）
+   - 构造PostgreSQL连接字符串
+   - 使用GORM连接数据库
+   - 配置连接池参数（MaxIdle=10, MaxOpen=100, ConnMaxLifetime=1h）
+   - 自动迁移documents表结构
+
+3. **依赖注入初始化**（步骤7-19）
+   - **Repository层**：创建DocumentRepository，封装数据库操作
+   - **StorageService**：根据配置初始化MinIO或本地存储
+     - MinIO模式：创建客户端、检查bucket、自动创建bucket
+     - 本地模式：创建数据目录
+   - **DocumentProcessor**：设置分块参数
+   - **VirusScanner**：根据配置启用ClamAV或Mock扫描器
+
+4. **Service层组装**（步骤20-22）
+   - 创建DocumentService，注入所有依赖
+   - 创建Worker Pool Channel（容量10，限制并发处理数）
+
+5. **Handler层创建**（步骤23-24）
+   - 创建DocumentHandler，注入DocumentService和StorageService
+
+6. **路由注册**（步骤25-27）
+   - 创建Gin Router
+   - 注册健康检查接口：GET /health
+   - 注册文档管理接口：POST/GET/PUT/DELETE /api/v1/documents
+
+7. **服务注册**（步骤28-32）
+   - 创建Consul客户端
+   - 注册服务到Consul（包含HealthCheck配置）
+   - 定期健康检查（10秒间隔）
+
+8. **启动HTTP服务器**（步骤33-34）
+   - 监听8082端口
+   - 优雅关闭机制（捕获SIGINT/SIGTERM信号）
+
+#### 2.1.2 初始化关键代码
+
+**main.go核心代码**：
+```go
+func main() {
+    godotenv.Load()
+    
+    // 初始化数据库
+    db, err := initDatabase()
+    if err != nil {
+        log.Fatalf("数据库初始化失败: %v", err)
+    }
+    
+    // 自动迁移
+    db.AutoMigrate(&model.Document{})
+    
+    // 初始化依赖
+    documentRepo := repository.NewDocumentRepository(db)
+    storageType := getEnv("STORAGE_TYPE", "local")
+    storageService := service.NewStorageService(storageType)
+    documentProcessor := service.NewDocumentProcessor(storageService)
+    virusScanner := service.NewVirusScanner()
+    
+    // 创建服务（Worker Pool容量=10）
+    maxWorkers := 10
+    documentService := service.NewDocumentService(
+        documentRepo,
+        storageService,
+        documentProcessor,
+        virusScanner,
+        maxWorkers,
+    )
+    
+    documentHandler := handler.NewDocumentHandler(documentService, storageService)
+    
+    // 创建路由
+    router := gin.Default()
+    router.GET("/health", healthHandler)
+    
+    v1 := router.Group("/api/v1")
+    {
+        docs := v1.Group("/documents")
+        {
+            docs.POST("", documentHandler.Upload)
+            docs.GET("", documentHandler.ListDocuments)
+            docs.GET("/:id", documentHandler.GetDocument)
+            docs.PUT("/:id", documentHandler.UpdateDocument)
+            docs.DELETE("/:id", documentHandler.DeleteDocument)
+            docs.GET("/:id/download", documentHandler.DownloadDocument)
+        }
+    }
+    
+    // 注册到Consul
+    consulRegistry, _ := NewConsulRegistry(consulAddr, &RegistryConfig{
+        ServiceName: "document-service",
+        ServiceID:   fmt.Sprintf("document-service-%d", os.Getpid()),
+        Host:        host,
+        Port:        8082,
+        HealthCheck: &api.AgentServiceCheck{
+            HTTP:     fmt.Sprintf("http://%s:8082/health", host),
+            Interval: "10s",
+            Timeout:  "3s",
+        },
+    })
+    consulRegistry.Register()
+    
+    // 启动HTTP服务器
+    srv := &http.Server{
+        Addr:    ":8082",
+        Handler: router,
+    }
+    
+    go srv.ListenAndServe()
+    
+    // 优雅关闭
+    quit := make(chan os.Signal, 1)
+    signal.Notify(quit, syscall.SIGINT, syscall.SIGTERM)
+    <-quit
+    
+    consulRegistry.Deregister()
+    ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+    defer cancel()
+    srv.Shutdown(ctx)
+}
+```
+
+---
+
+### 2.2 API 1：文档上传 - 完整调用链路
+
+#### 2.2.1 上传接口时序图（含内部调用）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as 客户端
+    participant H as Handler.Upload()
+    participant SS as StorageService
+    participant M as MinIO
+    participant DS as DocumentService
+    participant DR as Repository
+    participant PG as PostgreSQL
+    participant WP as Worker Pool
+    
+    rect rgb(230, 240, 255)
+    Note over C,PG: Handler层：文件接收与存储
+    C->>H: POST /api/v1/documents<br/>multipart/form-data
+    
+    H->>H: c.GetString("user_id")<br/>c.GetString("tenant_id")
+    Note right of H: 从Gin Context获取<br/>JWT认证信息
+    
+    H->>H: c.Request.FormFile("file")
+    Note right of H: 读取表单文件<br/>返回file, header, err
+    
+    H->>H: uuid.New().String()
+    Note right of H: 生成documentID<br/>例：550e8400-e29b-41d4-a716-446655440000
+    
+    H->>H: filepath.Ext(header.Filename)
+    Note right of H: 提取文件扩展名<br/>例：.pdf
+    
+    H->>H: io.ReadAll(file)
+    Note right of H: 读取文件内容到内存<br/>[]byte
+    
+    H->>SS: Upload(ctx, fileName, fileContent)
+    
+    alt MinIO存储
+        SS->>SS: bytes.NewReader(content)
+        SS->>M: PutObject(bucket, fileName, reader, size, options)
+        M-->>SS: UploadInfo
+        SS->>SS: 生成MinIO URL<br/>minio://bucket/filename
+        SS-->>H: fileURL
+    else 本地存储
+        SS->>SS: os.WriteFile(basePath/fileName, content, 0644)
+        SS->>SS: 生成本地路径<br/>./data/documents/filename
+        SS-->>H: filePath
+    end
+    
+    H->>H: 构造Document对象
+    Note right of H: Document{<br/>  ID: documentID,<br/>  UserID: userID,<br/>  TenantID: tenantID,<br/>  Title: header.Filename,<br/>  FileName: header.Filename,<br/>  FileType: fileExt[1:],<br/>  FileSize: header.Size,<br/>  FilePath: fileURL,<br/>  Status: "uploaded",<br/>  CreatedAt: time.Now(),<br/>  UpdatedAt: time.Now()<br/>}
+    
+    H->>DS: CreateDocument(ctx, document)
+    end
+    
+    rect rgb(240, 255, 240)
+    Note over DS,PG: Service层：元数据持久化
+    DS->>DS: log.Printf("创建文档记录: %s", document.ID)
+    DS->>DR: Create(ctx, document)
+    DR->>PG: db.WithContext(ctx).Create(document)
+    PG->>PG: INSERT INTO documents VALUES (...)
+    PG-->>DR: OK
+    DR-->>DS: nil
+    DS-->>H: nil
+    end
+    
+    rect rgb(255, 240, 230)
+    Note over H,WP: 异步处理启动
+    H->>DS: ProcessDocumentAsync(ctx, documentID)
+    DS->>WP: workerPool <- struct{}{}
+    Note right of WP: 尝试获取令牌<br/>如果已满则阻塞
+    
+    DS->>DS: go func() { ... }()
+    Note right of DS: 启动Goroutine<br/>后台处理文档
+    
+    DS-->>H: 立即返回（不等待处理完成）
+    
+    H->>H: c.JSON(http.StatusCreated, response)
+    H-->>C: 201 Created<br/>{<br/>  "code": 201,<br/>  "message": "Document uploaded successfully",<br/>  "data": { "document": {...} }<br/>}
+    end
+    
+    Note over WP: 异步处理继续（见下图）
+```
+
+#### 2.2.2 Handler.Upload() 关键代码
+
+**文件路径**：`services/document-service/internal/handler/document_handler.go`
+
+```go
+// Upload 上传文档
+func (h *DocumentHandler) Upload(c *gin.Context) {
+    // 1. 从Context获取用户信息（由中间件注入）
+    userID := c.GetString("user_id")
+    tenantID := c.GetString("tenant_id")
+    
+    // 如果未认证，使用默认值
+    if userID == "" {
+        userID = "anonymous"
+    }
+    if tenantID == "" {
+        tenantID = "default"
+    }
+    
+    // 2. 读取上传的文件
+    file, header, err := c.Request.FormFile("file")
+    if err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "code":    400,
+            "message": "Failed to read file",
+            "error":   err.Error(),
+        })
+        return
+    }
+    defer file.Close()
+    
+    // 3. 生成唯一的文档ID
+    documentID := uuid.New().String()
+    fileExt := filepath.Ext(header.Filename)
+    fileName := documentID + fileExt
+    
+    // 4. 读取文件内容到内存
+    fileContent, err := io.ReadAll(file)
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "code":    500,
+            "message": "Failed to read file content",
+        })
+        return
+    }
+    
+    // 5. 上传到存储系统（MinIO或本地）
+    fileURL, err := h.storageService.Upload(
+        c.Request.Context(),
+        fileName,
+        fileContent,
+    )
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "code":    500,
+            "message": "Failed to upload file",
+            "error":   err.Error(),
+        })
+        return
+    }
+    
+    // 6. 创建文档元数据记录
+    document := &model.Document{
+        ID:        documentID,
+        UserID:    userID,
+        TenantID:  tenantID,
+        Title:     header.Filename,
+        FileName:  header.Filename,
+        FileType:  fileExt[1:], // 去掉点号，例如 "pdf"
+        FileSize:  header.Size,
+        FilePath:  fileURL,
+        Status:    "uploaded",
+        CreatedAt: time.Now(),
+        UpdatedAt: time.Now(),
+    }
+    
+    // 7. 保存到数据库
+    if err := h.documentService.CreateDocument(c.Request.Context(), document); err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "code":    500,
+            "message": "Failed to create document record",
+            "error":   err.Error(),
+        })
+        return
+    }
+    
+    // 8. 启动异步处理（病毒扫描、文本提取、分块）
+    go h.documentService.ProcessDocument(c.Request.Context(), documentID)
+    
+    // 9. 立即返回成功响应
+    c.JSON(http.StatusCreated, gin.H{
+        "code":    201,
+        "message": "Document uploaded successfully",
+        "data":    gin.H{"document": document},
+    })
+}
+```
+
+**代码说明**：
+
+1. **步骤1-2**（行1-22）：用户身份与文件读取
+   - 从Gin Context获取user_id和tenant_id（由认证中间件注入）
+   - 使用`c.Request.FormFile("file")`读取multipart表单文件
+   - 返回file（io.Reader）、header（文件元数据）、error
+
+2. **步骤3-4**（行24-36）：文件预处理
+   - 使用`uuid.New().String()`生成全局唯一ID
+   - 提取文件扩展名（例如：.pdf）
+   - 将文件内容读取到内存（`io.ReadAll`）
+   - **注意**：大文件（>100MB）会消耗大量内存，应在Gateway层限制
+
+3. **步骤5**（行38-48）：文件存储
+   - 调用`StorageService.Upload()`上传文件
+   - MinIO模式：上传到对象存储bucket，返回`minio://bucket/filename`
+   - 本地模式：写入本地目录，返回`./data/documents/filename`
+   - 错误处理：存储失败返回500错误
+
+4. **步骤6**（行50-62）：元数据构造
+   - 创建Document结构体
+   - 初始status为"uploaded"
+   - 记录创建时间和更新时间
+
+5. **步骤7**（行64-71）：数据库持久化
+   - 调用`DocumentService.CreateDocument()`
+   - Service层调用Repository.Create()
+   - Repository执行PostgreSQL INSERT操作
+
+6. **步骤8**（行73-74）：异步处理启动
+   - 使用`go`关键字启动Goroutine
+   - 调用`ProcessDocument()`进行后台处理
+   - **关键**：不等待处理完成，立即进入下一步
+
+7. **步骤9**（行76-81）：响应客户端
+   - 返回201 Created状态码
+   - 响应体包含完整的document对象
+   - 客户端可以通过status字段追踪处理进度
+
+---
+
+### 2.3 异步处理管道 - Worker Pool机制
+
+#### 2.3.1 异步处理时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant H as Handler
+    participant DS as DocumentService
+    participant WP as Worker Pool Channel
+    participant G as Goroutine
+    participant DR as Repository
+    participant SS as StorageService
+    participant VS as VirusScanner
+    participant DP as DocumentProcessor
+    participant PG as PostgreSQL
+    
+    H->>DS: ProcessDocumentAsync(ctx, documentID)
+    
+    DS->>WP: workerPool <- struct{}{}
+    Note right of WP: 尝试发送令牌到Channel<br/>如果Channel已满(10个令牌)<br/>则阻塞等待
+    
+    DS->>G: go func() { ... }()
+    DS-->>H: 立即返回（不阻塞）
+    
+    rect rgb(255, 245, 230)
+    Note over G,PG: Goroutine内部处理流程
+    
+    G->>G: defer func() { <-workerPool }()
+    Note right of G: 确保令牌被释放<br/>（无论成功或失败）
+    
+    G->>DR: UpdateStatus(documentID, "processing")
+    DR->>PG: UPDATE documents SET status='processing'
+    PG-->>DR: OK
+    
+    G->>SS: Download(ctx, document.FilePath)
+    SS-->>G: fileContent ([]byte)
+    
+    G->>VS: ScanFile(ctx, filePath, fileContent)
+    
+    alt 发现病毒
+        VS->>VS: quarantineFile()
+        VS-->>G: ScanResult{IsClean: false, VirusFound: "xxx"}
+        G->>DR: UpdateStatus(documentID, "infected")
+        DR->>PG: UPDATE status='infected'
+        G->>G: return error
+        G->>WP: <-workerPool (释放令牌)
+    else 文件安全
+        VS-->>G: ScanResult{IsClean: true}
+        
+        G->>DP: ProcessDocument(ctx, filePath, fileType)
+        
+        DP->>SS: Download(ctx, filePath)
+        SS-->>DP: fileContent
+        
+        DP->>DP: extractText(fileContent, fileType)
+        DP->>DP: splitTextIntoChunks(text)
+        DP-->>G: ProcessedDocument{FullText, Chunks, ChunkCount}
+        
+        G->>DR: UpdateStatus(documentID, "completed")
+        DR->>PG: UPDATE status='completed'<br/>UPDATE processed_at=NOW()
+        PG-->>DR: OK
+        
+        G-.异步通知.->GraphRAG: 文档处理完成
+        
+        G->>WP: <-workerPool (释放令牌)
+    end
+    end
+```
+
+#### 2.3.2 DocumentService.ProcessDocumentAsync() 关键代码
+
+**文件路径**：`services/document-service/internal/service/document_service.go`
+
+```go
+// ProcessDocumentAsync 异步处理文档（使用Worker Pool）
+func (s *DocumentService) ProcessDocumentAsync(ctx context.Context, documentID string) {
+    // 1. 尝试获取Worker Pool令牌
+    // 如果已有10个Goroutine在处理，这里会阻塞等待
+    s.workerPool <- struct{}{}
+    
+    // 2. 启动Goroutine进行后台处理
+    go func() {
+        // 3. defer确保令牌被释放（无论成功或失败）
+        defer func() { 
+            <-s.workerPool // 从Channel取出令牌，释放Worker槽位
+        }()
+        
+        // 4. 调用实际的处理逻辑
+        if err := s.ProcessDocument(ctx, documentID); err != nil {
+            log.Printf("文档处理失败: %v, document_id: %s", err, documentID)
+            // 5. 处理失败时更新状态
+            s.documentRepo.UpdateStatus(ctx, documentID, "failed")
+        }
+    }()
+}
+
+// ProcessDocument 实际的文档处理逻辑
+func (s *DocumentService) ProcessDocument(ctx context.Context, documentID string) error {
+    log.Printf("📄 开始处理文档: %s", documentID)
+    
+    // 1. 获取文档信息
+    document, err := s.documentRepo.FindByID(ctx, documentID)
+    if err != nil {
+        return fmt.Errorf("failed to find document: %w", err)
+    }
+    
+    // 2. 更新状态为processing
+    if err := s.documentRepo.UpdateStatus(ctx, documentID, "processing"); err != nil {
+        return err
+    }
+    
+    // 3. 下载文件内容
+    fileContent, err := s.storageService.Download(ctx, document.FilePath)
+    if err != nil {
+        s.documentRepo.UpdateStatus(ctx, documentID, "failed")
+        return fmt.Errorf("failed to download file: %w", err)
+    }
+    
+    // 4. 病毒扫描
+    log.Printf("🔍 Scanning for viruses: %s", documentID)
+    scanResult, err := s.virusScanner.ScanFile(ctx, document.FilePath, fileContent)
+    if err != nil {
+        s.documentRepo.UpdateStatus(ctx, documentID, "failed")
+        return fmt.Errorf("virus scan failed: %w", err)
+    }
+    
+    if !scanResult.IsClean {
+        // 发现病毒
+        s.documentRepo.UpdateStatus(ctx, documentID, "infected")
+        log.Printf("⚠️  Virus found in document %s: %s", documentID, scanResult.VirusFound)
+        return fmt.Errorf("virus found: %s", scanResult.VirusFound)
+    }
+    
+    log.Printf("Virus scan passed: %s", documentID)
+    
+    // 5. 文档处理：提取文本和分块
+    log.Printf("📝 Extracting text and chunking: %s", documentID)
+    processed, err := s.documentProcessor.ProcessDocument(ctx, document.FilePath, document.FileType)
+    if err != nil {
+        s.documentRepo.UpdateStatus(ctx, documentID, "failed")
+        return fmt.Errorf("failed to process document: %w", err)
+    }
+    
+    // 6. 保存处理结果
+    log.Printf("💾 Processed document: %d chars, %d chunks", processed.CharCount, processed.ChunkCount)
+    
+    // TODO: 扩展点 - 将chunks保存到向量数据库
+    // for _, chunk := range processed.Chunks {
+    //     embedding := generateEmbedding(chunk.Content)
+    //     saveToVectorDB(documentID, chunk.Index, chunk.Content, embedding)
+    // }
+    
+    // 7. 更新状态为completed
+    if err := s.documentRepo.UpdateStatus(ctx, documentID, "completed"); err != nil {
+        return err
+    }
+    
+    log.Printf("文档处理完成: %s (%d chunks)", documentID, processed.ChunkCount)
+    
+    // 8. 通知GraphRAG服务（可选）
+    // notifyGraphRAG(documentID, processed.Chunks)
+    
+    return nil
+}
+```
+
+**Worker Pool机制说明**：
+
+1. **Channel作为令牌池**：
+   ```go
+   workerPool: make(chan struct{}, maxWorkers)
+   ```
+   - 创建容量为10的Channel
+   - Channel中的每个元素代表一个Worker槽位
+   - 当10个槽位都被占用时，新的请求会阻塞
+
+2. **获取令牌**（阻塞操作）：
+   ```go
+   s.workerPool <- struct{}{}  // 发送一个空结构体到Channel
+   ```
+   - 如果Channel未满，立即成功，占用一个槽位
+   - 如果Channel已满（10个Worker都在处理），阻塞等待
+   - **效果**：限制最多10个文档同时处理
+
+3. **释放令牌**（defer确保执行）：
+   ```go
+   defer func() { <-s.workerPool }()  // 从Channel取出一个元素
+   ```
+   - 使用defer确保无论成功或失败都会释放
+   - 释放后，等待的请求可以继续执行
+
+4. **错误处理**：
+   - 处理过程中任何错误都会被捕获
+   - 更新文档状态为"failed"
+   - 确保Worker Pool令牌被释放
+
+---
+
+### 2.4 API 2：获取文档详情 - 调用链路
+
+#### 2.4.1 获取文档时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as 客户端
+    participant H as Handler.GetDocument()
+    participant DS as DocumentService
+    participant DR as Repository
+    participant PG as PostgreSQL
+    
+    C->>H: GET /api/v1/documents/:id
+    
+    H->>H: documentID := c.Param("id")
+    H->>H: userID := c.GetString("user_id")
+    
+    H->>DS: GetDocument(ctx, documentID, userID)
+    
+    DS->>DR: FindByID(ctx, documentID)
+    DR->>PG: SELECT * FROM documents<br/>WHERE id=? AND deleted_at IS NULL
+    
+    alt 文档不存在
+        PG-->>DR: gorm.ErrRecordNotFound
+        DR-->>DS: ErrDocumentNotFound
+        DS-->>H: error
+        H-->>C: 404 Not Found<br/>{"code": 404, "message": "Document not found"}
+    else 文档存在
+        PG-->>DR: Document记录
+        DR-->>DS: *Document
+        
+        DS->>DS: 权限检查:<br/>if document.UserID != userID
+        
+        alt 权限不足
+            DS-->>H: error("no permission")
+            H-->>C: 404 Not Found
+        else 权限通过
+            DS-->>H: *Document
+            H-->>C: 200 OK<br/>{<br/>  "code": 200,<br/>  "data": {"document": {...}}<br/>}
+        end
+    end
+```
+
+#### 2.4.2 Handler.GetDocument() 关键代码
+
+```go
+// GetDocument 获取文档详情
+func (h *DocumentHandler) GetDocument(c *gin.Context) {
+    // 1. 从URL路径参数获取documentID
+    documentID := c.Param("id")
+    // 2. 从Context获取当前用户ID
+    userID := c.GetString("user_id")
+    
+    // 3. 参数校验
+    if documentID == "" {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "code":    400,
+            "message": "Document ID is required",
+        })
+        return
+    }
+    
+    // 4. 调用Service层获取文档
+    document, err := h.documentService.GetDocument(
+        c.Request.Context(),
+        documentID,
+        userID,
+    )
+    if err != nil {
+        // Service层返回错误（文档不存在或无权限）
+        c.JSON(http.StatusNotFound, gin.H{
+            "code":    404,
+            "message": "Document not found",
+            "error":   err.Error(),
+        })
+        return
+    }
+    
+    // 5. 返回文档信息
+    c.JSON(http.StatusOK, gin.H{
+        "code":    200,
+        "message": "Success",
+        "data":    gin.H{"document": document},
+    })
+}
+```
+
+#### 2.4.3 DocumentService.GetDocument() 关键代码
+
+```go
+// GetDocument 获取文档（带权限检查）
+func (s *DocumentService) GetDocument(ctx context.Context, documentID, userID string) (*model.Document, error) {
+    // 1. 从数据库查询文档
+    document, err := s.documentRepo.FindByID(ctx, documentID)
+    if err != nil {
+        // Repository返回ErrDocumentNotFound或其他数据库错误
+        return nil, err
+    }
+    
+    // 2. 权限检查：验证文档是否属于该用户
+    if document.UserID != userID {
+        // 即使文档存在，也返回"not found"，避免泄露信息
+        return nil, fmt.Errorf("document not found or no permission")
+    }
+    
+    // 3. 返回文档
+    return document, nil
+}
+```
+
+**权限控制说明**：
+
+1. **用户身份获取**：
+   - Handler层从Gin Context获取`user_id`
+   - `user_id`由认证中间件注入（JWT解析）
+
+2. **数据库查询**：
+   - Repository执行SQL查询
+   - 使用软删除过滤条件：`deleted_at IS NULL`
+
+3. **权限校验**：
+   - Service层比较`document.UserID`与请求者`userID`
+   - 不匹配时返回错误（统一返回404，不区分"不存在"和"无权限"）
+
+4. **安全性**：
+   - 防止用户枚举他人文档ID
+   - 即使文档存在，无权限也返回404
+
+---
+
+### 2.5 API 3：下载文档 - 调用链路
+
+#### 2.5.1 下载文档时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as 客户端
+    participant H as Handler.DownloadDocument()
+    participant DS as DocumentService
+    participant DR as Repository
+    participant SS as StorageService
+    participant M as MinIO/LocalFS
+    participant PG as PostgreSQL
+    
+    C->>H: GET /api/v1/documents/:id/download
+    
+    H->>H: documentID := c.Param("id")
+    H->>H: userID := c.GetString("user_id")
+    
+    H->>DS: GetDocument(ctx, documentID, userID)
+    DS->>DR: FindByID(ctx, documentID)
+    DR->>PG: SELECT * FROM documents WHERE id=?
+    
+    alt 文档不存在或无权限
+        PG-->>DR: 记录或错误
+        DR-->>DS: Document/error
+        DS-->>H: error
+        H-->>C: 404 Not Found
+    else 文档存在且有权限
+        PG-->>DR: Document记录
+        DR-->>DS: *Document
+        DS->>DS: 权限检查通过
+        DS-->>H: *Document
+        
+        H->>SS: Download(ctx, document.FilePath)
+        
+        alt MinIO存储
+            SS->>SS: extractFileNameFromURL(filePath)
+            SS->>M: GetObject(bucket, fileName)
+            M-->>SS: Object数据流
+            SS->>SS: buf.ReadFrom(object)
+            SS-->>H: fileContent ([]byte)
+        else 本地存储
+            SS->>SS: os.ReadFile(filePath)
+            SS-->>H: fileContent ([]byte)
+        end
+        
+        H->>H: 设置响应头<br/>Content-Disposition: attachment<br/>Content-Type: application/octet-stream
+        H-->>C: 200 OK<br/>文件二进制数据流
+    end
+```
+
+#### 2.5.2 Handler.DownloadDocument() 关键代码
+
+```go
+// DownloadDocument 下载文档
+func (h *DocumentHandler) DownloadDocument(c *gin.Context) {
+    documentID := c.Param("id")
+    userID := c.GetString("user_id")
+    
+    // 1. 获取文档信息（包含权限检查）
+    document, err := h.documentService.GetDocument(
+        c.Request.Context(),
+        documentID,
+        userID,
+    )
+    if err != nil {
+        c.JSON(http.StatusNotFound, gin.H{
+            "code":    404,
+            "message": "Document not found",
+        })
+        return
+    }
+    
+    // 2. 从存储系统下载文件
+    fileContent, err := h.storageService.Download(
+        c.Request.Context(),
+        document.FilePath,
+    )
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "code":    500,
+            "message": "Failed to download file",
+        })
+        return
+    }
+    
+    // 3. 设置响应头（触发浏览器下载）
+    c.Header("Content-Description", "File Transfer")
+    c.Header("Content-Transfer-Encoding", "binary")
+    c.Header("Content-Disposition", "attachment; filename="+document.FileName)
+    c.Header("Content-Type", "application/octet-stream")
+    
+    // 4. 返回文件内容
+    c.Data(http.StatusOK, "application/octet-stream", fileContent)
+}
+```
+
+**下载流程说明**：
+
+1. **权限检查**（步骤1-7）
+   - 调用GetDocument()验证用户权限
+   - 未通过返回404（不区分不存在和无权限）
+
+2. **文件下载**（步骤8-15）
+   - 从StorageService获取文件内容
+   - MinIO：调用GetObject API，读取对象流
+   - 本地：直接读取文件系统
+
+3. **响应设置**（步骤16-17）
+   - `Content-Disposition: attachment`：触发浏览器下载（而非预览）
+   - `Content-Type: application/octet-stream`：二进制流
+   - 文件名保留原始文件名
+
+---
+
+### 2.6 API 4：列表文档 - 调用链路
+
+#### 2.6.1 列表文档时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as 客户端
+    participant H as Handler.ListDocuments()
+    participant DS as DocumentService
+    participant DR as Repository
+    participant PG as PostgreSQL
+    
+    C->>H: GET /api/v1/documents?<br/>page=1&page_size=20&status=completed
+    
+    H->>H: userID := c.GetString("user_id")
+    H->>H: c.ShouldBindQuery(&req)
+    Note right of H: 绑定查询参数<br/>DocumentListRequest{<br/>  Page, PageSize, Status<br/>}
+    
+    H->>H: 设置默认值<br/>if Page<=0 then Page=1<br/>if PageSize<=0 then PageSize=20
+    
+    H->>DS: ListDocuments(ctx, userID, page, pageSize, status)
+    
+    DS->>DR: List(ctx, userID, page, pageSize, status)
+    
+    DR->>DR: 构建查询<br/>WHERE deleted_at IS NULL<br/>AND user_id=?<br/>AND status=? (可选)
+    
+    DR->>PG: SELECT COUNT(*) FROM documents<br/>WHERE ...
+    PG-->>DR: total (int64)
+    
+    DR->>PG: SELECT * FROM documents<br/>WHERE ...<br/>ORDER BY created_at DESC<br/>LIMIT ? OFFSET ?
+    PG-->>DR: []Document
+    
+    DR-->>DS: ([]*Document, total, nil)
+    
+    DS->>DS: 转换指针数组为值数组<br/>[]Document
+    
+    DS-->>H: ([]Document, total, nil)
+    
+    H->>H: 计算总页数<br/>totalPages = ceil(total / pageSize)
+    
+    H->>H: 构造响应<br/>DocumentListResponse{<br/>  Documents, Total, Page,<br/>  PageSize, TotalPages<br/>}
+    
+    H-->>C: 200 OK<br/>{<br/>  "code": 200,<br/>  "data": {<br/>    "documents": [...],<br/>    "total": 100,<br/>    "page": 1,<br/>    "page_size": 20,<br/>    "total_pages": 5<br/>  }<br/>}
+```
+
+#### 2.6.2 Repository.List() 关键代码
+
+**文件路径**：`services/document-service/internal/repository/document_repository.go`
+
+```go
+// List 列出文档（分页，支持状态过滤）
+func (r *documentRepository) List(
+    ctx context.Context,
+    userID string,
+    page, pageSize int,
+    status string,
+) ([]*model.Document, int64, error) {
+    var documents []*model.Document
+    var total int64
+    
+    // 1. 构建基础查询
+    query := r.db.WithContext(ctx).Model(&model.Document{}).
+        Where("deleted_at IS NULL")
+    
+    // 2. 添加用户过滤
+    if userID != "" {
+        query = query.Where("user_id = ?", userID)
+    }
+    
+    // 3. 添加状态过滤（可选）
+    if status != "" {
+        query = query.Where("status = ?", status)
+    }
+    
+    // 4. 获取总数（用于计算总页数）
+    if err := query.Count(&total).Error; err != nil {
+        return nil, 0, err
+    }
+    
+    // 5. 分页查询
+    offset := (page - 1) * pageSize
+    if err := query.
+        Offset(offset).
+        Limit(pageSize).
+        Order("created_at DESC").  // 按创建时间倒序
+        Find(&documents).Error; err != nil {
+        return nil, 0, err
+    }
+    
+    return documents, total, nil
+}
+```
+
+**分页查询说明**：
+
+1. **查询条件构建**（步骤1-3）
+   - 基础条件：软删除过滤 `deleted_at IS NULL`
+   - 用户隔离：`user_id = ?`（必选）
+   - 状态过滤：`status = ?`（可选，前端可过滤）
+
+2. **两次查询**（步骤4-5）
+   - 第一次：`COUNT(*)`获取总记录数
+   - 第二次：`SELECT *`获取当前页数据
+   - **性能考虑**：大数据量时COUNT可能较慢，可考虑缓存
+
+3. **分页计算**（步骤5）
+   - `OFFSET = (page - 1) * pageSize`
+   - `LIMIT = pageSize`
+   - 排序：`ORDER BY created_at DESC`（最新的在前）
+
+4. **响应构造**（Handler层）
+   - `totalPages = ceil(total / pageSize)`
+   - 返回完整分页信息便于前端渲染
+
+---
+
+### 2.7 模块内部详细时序图
+
+#### 2.7.1 StorageService模块时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as 调用者
+    participant SS as StorageService
+    participant MC as MinIO Client
+    participant FS as 文件系统
+    
+    Note over SS: 初始化阶段
+    Caller->>SS: NewStorageService(storageType)
+    
+    alt storageType == "minio"
+        SS->>SS: 读取MinIO配置<br/>(endpoint, accessKey, secretKey, bucket)
+        SS->>MC: minio.New(endpoint, options)
+        MC-->>SS: *minio.Client
+        
+        SS->>MC: BucketExists(ctx, bucket)
+        MC-->>SS: exists (bool)
+        
+        alt bucket不存在
+            SS->>MC: MakeBucket(ctx, bucket, options)
+            MC-->>SS: OK
+        end
+        
+        SS->>SS: minioEnabled = true
+    else storageType == "local"
+        SS->>FS: os.MkdirAll(basePath, 0755)
+        FS-->>SS: OK
+        SS->>SS: minioEnabled = false
+    end
+    
+    SS-->>Caller: *StorageService
+    
+    Note over SS: 上传操作
+    Caller->>SS: Upload(ctx, fileName, content)
+    
+    alt MinIO模式
+        SS->>SS: bytes.NewReader(content)
+        SS->>MC: PutObject(bucket, fileName, reader, size, options)
+        MC-->>SS: UploadInfo
+        SS->>SS: fileURL = "minio://bucket/filename"
+        SS-->>Caller: fileURL
+    else 本地模式
+        SS->>FS: os.WriteFile(fullPath, content, 0644)
+        FS-->>SS: OK
+        SS->>SS: filePath = "./data/documents/filename"
+        SS-->>Caller: filePath
+    end
+    
+    Note over SS: 下载操作
+    Caller->>SS: Download(ctx, filePath)
+    
+    alt MinIO模式
+        SS->>SS: extractFileNameFromURL(filePath)
+        SS->>MC: GetObject(bucket, fileName, options)
+        MC-->>SS: *Object (数据流)
+        SS->>SS: buf.ReadFrom(object)
+        SS-->>Caller: fileContent ([]byte)
+    else 本地模式
+        SS->>FS: os.ReadFile(filePath)
+        FS-->>SS: content ([]byte)
+        SS-->>Caller: content
+    end
+    
+    Note over SS: 删除操作
+    Caller->>SS: Delete(ctx, filePath)
+    
+    alt MinIO模式
+        SS->>SS: extractFileNameFromURL(filePath)
+        SS->>MC: RemoveObject(bucket, fileName, options)
+        MC-->>SS: OK
+        SS-->>Caller: nil
+    else 本地模式
+        SS->>FS: os.Remove(filePath)
+        FS-->>SS: OK
+        SS-->>Caller: nil
+    end
+```
+
+**StorageService模块功能说明**：
+
+1. **存储抽象层**
+   - 统一封装MinIO和本地文件系统
+   - 提供Upload/Download/Delete/GetPresignedURL接口
+   - 运行时动态选择存储后端
+
+2. **MinIO模式特点**
+   - 分布式对象存储，支持水平扩展
+   - S3兼容API，易于迁移到AWS S3
+   - Bucket概念：类似文件夹，存储对象集合
+   - URL格式：`minio://bucket/filename`
+
+3. **本地模式特点**
+   - 直接写入文件系统
+   - 开发环境首选（无需额外依赖）
+   - 路径格式：`./data/documents/filename`
+
+4. **降级策略**
+   - MinIO初始化失败时自动降级到本地存储
+   - 确保服务可用性
+
+---
+
+#### 2.7.2 DocumentProcessor模块时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as DocumentService
+    participant DP as DocumentProcessor
+    participant SS as StorageService
+    participant PDF as PDF库
+    participant HTML as HTML解析
+    
+    Caller->>DP: ProcessDocument(ctx, filePath, fileType)
+    
+    DP->>SS: Download(ctx, filePath)
+    SS-->>DP: fileContent ([]byte)
+    
+    DP->>DP: extractText(fileContent, fileType)
+    
+    alt fileType == "pdf"
+        DP->>PDF: bytes.NewReader(content)
+        DP->>PDF: pdf.NewReader(bytesReader, size)
+        PDF-->>DP: *pdf.Reader
+        
+        loop 遍历每一页
+            DP->>PDF: reader.Page(pageNum)
+            PDF-->>DP: *pdf.Page
+            DP->>PDF: page.GetPlainText(nil)
+            PDF-->>DP: pageText (string)
+            DP->>DP: text.WriteString(pageText)
+        end
+        
+        DP-->>DP: fullText (string)
+        
+    else fileType == "html" || "htm"
+        DP->>HTML: removeTagsWithContent(text, "script")
+        HTML-->>DP: cleanedText
+        DP->>HTML: removeTagsWithContent(text, "style")
+        HTML-->>DP: cleanedText
+        DP->>HTML: removeHTMLTags(text)
+        HTML-->>DP: plainText
+        DP->>DP: cleanWhitespace(text)
+        DP-->>DP: fullText (string)
+        
+    else fileType == "txt" || "md"
+        DP->>DP: fullText = string(fileContent)
+        
+    else fileType == "docx"
+        DP->>DP: return error("not implemented")
+    end
+    
+    DP->>DP: splitTextIntoChunks(fullText)
+    
+    Note over DP: 分块算法
+    DP->>DP: paragraphs = strings.Split(text, "\n\n")
+    
+    loop 遍历段落
+        alt currentChunk + para > maxChunkSize
+            DP->>DP: 保存当前chunk<br/>chunks.append(TextChunk{<br/>  Index, Content, Start, End<br/>})
+            DP->>DP: 提取overlap部分<br/>overlapText = getLastNChars(content, 200)
+            DP->>DP: currentChunk.Reset()
+            DP->>DP: currentChunk.WriteString(overlapText)
+        end
+        
+        DP->>DP: currentChunk.WriteString(para)
+    end
+    
+    DP->>DP: 保存最后一个chunk
+    
+    DP-->>Caller: ProcessedDocument{<br/>  FullText: fullText,<br/>  Chunks: chunks,<br/>  ChunkCount: len(chunks),<br/>  CharCount: len(fullText)<br/>}
+```
+
+**DocumentProcessor模块功能说明**：
+
+1. **文本提取**
+   - **PDF**：使用ledongthuc/pdf库逐页提取
+     - 支持纯文本PDF
+     - 图片型PDF需OCR（未实现）
+   - **HTML**：正则移除标签
+     - 移除script/style标签及内容
+     - 移除所有HTML标签
+     - 清理多余空白
+   - **TXT/MD**：直接读取
+   - **DOCX**：待实现（可使用docx库）
+
+2. **文本分块算法**
+   - **分块大小**：1000字符/chunk（可配置）
+   - **重叠大小**：200字符（保持上下文）
+   - **分割策略**：
+     - 按段落分割（双换行符`\n\n`）
+     - 累积段落直到超过maxChunkSize
+     - 创建新chunk时保留overlap部分
+   - **边界处理**：
+     - 保留完整段落
+     - 避免截断句子
+
+3. **输出结构**
+   ```go
+   type ProcessedDocument struct {
+       FullText   string      // 完整提取的文本
+       Chunks     []TextChunk // 分块结果
+       ChunkCount int         // 分块数量
+       CharCount  int         // 总字符数
+   }
+   
+   type TextChunk struct {
+       Index   int    // 分块序号
+       Content string // 分块内容
+       Start   int    // 在原文中的起始位置
+       End     int    // 在原文中的结束位置
+   }
+   ```
+
+4. **扩展点**
+   - 可将chunks保存到向量数据库
+   - 可调用Embedding API生成向量
+   - 可通知GraphRAG服务进行知识图谱构建
+
+---
+
+#### 2.7.3 VirusScanner模块时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Caller as DocumentService
+    participant VS as VirusScanner
+    participant TMP as 临时文件
+    participant ClamAV as ClamAV守护进程
+    participant QT as 隔离目录
+    
+    Caller->>VS: ScanFile(ctx, filePath, fileContent)
+    
+    alt 扫描未启用
+        VS-->>Caller: ScanResult{IsClean: true, Scanner: "disabled"}
+    end
+    
+    VS->>VS: 检查文件大小<br/>if size > maxFileSize return error
+    
+    alt scannerType == "clamav"
+        VS->>TMP: os.CreateTemp("", "virus-scan-*")
+        TMP-->>VS: *File, tmpPath
+        
+        VS->>TMP: tmpFile.Write(fileContent)
+        VS->>TMP: tmpFile.Close()
+        
+        VS->>VS: context.WithTimeout(ctx, 30s)
+        VS->>ClamAV: exec.CommandContext("clamdscan", tmpPath)
+        ClamAV->>ClamAV: 扫描文件
+        
+        alt 发现病毒 (exit code 1)
+            ClamAV-->>VS: output (包含病毒名称)
+            VS->>VS: extractVirusName(output)
+            VS->>VS: result.IsClean = false<br/>result.VirusFound = virusName
+            
+            VS->>QT: os.WriteFile(quarantinePath/timestamp-virusName.quarantine, content, 0600)
+            QT-->>VS: OK
+            
+            VS-->>Caller: ScanResult{<br/>  IsClean: false,<br/>  VirusFound: "xxx",<br/>  Scanner: "clamav"<br/>}
+            
+        else 文件安全 (exit code 0)
+            ClamAV-->>VS: "OK"
+            VS->>VS: result.IsClean = true
+            VS-->>Caller: ScanResult{IsClean: true}
+            
+        else 扫描错误 (exit code 2)
+            ClamAV-->>VS: error output
+            VS-->>Caller: error
+        end
+        
+        VS->>TMP: os.Remove(tmpPath)
+        
+    else scannerType == "mock"
+        VS->>VS: fileName = strings.ToLower(filePath)
+        
+        alt strings.Contains(fileName, "virus") || "malware"
+            VS->>VS: result.IsClean = false<br/>result.VirusFound = "Mock.Virus.Test"
+            VS-->>Caller: ScanResult{IsClean: false}
+        else
+            VS->>VS: result.IsClean = true
+            VS-->>Caller: ScanResult{IsClean: true}
+        end
+    end
+```
+
+**VirusScanner模块功能说明**：
+
+1. **扫描模式**
+   - **ClamAV模式**（生产环境）
+     - 开源病毒扫描引擎
+     - 支持实时病毒库更新
+     - 通过守护进程clamdscan扫描
+   - **Mock模式**（开发/测试）
+     - 检查文件名包含"virus"或"malware"
+     - 快速响应，无需安装ClamAV
+
+2. **ClamAV扫描流程**
+   - 创建临时文件（避免权限问题）
+   - 写入文件内容
+   - 调用clamdscan命令行工具
+   - 解析返回码：
+     - 0 = 文件安全
+     - 1 = 发现病毒
+     - 2 = 扫描错误
+   - 清理临时文件
+
+3. **病毒隔离**
+   - 发现病毒时自动隔离
+   - 隔离文件命名：`timestamp-virusname.quarantine`
+   - 文件权限：0600（仅所有者可读写）
+   - 隔离目录：`./data/quarantine`（可配置）
+
+4. **性能考虑**
+   - 最大文件大小：100MB（超过则跳过扫描）
+   - 扫描超时：30秒
+   - 异步处理：在Worker Pool中执行
+
+5. **配置项**
+   ```bash
+   VIRUS_SCAN_ENABLED=true          # 是否启用扫描
+   VIRUS_SCANNER_TYPE=clamav        # 扫描器类型 (clamav/mock)
+   CLAMAV_SOCKET=/var/run/clamav/clamd.ctl
+   VIRUS_QUARANTINE_PATH=./data/quarantine
+   ```
+
+---
+
+## 三、对外API规格
+
+### 3.1 API列表
 
 | API | 方法 | 路径 | 说明 | 认证 |
 |---|---|---|---|---|
@@ -1690,13 +3305,13 @@ func (h *DocumentHandler) BatchUpload(c *gin.Context) {
 Document文档服务是VoiceHelper项目中的核心数据管理服务，提供完整的文档生命周期管理功能。
 
 **核心特性**：
-1. ✅ **存储灵活性**：支持本地存储和MinIO，运行时可切换
-2. ✅ **安全保障**：ClamAV病毒扫描 + 文件隔离
-3. ✅ **格式支持**：PDF、Word、HTML、Markdown、纯文本
-4. ✅ **异步处理**：Worker Pool并发控制，避免资源耗尽
-5. ✅ **权限控制**：用户级隔离，仅所有者可访问
-6. ✅ **状态追踪**：完整的文档处理状态机
-7. ✅ **可扩展性**：易于集成GraphRAG服务进行向量化
+1. **存储灵活性**：支持本地存储和MinIO，运行时可切换
+2. **安全保障**：ClamAV病毒扫描 + 文件隔离
+3. **格式支持**：PDF、Word、HTML、Markdown、纯文本
+4. **异步处理**：Worker Pool并发控制，避免资源耗尽
+5. **权限控制**：用户级隔离，仅所有者可访问
+6. **状态追踪**：完整的文档处理状态机
+7. **可扩展性**：易于集成GraphRAG服务进行向量化
 
 **后续优化方向**：
 - 支持更多文档格式（DOCX、PPTX、Excel）
@@ -1710,6 +3325,5 @@ Document文档服务是VoiceHelper项目中的核心数据管理服务，提供�
 ---
 
 **文档版本**：v1.0  
-**最后更新**：2025-10-10  
-**维护者**：VoiceHelper Team
+**最后更新**：2025-10-10
 

@@ -1,11 +1,12 @@
 ---
-title: "VoiceHelper源码剖析 - 05Notification通知服务"
-date: 2025-10-10T05:00:00+08:00
+title: "VoiceHelper-05-Notification通知服务"
+date: 2025-10-10T10:05:00+08:00
 draft: false
-tags: ["源码剖析", "VoiceHelper", "通知系统", "WebSocket", "多渠道推送", "实时通信"]
+tags: ["VoiceHelper", "通知服务", "WebSocket", "实时推送", "消息队列"]
 categories: ["VoiceHelper", "源码剖析"]
-description: "Notification通知服务详解：WebSocket实时推送、多渠道支持（邮件/短信/推送）、通知模板引擎、定时发送、连接管理"
-weight: 6
+description: "VoiceHelper 通知服务详细设计，包含WebSocket实时推送、多渠道通知、消息队列、邮件短信集成完整实现"
+series: ["VoiceHelper源码剖析"]
+weight: 5
 ---
 
 # VoiceHelper-05-Notification通知服务
@@ -41,184 +42,731 @@ Notification通知服务是VoiceHelper项目中负责多渠道消息通知的核
 - ❌ 深度数据分析与报表（由Analytics服务负责）
 - ❌ 用户偏好设置（由User服务负责）
 
-### 1.2 模块架构
+### 1.2 整体服务架构
+
+#### 1.2.1 系统层级架构图
 
 ```mermaid
 flowchart TB
-    subgraph API["HTTP/WebSocket API层"]
-        Handler[NotificationHandler]
-        WSHub[WebSocket Hub]
+    subgraph Client["客户端层"]
+        WebClient[Web客户端]
+        MobileClient[移动客户端]
+        ThirdParty[第三方系统]
     end
     
-    subgraph Service["业务逻辑层"]
-        NotifSvc[NotificationService]
-        TemplateSvc[TemplateService]
-        MultiChannel[MultiChannelSender]
+    subgraph Gateway["网关层"]
+        APIGateway[API Gateway<br/>端口:8080]
     end
     
-    subgraph Sender["渠道发送器层"]
-        AppSender[AppSender]
-        EmailSvc[EmailSender]
-        SMSSvc[SMSSender]
-        PushSvc[PushSender]
-    end
-    
-    subgraph Repo["数据访问层"]
-        NotifRepo[NotificationRepository]
-        TemplateRepo[TemplateRepository]
+    subgraph NotificationService["Notification Service<br/>端口:8084"]
+        subgraph API["API层 (Handler)"]
+            NotifHandler[NotificationHandler<br/>HTTP/WebSocket路由]
+        end
+        
+        subgraph Service["业务逻辑层 (Service)"]
+            NotifService[NotificationService<br/>通知管理]
+            TemplateService[TemplateService<br/>模板管理]
+            ScheduleService[定时任务调度器]
+        end
+        
+        subgraph Channel["渠道层 (Sender)"]
+            MultiChannel[MultiChannelSender<br/>渠道路由]
+            AppSender[AppSender]
+            EmailSender[EmailSender]
+            SMSSender[SMSSender]
+            PushSender[PushSender]
+        end
+        
+        subgraph WS["WebSocket层"]
+            WSHub[WSHub<br/>连接管理中心]
+            WSClient1[WSClient<br/>用户1]
+            WSClient2[WSClient<br/>用户2]
+            WSClientN[WSClient<br/>用户N]
+        end
+        
+        subgraph Repository["数据访问层 (Repository)"]
+            NotifRepo[NotificationRepository]
+            TemplateRepo[TemplateRepository]
+        end
     end
     
     subgraph Storage["存储层"]
-        PG[(PostgreSQL)]
+        PG[(PostgreSQL<br/>通知/模板数据)]
     end
     
     subgraph External["外部服务"]
-        SMTP[SMTP服务器]
-        SMSGateway[短信网关]
-        FCM[Firebase FCM]
+        SMTP[SMTP服务器<br/>Gmail/Outlook]
+        SMSGateway[短信网关<br/>阿里云/腾讯云]
+        FCM[Firebase FCM<br/>移动推送]
     end
     
-    subgraph Background["后台任务"]
-        Scheduler[定时任务调度器]
+    subgraph Registry["服务注册"]
+        Consul[Consul<br/>服务发现]
     end
     
-    Handler --> NotifSvc
-    Handler --> TemplateSvc
-    Handler --> WSHub
+    %% 客户端到网关
+    WebClient --> APIGateway
+    MobileClient --> APIGateway
+    ThirdParty --> APIGateway
     
-    NotifSvc --> NotifRepo
-    NotifSvc --> MultiChannel
-    NotifSvc --> Scheduler
+    %% 网关到服务
+    APIGateway --> NotifHandler
     
+    %% Handler层流转
+    NotifHandler --> NotifService
+    NotifHandler --> TemplateService
+    NotifHandler -.升级WebSocket.-> WSHub
+    
+    %% Service层流转
+    NotifService --> NotifRepo
+    NotifService --> MultiChannel
+    NotifService --> ScheduleService
+    TemplateService --> TemplateRepo
+    
+    %% 渠道发送器
     MultiChannel --> AppSender
-    MultiChannel --> EmailSvc
-    MultiChannel --> SMSSvc
-    MultiChannel --> PushSvc
+    MultiChannel --> EmailSender
+    MultiChannel --> SMSSender
+    MultiChannel --> PushSender
     
-    AppSender --> WSHub
+    %% WebSocket连接
+    AppSender -.广播.-> WSHub
+    WSHub --> WSClient1
+    WSHub --> WSClient2
+    WSHub --> WSClientN
+    WSClient1 -.推送.-> WebClient
+    WSClient2 -.推送.-> MobileClient
     
-    TemplateSvc --> TemplateRepo
+    %% Repository到数据库
     NotifRepo --> PG
     TemplateRepo --> PG
     
-    EmailSvc --> SMTP
-    SMSSvc --> SMSGateway
-    PushSvc --> FCM
+    %% 外部渠道
+    EmailSender --> SMTP
+    SMSSender --> SMSGateway
+    PushSender --> FCM
     
-    WSHub -.实时推送.-> 客户端
-    Scheduler -.定时扫描.-> NotifRepo
+    %% 服务注册
+    NotificationService -.注册.-> Consul
+    
+    %% 定时任务
+    ScheduleService -.扫描.-> NotifRepo
 ```
 
-**架构说明**：
+**架构层级说明**：
 
-1. **四层架构设计**：
-   - **API层**：处理HTTP请求和WebSocket连接，路由分发到Service层
-   - **Service层**：核心业务逻辑，通知创建、状态管理、渠道调度
-   - **Sender层**：渠道发送器抽象，每个渠道独立实现，支持插件化扩展
-   - **Repository层**：数据访问封装，统一数据库操作接口
+**1. 客户端层（Client Layer）**：
+- **Web客户端**：浏览器端，通过HTTP API调用和WebSocket接收实时通知
+- **移动客户端**：iOS/Android App，通过HTTP API + FCM推送
+- **第三方系统**：其他业务系统通过RESTful API发送通知
 
-2. **WebSocket Hub中心化管理**：
-   - Hub维护所有在线用户的WebSocket连接映射（userID → WSClient）
-   - 通过channel机制实现高并发下的连接注册/注销/广播
-   - 读写分离Pump模式，避免goroutine阻塞
+**2. 网关层（Gateway Layer）**：
+- **API Gateway (端口8080)**：统一入口，负责路由、认证、限流
+- 转发通知相关请求到Notification Service (端口8084)
+- 处理跨域、TLS终止、日志记录
 
-3. **MultiChannelSender统一调度**：
-   - 封装所有渠道发送器，提供统一的Send接口
-   - 支持多渠道并发发送，某个渠道失败不影响其他渠道
-   - 通过ChannelSender接口实现，便于扩展新渠道
+**3. Notification Service核心层**：
 
-4. **异步发送机制**：
-   - 通知创建后立即返回，不等待渠道发送完成
-   - 邮件、短信、推送通过goroutine异步发送
-   - 发送失败自动重试（最多3次，指数退避）
+**3.1 API层（Handler）**：
+- **NotificationHandler**：处理所有HTTP/WebSocket请求
+- 10+ REST API端点 + 1个WebSocket端点
+- 请求参数验证、响应格式化
+- WebSocket连接升级和客户端注册
 
-5. **定时任务调度器**：
-   - 后台goroutine每分钟扫描scheduled_at到期的通知
-   - 自动触发渠道发送，更新状态为sent
+**3.2 业务逻辑层（Service）**：
+- **NotificationService**：核心业务逻辑
+  - 通知创建、查询、更新、删除
+  - 状态管理（pending → sent → read）
+  - 权限验证（用户只能访问自己的通知）
+  - 调度渠道发送
+  
+- **TemplateService**：模板管理
+  - 模板CRUD操作
+  - 变量替换和渲染
+  - 模板版本控制
+  
+- **定时任务调度器**：
+  - 每分钟扫描scheduled_at到期的通知
+  - 自动触发发送流程
+  - 更新通知状态
 
-### 1.3 数据流架构
+**3.3 渠道层（Sender）**：
+- **MultiChannelSender**：渠道路由和管理
+  - 注册所有可用渠道
+  - 多渠道并发发送
+  - 失败重试和降级
+  
+- **AppSender**：应用内推送（WebSocket）
+- **EmailSender**：邮件发送（SMTP）
+- **SMSSender**：短信发送（阿里云/腾讯云SDK）
+- **PushSender**：移动推送（Firebase FCM）
+
+**3.4 WebSocket层**：
+- **WSHub**：WebSocket连接中心
+  - 维护 userID → WSClient 映射
+  - 处理连接注册/注销
+  - 广播消息到指定用户
+  - 并发安全（channel + RWMutex）
+  
+- **WSClient**：单个WebSocket连接
+  - 读写Pump分离
+  - 256消息缓冲队列
+  - 心跳保活机制
+
+**3.5 数据访问层（Repository）**：
+- **NotificationRepository**：通知数据操作
+  - CRUD、状态更新、统计查询
+  - 分页查询、批量操作
+  - 软删除、定时查询
+  
+- **TemplateRepository**：模板数据操作
+
+**4. 存储层（Storage Layer）**：
+- **PostgreSQL**：关系型数据库
+  - notifications表：通知记录
+  - notification_templates表：模板记录
+  - 连接池配置：10空闲/100最大
+
+**5. 外部服务层（External Services）**：
+- **SMTP服务器**：Gmail/Outlook等邮件服务
+- **短信网关**：阿里云/腾讯云短信服务
+- **Firebase FCM**：Google移动推送服务
+
+**6. 服务注册层（Service Registry）**：
+- **Consul**：服务发现和健康检查
+  - 服务注册：notification-service
+  - 健康检查：/health 每10秒
+  - 自动注销：30秒后
+
+#### 1.2.2 模块交互关系图
+
+```mermaid
+graph LR
+    subgraph 入口层
+        A[HTTP Request]
+        B[WebSocket Upgrade]
+    end
+    
+    subgraph Handler层
+        C[NotificationHandler]
+    end
+    
+    subgraph Service层
+        D[NotificationService]
+        E[TemplateService]
+    end
+    
+    subgraph Repository层
+        F[NotificationRepo]
+        G[TemplateRepo]
+    end
+    
+    subgraph 渠道层
+        H[MultiChannelSender]
+        I[AppSender]
+        J[EmailSender]
+        K[SMSSender]
+        L[PushSender]
+    end
+    
+    subgraph WebSocket层
+        M[WSHub]
+        N[WSClient]
+    end
+    
+    subgraph 存储层
+        O[(PostgreSQL)]
+    end
+    
+    A --> C
+    B --> C
+    C --> D
+    C --> E
+    C --> M
+    D --> F
+    D --> H
+    E --> G
+    F --> O
+    G --> O
+    H --> I
+    H --> J
+    H --> K
+    H --> L
+    I --> M
+    M --> N
+    N -.推送.-> 客户端
+```
+
+**模块依赖关系**：
+1. **Handler → Service**：单向依赖，Handler调用Service
+2. **Service → Repository**：单向依赖，Service调用Repository进行数据操作
+3. **Service → ChannelSender**：单向依赖，Service调用Sender发送通知
+4. **ChannelSender → WSHub**：AppSender依赖WSHub进行WebSocket推送
+5. **Repository → Database**：单向依赖，Repository操作数据库
+
+**无循环依赖**：整个架构采用分层设计，自上而下单向依赖，无循环依赖。
+
+#### 1.2.3 核心设计特性
+
+**1. 四层分层架构**：
+- **API层**：HTTP/WebSocket请求处理，参数验证
+- **Service层**：业务逻辑封装，状态管理
+- **Repository层**：数据访问封装，SQL操作
+- **External层**：外部服务集成，SMTP/SMS/Push
+
+**2. WebSocket Hub中心化管理**：
+- 所有WebSocket连接集中管理
+- userID作为唯一标识
+- 通过Go channel实现并发安全
+- 读写分离Pump模式
+
+**3. MultiChannelSender统一调度**：
+- 渠道发送器接口化（ChannelSender Interface）
+- 插件化架构，易于扩展新渠道
+- 多渠道并发发送，互不影响
+- 失败重试和降级策略
+
+**4. 异步发送机制**：
+- 通知创建后立即返回（同步）
+- 渠道发送异步执行（goroutine）
+- 不阻塞主业务流程
+- 发送状态异步更新
+
+**5. 定时任务调度**：
+- 独立goroutine运行
+- 每分钟扫描到期通知
+- 自动触发发送流程
+- 支持定时通知功能
+
+**6. 并发安全设计**：
+- WSHub使用channel + RWMutex
+- Repository使用context传递
+- 无全局可变状态
+- goroutine安全关闭
+
+### 1.3 完整数据流时序
+
+#### 1.3.1 通知发送完整流程时序图
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant Client as 客户端
-    participant Handler as NotificationHandler
-    participant Service as NotificationService
-    participant MultiChannel as MultiChannelSender
-    participant WSHub as WebSocket Hub
-    participant EmailSender as EmailSender
-    participant Repo as Repository
+    participant C as 客户端
+    participant G as Gateway<br/>(8080)
+    participant H as Handler<br/>NotificationHandler
+    participant S as Service<br/>NotificationService
+    participant R as Repository<br/>NotificationRepo
     participant DB as PostgreSQL
+    participant MC as MultiChannel<br/>Sender
+    participant AS as AppSender
+    participant WH as WSHub
+    participant WC as WSClient
+    participant ES as EmailSender
+    participant SMTP as SMTP<br/>Server
     
-    Note over Client,DB: 通知发送完整流程
+    rect rgb(200, 220, 250)
+    Note over C,H: 阶段1: HTTP请求处理（同步，<5ms）
+    C->>G: POST /notifications<br/>{user_ids, title, content, channels}
+    G->>G: 认证鉴权<br/>限流检查
+    G->>H: 转发请求
+    H->>H: 参数绑定验证<br/>ShouldBindJSON()
+    end
     
-    Client->>Handler: POST /notifications (发送通知请求)
-    Handler->>Handler: 解析请求参数
-    Handler->>Service: SendNotification(req)
+    rect rgb(250, 220, 200)
+    Note over H,DB: 阶段2: 通知创建（同步，10-20ms）
+    H->>S: SendNotification(ctx, req)
     
-    loop 为每个用户创建通知
-        Service->>Service: 生成Notification对象
-        Service->>Repo: Create(notification)
-        Repo->>DB: INSERT notification
-        DB-->>Repo: OK
-        Repo-->>Service: notification
+    loop 遍历每个用户ID
+        S->>S: 构造Notification对象<br/>ID=UUID, Status=pending
+        S->>S: 序列化Channels/Metadata<br/>JSON.Marshal()
+        S->>R: Create(ctx, notification)
+        R->>DB: INSERT INTO notifications<br/>VALUES(...)
+        DB-->>R: 插入成功
+        R-->>S: notification
+    end
+    end
+    
+    rect rgb(220, 250, 220)
+    Note over S,C: 阶段3: 同步返回（立即响应）
+    S-->>H: return nil
+    H-->>G: 200 OK<br/>{code:200, message:"success"}
+    G-->>C: HTTP响应
+    Note over C: 客户端收到成功响应<br/>（总耗时 <50ms）
+    end
+    
+    rect rgb(250, 250, 200)
+    Note over S,SMTP: 阶段4: 异步渠道发送（goroutine并发）
+    
+    par 为每个通知启动goroutine
+        S->>MC: go sendNotification()<br/>channels=["app","email"]
+    end
+    
+    MC->>MC: 解析channels配置
+    
+    par 多渠道并发发送
+        MC->>AS: Send(notification)<br/>渠道:app
+        AS->>WH: Broadcast(notification)
+        WH->>WH: 查找clients map<br/>userID → WSClient
+        WH->>WC: Send channel <- message
+        WC->>WC: WriteMessage(JSON)
+        WC-->>C: WebSocket推送<br/>（延迟 5-10ms）
+        AS-->>MC: 发送成功
+    and
+        MC->>ES: Send(notification)<br/>渠道:email
+        ES->>ES: 获取用户邮箱
+        ES->>ES: 渲染HTML模板
+        ES->>SMTP: SendMail(to, subject, body)
         
-        Service->>Service: 判断是否定时通知
-        
-        alt 非定时通知
-            Service->>MultiChannel: Send(notification, channels)
-            
-            par 多渠道并发发送
-                MultiChannel->>WSHub: AppSender.Send()
-                WSHub->>WSHub: Broadcast(notification)
-                WSHub-->>Client: WebSocket推送（实时）
-            and
-                MultiChannel->>EmailSender: EmailSender.Send()
-                EmailSender->>EmailSender: 渲染HTML模板
-                EmailSender->>External: SMTP.SendMail()
-                Note over EmailSender: 发送失败自动重试（最多3次）
+        alt SMTP发送成功
+            SMTP-->>ES: 250 OK
+            ES-->>MC: 发送成功
+        else SMTP发送失败
+            SMTP-->>ES: 错误
+            ES->>ES: 重试1/3（延迟1s）
+            ES->>SMTP: SendMail() 重试
+            alt 重试成功
+                SMTP-->>ES: 250 OK
+            else 重试失败
+                ES-->>MC: 发送失败
             end
-            
-            MultiChannel-->>Service: 发送完成
-            Service->>Repo: UpdateStatus(sent)
-        else 定时通知
-            Note over Service: 保持pending状态,等待定时任务处理
         end
     end
     
-    Service-->>Handler: OK
-    Handler-->>Client: 200 Success
+    alt 至少一个渠道成功
+        MC->>R: UpdateStatus(id, "sent")<br/>SentAt=NOW()
+        R->>DB: UPDATE notifications<br/>SET status='sent'
+        DB-->>R: 更新成功
+        Note over S: 通知状态: sent
+    else 所有渠道失败
+        MC->>R: UpdateStatus(id, "failed")
+        Note over S: 通知状态: failed
+    end
+    end
     
-    Note over Client,WSHub: WebSocket心跳保活
+    rect rgb(220, 220, 250)
+    Note over WH,C: 阶段5: WebSocket心跳保活（持续）
     loop 每54秒
-        WSHub->>Client: Ping
-        Client->>WSHub: Pong
+        WC->>C: Ping Frame
+        C->>WC: Pong Frame
+        WC->>WC: 更新ReadDeadline<br/>NOW()+60s
+    end
     end
 ```
 
-**数据流说明**：
+**时序图详细说明**：
 
-1. **同步阶段（步骤1-7）**：
-   - 客户端调用API发送通知请求
-   - Handler层验证参数后转发给Service层
-   - Service为每个目标用户创建notification记录并保存到数据库
-   - 立即返回客户端（不等待渠道发送完成）
+**阶段1: HTTP请求处理（同步，<5ms）**
+- **步骤1-3**：客户端通过Gateway发送POST请求
+- **Gateway处理**：
+  - 认证鉴权（JWT Token验证）
+  - 限流检查（10 req/min）
+  - 路由转发到Notification Service
+- **步骤4-5**：Handler接收请求
+- **参数验证**：使用Gin的ShouldBindJSON进行参数绑定和验证
+  - user_ids非空且长度≥1
+  - title长度1-200字符
+  - content长度1-2000字符
+  - type枚举值：system/info/warning/error
+  - channels枚举值：app/email/sms/push
 
-2. **异步阶段（步骤8-15）**：
-   - MultiChannelSender接收通知和目标渠道列表
-   - 使用goroutine并发发送到各个渠道（app/email/sms/push）
-   - WebSocket推送是同步的（毫秒级），邮件/短信是异步的（秒级）
-   - 发送失败的渠道自动重试（指数退避）
+**阶段2: 通知创建（同步，10-20ms）**
+- **步骤6**：Handler调用Service.SendNotification()
+- **步骤7-12**：Service遍历每个用户ID
+  - 生成UUID作为通知ID
+  - 设置Status=pending（初始状态）
+  - 设置Priority默认值（normal）
+  - 序列化Channels为JSON字符串
+  - 序列化Metadata为JSON字符串
+  - 解析ScheduleAt时间（RFC3339格式）
+- **步骤13-15**：Repository调用GORM执行INSERT
+  - 使用Context传递（超时控制）
+  - 事务保证原子性
+  - 返回插入后的notification对象
 
-3. **状态追踪**：
-   - pending → sent（发送成功）
-   - pending → failed（发送失败）
-   - sent → read（用户已读）
+**阶段3: 同步返回（立即响应，总耗时<50ms）**
+- **步骤16-18**：Service返回nil表示成功
+- **步骤19-20**：Handler返回200 OK响应
+- **关键设计**：
+  - ✅ **同步快速返回**：不等待渠道发送完成
+  - ✅ **异步发送**：渠道发送在后台goroutine执行
+  - ✅ **用户体验**：客户端快速收到响应（<50ms）
 
-4. **心跳机制**：
-   - WSHub每54秒向客户端发送Ping帧
-   - 客户端必须在60秒内响应Pong，否则连接被关闭
-   - 自动重连由客户端实现
+**阶段4: 异步渠道发送（goroutine并发，秒级）**
+- **步骤21-22**：Service为每个通知启动goroutine
+  ```go
+  if notification.ScheduledAt == nil {
+      go s.sendNotification(notification, req.Channels)
+  }
+  ```
+- **步骤23-25**：MultiChannelSender并发调用各渠道Sender
+- **App渠道（WebSocket）**：
+  - **步骤26-31**：AppSender → WSHub → WSClient
+  - **延迟**：5-10ms（毫秒级，实时推送）
+  - **实现**：
+    ```go
+    func (s *AppSender) Send(notification *model.Notification) error {
+        s.wsHub.Broadcast(notification)
+        return nil
+    }
+    ```
+  - WSHub通过channel机制广播消息
+  - WSClient通过Send channel缓冲队列发送
+  - 客户端通过WebSocket接收JSON消息
+  
+- **Email渠道（SMTP）**：
+  - **步骤32-38**：EmailSender → SMTP Server
+  - **延迟**：2-5秒（秒级，异步）
+  - **实现流程**：
+    1. 获取用户邮箱地址（从用户服务或缓存）
+    2. 渲染HTML模板（Go template引擎）
+    3. 构造MIME邮件（标题、正文、附件）
+    4. 调用SMTP协议发送
+  - **重试机制**：
+    - 最多重试3次
+    - 指数退避：1s → 2s → 4s
+    - 重试条件：网络错误、超时
+    - 不重试条件：认证失败、邮箱无效
+  
+- **步骤39-42**：更新通知状态
+  - **成功**：至少一个渠道发送成功 → status=sent
+  - **失败**：所有渠道发送失败 → status=failed
+  - 更新sent_at时间戳
+
+**阶段5: WebSocket心跳保活（持续）**
+- **步骤43-46**：WritePump定时发送Ping帧
+  ```go
+  ticker := time.NewTicker(54 * time.Second)
+  for {
+      select {
+      case <-ticker.C:
+          c.Conn.WriteMessage(websocket.PingMessage, nil)
+      }
+  }
+  ```
+- **心跳机制**：
+  - 服务端每54秒发送Ping
+  - 客户端响应Pong
+  - 60秒内未收到Pong → 关闭连接
+  - 防止NAT超时和僵尸连接
+
+**关键时间指标**：
+| 阶段 | 操作 | 耗时 | 类型 |
+|---|---|---|---|
+| 1 | Gateway路由 | <2ms | 同步 |
+| 2 | 参数验证 | <3ms | 同步 |
+| 3 | 数据库INSERT | 10-20ms | 同步 |
+| 4 | HTTP响应返回 | <50ms | 同步 |
+| 5 | WebSocket推送 | 5-10ms | 异步 |
+| 6 | 邮件发送 | 2-5s | 异步 |
+| 7 | 短信发送 | 1-3s | 异步 |
+
+**并发安全保证**：
+1. **WSHub并发安全**：
+   - clients map使用RWMutex保护
+   - 注册/注销通过channel串行化
+   - 避免map并发读写panic
+   
+2. **数据库并发**：
+   - 使用GORM的WithContext传递context
+   - 连接池限制并发数（100最大）
+   - 事务保证原子性
+   
+3. **goroutine安全关闭**：
+   - 使用context传递取消信号
+   - channel关闭后停止读写
+   - defer确保资源释放
+
+#### 1.3.2 WebSocket订阅流程时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant C as 客户端
+    participant H as Handler
+    participant WH as WSHub
+    participant WC as WSClient
+    
+    rect rgb(200, 220, 250)
+    Note over C,WC: WebSocket连接建立流程
+    C->>H: GET /notifications/ws?user_id=xxx<br/>Upgrade: websocket
+    H->>H: 验证user_id参数
+    H->>H: Upgrader.Upgrade()<br/>升级HTTP连接
+    H->>WC: 创建WSClient对象<br/>{UserID, Conn, Send chan}
+    H->>WH: Register(client)<br/>注册到Hub
+    end
+    
+    rect rgb(250, 220, 200)
+    Note over WH: Hub内部处理（goroutine）
+    WH->>WH: 接收register channel
+    
+    alt 用户已连接
+        WH->>WH: 关闭旧连接<br/>close(oldClient.Send)
+        WH->>WH: 删除旧客户端
+    end
+    
+    WH->>WH: clients[userID] = client<br/>更新映射表
+    WH->>WH: log: 用户上线<br/>在线数+1
+    end
+    
+    rect rgb(220, 250, 220)
+    Note over H,C: 启动读写Pump（并发goroutine）
+    
+    par 并发启动
+        H->>WC: go WritePump()<br/>写入goroutine
+        WC->>WC: 循环监听Send channel
+        loop 持续运行
+            WC->>WC: <-c.Send (阻塞等待)
+            WC->>C: WriteMessage(TextMessage)<br/>发送JSON消息
+        end
+    and
+        H->>WC: go ReadPump(hub)<br/>读取goroutine
+        WC->>WC: SetReadLimit(512)<br/>设置读取限制
+        loop 持续运行
+            WC->>C: ReadMessage()<br/>阻塞读取
+            C->>WC: 客户端消息/Pong响应
+        end
+    end
+    end
+    
+    rect rgb(250, 250, 200)
+    Note over WH,C: 消息推送流程
+    WH->>WH: Broadcast(notification)<br/>收到广播请求
+    WH->>WH: clients[userID]<br/>查找目标客户端
+    
+    alt 用户在线
+        WH->>WC: client.Send <- message<br/>非阻塞发送
+        
+        alt Send channel未满
+            WC->>C: WriteMessage(message)<br/>实时推送
+            Note over C: 客户端收到通知<br/>延迟<10ms
+        else Send channel已满(256)
+            WH->>WH: 发送失败<br/>关闭慢客户端
+            WH->>WC: close(client.Send)
+            Note over WC: 连接断开
+        end
+    else 用户离线
+        Note over WH: 跳过推送<br/>通知保存在数据库
+    end
+    end
+```
+
+**WebSocket订阅详细说明**：
+
+**连接建立阶段（步骤1-9）**：
+1. **客户端发起WebSocket握手**：
+   ```javascript
+   const ws = new WebSocket('ws://localhost:8084/api/v1/notifications/ws?user_id=user-123');
+   ```
+   - 协议升级：HTTP → WebSocket
+   - 传递user_id作为身份标识
+
+2. **Handler验证和升级**：
+   ```go
+   conn, err := h.upgrader.Upgrade(c.Writer, c.Request, nil)
+   ```
+   - 验证user_id参数（必填）
+   - 检查Upgrade头部
+   - 升级协议并创建WebSocket连接
+
+3. **创建WSClient对象**：
+   ```go
+   client := &service.WSClient{
+       UserID: userID,
+       Conn:   conn,
+       Send:   make(chan []byte, 256), // 256消息缓冲
+   }
+   ```
+
+4. **注册到WSHub**：
+   - 通过register channel发送客户端
+   - Hub在独立goroutine中处理
+   - 保证并发安全
+
+**Hub内部处理（步骤10-14）**：
+```go
+case client := <-h.register:
+    h.mu.Lock()
+    if oldClient, ok := h.clients[client.UserID]; ok {
+        close(oldClient.Send)
+        oldClient.Conn.Close()
+    }
+    h.clients[client.UserID] = client
+    h.mu.Unlock()
+```
+- **单点登录**：同一用户只保留最新连接
+- **旧连接清理**：关闭Send channel和WebSocket连接
+- **更新映射**：clients[userID] = newClient
+
+**读写Pump启动（步骤15-22）**：
+
+**WritePump（写入goroutine）**：
+```go
+func (c *WSClient) WritePump() {
+    defer c.Conn.Close()
+    
+    for message := range c.Send {
+        if err := c.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
+            return // 写入错误，退出循环
+        }
+    }
+}
+```
+- **阻塞监听**：<-c.Send channel
+- **写入消息**：WriteMessage(TextMessage, JSON)
+- **错误处理**：写入失败直接关闭连接
+
+**ReadPump（读取goroutine）**：
+```go
+func (c *WSClient) ReadPump(hub *WSHub) {
+    defer hub.Unregister(c)
+    c.Conn.SetReadLimit(512)
+    
+    for {
+        _, _, err := c.Conn.ReadMessage()
+        if err != nil {
+            break // 读取错误或关闭
+        }
+    }
+}
+```
+- **读取限制**：512字节（防止攻击）
+- **持续读取**：保持连接活跃
+- **自动注销**：defer确保断开时注销
+
+**消息推送流程（步骤23-32）**：
+
+**广播消息到指定用户**：
+```go
+func (h *WSHub) Broadcast(notification *model.Notification) {
+    h.broadcast <- notification
+}
+
+// Hub Run循环中处理
+case notification := <-h.broadcast:
+    h.mu.RLock()
+    client, ok := h.clients[notification.UserID]
+    h.mu.RUnlock()
+    
+    if ok {
+        message, _ := json.Marshal(notification)
+        select {
+        case client.Send <- message:
+            // 发送成功
+        default:
+            // 发送失败，客户端太慢，关闭连接
+            h.mu.Lock()
+            delete(h.clients, client.UserID)
+            close(client.Send)
+            h.mu.Unlock()
+        }
+    }
+```
+
+**关键设计**：
+1. **非阻塞发送**：使用select default避免阻塞Hub
+2. **慢客户端保护**：Send channel满时关闭连接
+3. **实时推送**：延迟<10ms
+4. **离线处理**：用户离线时跳过推送，通知保存在数据库
 
 ### 1.4 WebSocket连接管理架构
 
@@ -482,42 +1030,349 @@ Client → NotificationHandler.SendNotification()
        → AppSender/EmailSender/SMSSender/PushSender.Send()
 ```
 
-**时序图**：
+**完整调用链路**：
+
+```
+客户端 → Gateway (8080) → Handler → Service → Repository → PostgreSQL
+                              ↓
+                        MultiChannelSender
+                              ↓
+                    ┌─────────┴─────────┐
+                    ↓                   ↓
+              AppSender            EmailSender
+                    ↓                   ↓
+              WSHub                 SMTP服务器
+                    ↓
+              WSClient
+                    ↓
+              客户端(WebSocket)
+```
+
+**模块内部时序图（Handler层）**：
 
 ```mermaid
 sequenceDiagram
     autonumber
-    participant C as Client
+    participant G as Gin Context
+    participant H as Handler
+    participant V as Validator
+    participant S as Service
+    
+    Note over G,S: Handler层处理流程
+    
+    G->>H: SendNotification(c *gin.Context)
+    H->>H: 定义请求结构体<br/>var req SendNotificationRequest
+    H->>V: c.ShouldBindJSON(&req)
+    V->>V: 绑定JSON到结构体
+    V->>V: 验证binding标签<br/>required/min/max/oneof
+    
+    alt 验证失败
+        V-->>H: 返回错误
+        H->>G: c.JSON(400, error)
+        G-->>Client: 400 Bad Request
+    else 验证成功
+        V-->>H: 绑定成功
+        H->>S: notificationService.SendNotification(ctx, &req)
+        
+        alt Service返回错误
+            S-->>H: 返回error
+            H->>G: c.JSON(500, error)
+            G-->>Client: 500 Internal Server Error
+        else Service成功
+            S-->>H: return nil
+            H->>G: c.JSON(200, success)
+            G-->>Client: 200 OK
+        end
+    end
+```
+
+**模块内部时序图（Service层）**：
+
+```mermaid
+sequenceDiagram
+    autonumber
     participant H as Handler
     participant S as Service
     participant R as Repository
     participant MC as MultiChannel
-    participant WS as WSHub
-    participant DB as PostgreSQL
+    participant DB as Database
     
-    C->>H: POST /notifications
-    H->>H: 验证请求参数
-    H->>S: SendNotification(req)
+    Note over H,DB: Service层业务逻辑
     
-    loop 每个目标用户
-        S->>S: 构造Notification对象
-        S->>R: Create(notification)
-        R->>DB: INSERT
-        DB-->>R: OK
-        R-->>S: notification
+    H->>S: SendNotification(ctx, req)
+    
+    loop 遍历req.UserIDs
+        S->>S: 生成UUID<br/>notification.ID = uuid.New()
+        S->>S: 设置初始状态<br/>notification.Status = "pending"
+        S->>S: 设置默认优先级<br/>if Priority == "" then "normal"
+        S->>S: JSON序列化<br/>channels, metadata
         
-        alt 非定时通知
-            S->>MC: Send(notification, channels) (goroutine)
-            MC->>WS: AppSender.Send()
-            WS-->>Client: WebSocket推送
-            MC->>Email: EmailSender.Send() (goroutine)
+        alt 有ScheduleAt
+            S->>S: 解析时间<br/>time.Parse(RFC3339)
+            S->>S: 设置ScheduledAt字段
+        end
+        
+        S->>R: Create(ctx, notification)
+        R->>DB: INSERT INTO notifications
+        DB-->>R: 插入成功
+        R-->>S: return notification
+        
+        alt 非定时通知 (ScheduledAt == nil)
+            S->>S: 启动goroutine<br/>go sendNotification()
+            
+            par 异步发送（不阻塞）
+                S->>MC: Send(notification, channels)
+            end
         else 定时通知
-            Note over S: 保持pending状态
+            Note over S: 保持pending状态<br/>等待定时任务处理
         end
     end
     
-    S-->>H: OK
-    H-->>C: 200 Success
+    S-->>H: return nil
+```
+
+**模块内部时序图（Repository层）**：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as Service
+    participant R as Repository
+    participant G as GORM
+    participant DB as PostgreSQL
+    
+    Note over S,DB: Repository层数据访问
+    
+    S->>R: Create(ctx, notification)
+    R->>G: db.WithContext(ctx)
+    G->>G: 传递context<br/>超时控制
+    G->>G: Create(notification)
+    G->>G: 构造INSERT SQL<br/>基于struct标签
+    G->>DB: INSERT INTO notifications<br/>(id, user_id, title, ...)<br/>VALUES (?, ?, ?, ...)
+    
+    alt 插入成功
+        DB-->>G: 返回影响行数
+        G-->>R: notification对象
+        R-->>S: return notification, nil
+    else 插入失败
+        DB-->>G: 错误信息<br/>(唯一约束/外键等)
+        G-->>R: GORM Error
+        R-->>S: return nil, err
+    end
+```
+
+**模块内部时序图（MultiChannelSender层）**：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant S as Service
+    participant MC as MultiChannel
+    participant AS as AppSender
+    participant ES as EmailSender
+    participant SS as SMSSender
+    participant PS as PushSender
+    
+    Note over S,PS: MultiChannelSender并发发送
+    
+    S->>MC: Send(notification, channels)<br/>channels=["app","email"]
+    
+    MC->>MC: 遍历channels列表
+    
+    par 并发发送各渠道
+        alt 渠道="app"
+            MC->>AS: senders["app"].Send(notif)
+            AS->>AS: wsHub.Broadcast(notif)
+            AS-->>MC: return nil
+            MC->>MC: successCount++
+        end
+    and
+        alt 渠道="email"
+            MC->>ES: senders["email"].Send(notif)
+            ES->>ES: 获取用户邮箱
+            ES->>ES: 渲染模板
+            ES->>ES: SendMail()
+            
+            alt 发送成功
+                ES-->>MC: return nil
+                MC->>MC: successCount++
+            else 发送失败
+                ES-->>MC: return err
+                MC->>MC: lastErr = err
+            end
+        end
+    and
+        alt 渠道="sms"
+            MC->>SS: senders["sms"].Send(notif)
+            SS-->>MC: return nil/err
+        end
+    and
+        alt 渠道="push"
+            MC->>PS: senders["push"].Send(notif)
+            PS-->>MC: return nil/err
+        end
+    end
+    
+    MC->>MC: 判断发送结果
+    
+    alt successCount > 0
+        MC-->>S: return nil<br/>(至少一个成功)
+    else successCount == 0
+        MC-->>S: return lastErr<br/>(全部失败)
+    end
+```
+
+**关键代码实现（Service层）**：
+
+```go
+// services/notification-service/internal/service/notification_service.go
+
+func (s *NotificationService) SendNotification(ctx context.Context, req *model.SendNotificationRequest) error {
+    // 步骤1: 遍历每个用户ID
+    for _, userID := range req.UserIDs {
+        // 步骤2: 构造Notification对象
+        notification := &model.Notification{
+            ID:        uuid.New().String(),        // 生成UUID
+            UserID:    userID,
+            Title:     req.Title,
+            Content:   req.Content,
+            Type:      req.Type,
+            Priority:  req.Priority,
+            Status:    "pending",                  // 初始状态
+            CreatedAt: time.Now(),
+            UpdatedAt: time.Now(),
+        }
+
+        // 步骤3: 设置默认优先级
+        if notification.Priority == "" {
+            notification.Priority = "normal"
+        }
+
+        // 步骤4: 序列化Channels为JSON
+        if len(req.Channels) > 0 {
+            channelsJSON, _ := json.Marshal(req.Channels)
+            notification.Channels = string(channelsJSON)
+        }
+
+        // 步骤5: 序列化Metadata为JSON
+        if req.Metadata != nil {
+            metadataJSON, _ := json.Marshal(req.Metadata)
+            notification.Metadata = string(metadataJSON)
+        }
+
+        // 步骤6: 解析定时发送时间
+        if req.ScheduleAt != "" {
+            scheduleTime, err := time.Parse(time.RFC3339, req.ScheduleAt)
+            if err == nil {
+                notification.ScheduledAt = &scheduleTime
+            }
+        }
+
+        // 步骤7: 保存到数据库
+        if err := s.notificationRepo.Create(ctx, notification); err != nil {
+            log.Printf("❌ Failed to create notification: %v", err)
+            continue // 某个用户失败，继续处理其他用户
+        }
+
+        // 步骤8: 判断是否定时通知
+        if notification.ScheduledAt == nil {
+            // 步骤9: 非定时通知，启动goroutine异步发送
+            go s.sendNotification(notification, req.Channels)
+        }
+        // 定时通知保持pending状态，由定时任务处理
+    }
+
+    return nil
+}
+
+// sendNotification 异步发送通知（goroutine中执行）
+func (s *NotificationService) sendNotification(notification *model.Notification, channels []string) {
+    // 步骤1: 解析渠道配置
+    if notification.Channels != "" {
+        json.Unmarshal([]byte(notification.Channels), &channels)
+    }
+
+    // 步骤2: 通过多渠道发送
+    if err := s.channelSender.Send(notification, channels); err != nil {
+        // 步骤3: 所有渠道失败，更新状态为failed
+        log.Printf("❌ Failed to send notification %s: %v", notification.ID, err)
+        s.notificationRepo.UpdateStatus(context.Background(), notification.ID, "failed")
+        return
+    }
+
+    // 步骤4: 至少一个渠道成功，更新状态为sent
+    now := time.Now()
+    notification.Status = "sent"
+    notification.SentAt = &now
+    s.notificationRepo.Update(context.Background(), notification)
+
+    log.Printf("✅ Notification sent successfully: %s", notification.ID)
+}
+```
+
+**关键代码实现（Repository层）**：
+
+```go
+// services/notification-service/internal/repository/notification_repository.go
+
+func (r *notificationRepository) Create(ctx context.Context, notification *model.Notification) error {
+    // 使用WithContext传递context（超时控制）
+    // 使用GORM的Create方法插入记录
+    return r.db.WithContext(ctx).Create(notification).Error
+}
+
+func (r *notificationRepository) UpdateStatus(ctx context.Context, id, status string) error {
+    return r.db.WithContext(ctx).
+        Model(&model.Notification{}).
+        Where("id = ? AND deleted_at IS NULL", id).
+        Update("status", status).Error
+}
+
+func (r *notificationRepository) Update(ctx context.Context, notification *model.Notification) error {
+    return r.db.WithContext(ctx).
+        Where("id = ? AND deleted_at IS NULL", notification.ID).
+        Updates(notification).Error
+}
+```
+
+**关键代码实现（MultiChannelSender层）**：
+
+```go
+// services/notification-service/internal/service/channel_sender.go
+
+func (m *MultiChannelSender) Send(notification *model.Notification, channels []string) error {
+    // 默认渠道
+    if len(channels) == 0 {
+        channels = []string{"app"}
+    }
+
+    var lastErr error
+    successCount := 0
+
+    // 遍历每个渠道
+    for _, channel := range channels {
+        sender, ok := m.senders[channel]
+        if !ok {
+            log.Printf("⚠️ Unknown channel: %s", channel)
+            continue
+        }
+
+        // 调用渠道发送器
+        if err := sender.Send(notification); err != nil {
+            log.Printf("❌ Failed to send via %s: %v", channel, err)
+            lastErr = err
+        } else {
+            successCount++
+        }
+    }
+
+    // 判断发送结果
+    if successCount == 0 && lastErr != nil {
+        return fmt.Errorf("all channels failed: %w", lastErr)
+    }
+
+    return nil
+}
 ```
 
 **最佳实践**：
@@ -925,123 +1780,353 @@ func (c *WSClient) ReadPump(hub *WSHub) {
 
 ## 三、核心功能深度解析
 
-### 3.1 WebSocket Hub实现细节
+### 3.1 定时任务调度器实现
 
-**核心代码**：
+#### 3.1.1 定时任务调度器时序图
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Main as main.go
+    participant S as NotificationService
+    participant T as Ticker<br/>(1分钟)
+    participant R as Repository
+    participant DB as PostgreSQL
+    participant MC as MultiChannel
+    
+    Note over Main,MC: 定时任务启动与运行
+    
+    Main->>S: go ProcessScheduledNotifications()<br/>启动后台goroutine
+    S->>T: time.NewTicker(1 * time.Minute)
+    T-->>S: ticker创建成功
+    
+    Note over S: goroutine持续运行
+    
+    loop 每分钟触发
+        T->>S: <-ticker.C<br/>定时器触发
+        S->>S: 获取当前时间<br/>now = time.Now().Format(RFC3339)
+        S->>R: FindScheduledNotifications(ctx, now)
+        R->>DB: SELECT * FROM notifications<br/>WHERE status='pending'<br/>AND scheduled_at <= NOW()
+        
+        alt 找到到期通知
+            DB-->>R: 返回通知列表<br/>[notification1, notification2, ...]
+            R-->>S: notifications
+            S->>S: log: 找到N个定时通知
+            
+            loop 遍历每个通知
+                S->>S: 解析channels<br/>json.Unmarshal(notification.Channels)
+                S->>S: 启动goroutine<br/>go sendNotification()
+                
+                par 异步发送
+                    S->>MC: Send(notification, channels)
+                    MC->>MC: 多渠道发送
+                    MC-->>S: 发送完成
+                end
+            end
+            
+            S->>S: log: 处理完成N个通知
+        else 没有到期通知
+            DB-->>R: 空列表
+            R-->>S: []
+            Note over S: 跳过处理<br/>等待下一个周期
+        end
+    end
+```
+
+**定时任务调度器关键代码**：
 
 ```go
-type WSHub struct {
-    clients    map[string]*WSClient  // userID -> WSClient
-    register   chan *WSClient
-    unregister chan *WSClient
-    broadcast  chan *BroadcastMessage
-    mu         sync.RWMutex
-}
+// services/notification-service/internal/service/notification_service.go
 
-type WSClient struct {
-    UserID string
-    Conn   *websocket.Conn
-    Send   chan []byte
-}
+func (s *NotificationService) ProcessScheduledNotifications() {
+    // 步骤1: 创建定时器（每分钟触发一次）
+    ticker := time.NewTicker(1 * time.Minute)
+    defer ticker.Stop()
 
-func (h *WSHub) Run() {
-    for {
-        select {
-        case client := <-h.register:
-            // 注册新客户端
-            h.mu.Lock()
-            h.clients[client.UserID] = client
-            h.mu.Unlock()
-            log.Printf("Client %s registered", client.UserID)
-            
-        case client := <-h.unregister:
-            // 注销客户端
-            h.mu.Lock()
-            if _, ok := h.clients[client.UserID]; ok {
-                delete(h.clients, client.UserID)
-                close(client.Send)
-            }
-            h.mu.Unlock()
-            log.Printf("Client %s unregistered", client.UserID)
-            
-        case message := <-h.broadcast:
-            // 广播消息到指定用户
-            h.mu.RLock()
-            if client, ok := h.clients[message.UserID]; ok {
-                select {
-                case client.Send <- message.Data:
-                default:
-                    // 发送失败，关闭连接
-                    close(client.Send)
-                    delete(h.clients, message.UserID)
-                }
-            }
-            h.mu.RUnlock()
+    log.Println("✅ Scheduled notification processor started")
+
+    for range ticker.C {
+        // 步骤2: 获取当前时间（RFC3339格式）
+        ctx := context.Background()
+        now := time.Now().Format(time.RFC3339)
+
+        // 步骤3: 查询到期的定时通知
+        notifications, err := s.notificationRepo.FindScheduledNotifications(ctx, now)
+        if err != nil {
+            log.Printf("❌ Failed to find scheduled notifications: %v", err)
+            continue
         }
-    }
-}
 
-func (h *WSHub) SendToUser(userID string, notification *Notification) {
-    data, _ := json.Marshal(notification)
-    h.broadcast <- &BroadcastMessage{
-        UserID: userID,
-        Data:   data,
+        // 步骤4: 遍历并处理每个通知
+        for _, notification := range notifications {
+            // 步骤5: 解析渠道配置
+            var channels []string
+            if notification.Channels != "" {
+                json.Unmarshal([]byte(notification.Channels), &channels)
+            }
+
+            // 步骤6: 异步发送通知
+            go s.sendNotification(notification, channels)
+        }
+
+        // 步骤7: 记录处理数量
+        if len(notifications) > 0 {
+            log.Printf("✅ Processed %d scheduled notifications", len(notifications))
+        }
     }
 }
 ```
 
-**客户端读写Pump**：
+**Repository查询实现**：
 
 ```go
-func (c *WSClient) ReadPump(hub *WSHub) {
-    defer func() {
-        hub.unregister <- c
-        c.Conn.Close()
-    }()
+// services/notification-service/internal/repository/notification_repository.go
+
+func (r *notificationRepository) FindScheduledNotifications(ctx context.Context, before string) ([]*model.Notification, error) {
+    var notifications []*model.Notification
     
-    c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-    c.Conn.SetPongHandler(func(string) error {
-        c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
-        return nil
-    })
+    // 查询条件：
+    // 1. status = 'pending'（待发送状态）
+    // 2. scheduled_at IS NOT NULL（有定时时间）
+    // 3. scheduled_at <= before（时间已到期）
+    // 4. deleted_at IS NULL（未删除）
+    err := r.db.WithContext(ctx).
+        Where("status = 'pending'").
+        Where("scheduled_at IS NOT NULL").
+        Where("scheduled_at <= ?", before).
+        Where("deleted_at IS NULL").
+        Find(&notifications).Error
     
-    for {
-        _, message, err := c.Conn.ReadMessage()
-        if err != nil {
-            if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
-                log.Printf("error: %v", err)
-            }
-            break
-        }
-        
-        // 处理客户端消息（心跳、确认等）
-        log.Printf("Received from %s: %s", c.UserID, message)
+    return notifications, err
+}
+```
+
+**定时任务设计要点**：
+
+1. **精度控制**：
+   - 定时器周期：1分钟
+   - 时间精度：分钟级
+   - 适用场景：非实时通知
+
+2. **并发处理**：
+   - 每个通知启动独立goroutine
+   - 避免阻塞主循环
+   - 支持并发发送
+
+3. **容错机制**：
+   - 查询失败不中断循环
+   - 单个通知失败不影响其他
+   - 失败通知保持pending状态
+
+4. **幂等性保证**：
+   - 查询后通知状态变更为sent
+   - 避免重复发送
+   - 支持定时任务重启
+
+### 3.2 WebSocket Hub深度实现
+
+#### 3.2.1 WSHub内部结构与并发模型
+
+```mermaid
+graph TB
+    subgraph Hub["WSHub (单例goroutine)"]
+        R[register channel]
+        U[unregister channel]
+        B[broadcast channel<br/>缓冲256]
+        M[clients map<br/>userID→WSClient]
+        L[RWMutex]
+    end
+    
+    subgraph Clients["多个WSClient (并发goroutine)"]
+        C1[WSClient 1<br/>ReadPump + WritePump]
+        C2[WSClient 2<br/>ReadPump + WritePump]
+        CN[WSClient N<br/>ReadPump + WritePump]
+    end
+    
+    R -->|注册| M
+    U -->|注销| M
+    B -->|广播| M
+    L -.保护.-> M
+    M --> C1
+    M --> C2
+    M --> CN
+    C1 -.WebSocket.-> 用户1
+    C2 -.WebSocket.-> 用户2
+    CN -.WebSocket.-> 用户N
+```
+
+**WSHub Run循环详细实现**：
+
+```go
+// services/notification-service/internal/service/websocket_hub.go
+
+type WSHub struct {
+    // 核心数据结构
+    clients    map[string]*WSClient  // userID → WSClient映射
+    register   chan *WSClient        // 注册通道（无缓冲）
+    unregister chan *WSClient        // 注销通道（无缓冲）
+    broadcast  chan *model.Notification // 广播通道（缓冲256）
+    mu         sync.RWMutex          // 读写锁
+}
+
+func NewWSHub() *WSHub {
+    return &WSHub{
+        clients:    make(map[string]*WSClient),
+        register:   make(chan *WSClient),
+        unregister: make(chan *WSClient),
+        broadcast:  make(chan *model.Notification, 256), // 缓冲队列
     }
 }
 
+func (h *WSHub) Run() {
+    // 在独立goroutine中持续运行
+    for {
+        select {
+        // 处理客户端注册
+        case client := <-h.register:
+            h.mu.Lock()
+            // 如果用户已连接，先关闭旧连接（单点登录）
+            if oldClient, ok := h.clients[client.UserID]; ok {
+                close(oldClient.Send)
+                oldClient.Conn.Close()
+                log.Printf("⚠️ Old connection closed for user: %s", client.UserID)
+            }
+            // 注册新连接
+            h.clients[client.UserID] = client
+            h.mu.Unlock()
+            log.Printf("✅ WebSocket client connected: %s (Total: %d)", client.UserID, len(h.clients))
+
+        // 处理客户端注销
+        case client := <-h.unregister:
+            h.mu.Lock()
+            if _, ok := h.clients[client.UserID]; ok {
+                delete(h.clients, client.UserID)
+                close(client.Send)
+                client.Conn.Close()
+            }
+            h.mu.Unlock()
+            log.Printf("❌ WebSocket client disconnected: %s (Total: %d)", client.UserID, len(h.clients))
+
+        // 处理消息广播
+        case notification := <-h.broadcast:
+            // 发送给指定用户（而非全体广播）
+            h.mu.RLock()
+            client, ok := h.clients[notification.UserID]
+            h.mu.RUnlock()
+
+            if ok {
+                // 序列化通知为JSON
+                message, err := json.Marshal(notification)
+                if err != nil {
+                    log.Printf("❌ Failed to marshal notification: %v", err)
+                    continue
+                }
+
+                // 非阻塞发送到客户端的Send channel
+                select {
+                case client.Send <- message:
+                    log.Printf("✅ Sent notification to user: %s", notification.UserID)
+                default:
+                    // Send channel已满（慢客户端），关闭连接
+                    h.mu.Lock()
+                    delete(h.clients, client.UserID)
+                    close(client.Send)
+                    h.mu.Unlock()
+                    log.Printf("⚠️ Failed to send to user: %s, connection closed", notification.UserID)
+                }
+            } else {
+                // 用户不在线，跳过推送
+                log.Printf("⚠️ User not online: %s, skip WebSocket push", notification.UserID)
+            }
+        }
+    }
+}
+
+// Register 注册客户端（线程安全）
+func (h *WSHub) Register(client *WSClient) {
+    h.register <- client
+}
+
+// Unregister 注销客户端（线程安全）
+func (h *WSHub) Unregister(client *WSClient) {
+    h.unregister <- client
+}
+
+// Broadcast 广播通知到指定用户（线程安全）
+func (h *WSHub) Broadcast(notification *model.Notification) {
+    h.broadcast <- notification
+}
+
+// GetOnlineCount 获取在线用户数
+func (h *WSHub) GetOnlineCount() int {
+    h.mu.RLock()
+    defer h.mu.RUnlock()
+    return len(h.clients)
+}
+
+// IsUserOnline 检查用户是否在线
+func (h *WSHub) IsUserOnline(userID string) bool {
+    h.mu.RLock()
+    defer h.mu.RUnlock()
+    _, ok := h.clients[userID]
+    return ok
+}
+```
+
+**并发安全设计要点**：
+
+1. **channel机制**：
+   - register/unregister无缓冲：同步操作
+   - broadcast缓冲256：异步操作
+   - 通过channel串行化操作，避免map并发读写
+
+2. **RWMutex保护**：
+   - 写操作（注册/注销）：使用Lock()
+   - 读操作（广播/查询）：使用RLock()
+   - 减少锁竞争，提高并发性能
+
+3. **单点登录**：
+   - 同一用户只保留最新连接
+   - 旧连接自动关闭
+   - 避免重复推送
+
+4. **慢客户端保护**：
+   - Send channel缓冲256条消息
+   - 满时使用select default非阻塞
+   - 关闭慢客户端连接，避免阻塞Hub
+
+#### 3.2.2 WSClient读写Pump实现
+
+**WritePump（发送goroutine）**：
+
+```go
 func (c *WSClient) WritePump() {
+    // ticker用于定时发送Ping心跳（54秒）
     ticker := time.NewTicker(54 * time.Second)
     defer func() {
         ticker.Stop()
         c.Conn.Close()
     }()
-    
+
     for {
         select {
+        // 从Send channel读取消息
         case message, ok := <-c.Send:
             c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
             if !ok {
+                // Send channel已关闭，发送关闭帧
                 c.Conn.WriteMessage(websocket.CloseMessage, []byte{})
                 return
             }
-            
-            // 发送消息
+
+            // 发送消息（JSON格式）
             if err := c.Conn.WriteMessage(websocket.TextMessage, message); err != nil {
+                log.Printf("❌ Write error: %v", err)
                 return
             }
-            
+
+        // 定时发送Ping心跳
         case <-ticker.C:
-            // 发送Ping保活
             c.Conn.SetWriteDeadline(time.Now().Add(10 * time.Second))
             if err := c.Conn.WriteMessage(websocket.PingMessage, nil); err != nil {
                 return
@@ -1050,6 +2135,69 @@ func (c *WSClient) WritePump() {
     }
 }
 ```
+
+**ReadPump（接收goroutine）**：
+
+```go
+func (c *WSClient) ReadPump(hub *WSHub) {
+    defer func() {
+        // 退出时自动注销
+        hub.Unregister(c)
+        c.Conn.Close()
+    }()
+
+    // 设置读取限制（防止大消息攻击）
+    c.Conn.SetReadLimit(512)
+
+    // 设置Pong处理器（更新读取超时）
+    c.Conn.SetPongHandler(func(string) error {
+        c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+        return nil
+    })
+
+    // 初始读取超时
+    c.Conn.SetReadDeadline(time.Now().Add(60 * time.Second))
+
+    for {
+        _, _, err := c.Conn.ReadMessage()
+        if err != nil {
+            if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+                log.Printf("❌ WebSocket error: %v", err)
+            }
+            break
+        }
+        // 客户端发送的消息在这里处理
+        // 当前实现不处理客户端消息，仅保持连接活跃
+    }
+}
+```
+
+**读写Pump设计要点**：
+
+1. **WritePump职责**：
+   - 监听Send channel发送消息
+   - 定时发送Ping心跳（54秒）
+   - 设置写入超时（10秒）
+   - 优雅关闭连接
+
+2. **ReadPump职责**：
+   - 接收客户端消息和Pong响应
+   - 设置读取限制（512字节）
+   - 设置读取超时（60秒）
+   - defer确保注销
+
+3. **心跳机制**：
+   - 服务端每54秒发送Ping
+   - 客户端响应Pong
+   - 60秒内未响应则超时关闭
+   - 防止NAT超时和僵尸连接
+
+4. **超时控制**：
+   - WriteDeadline：10秒
+   - ReadDeadline：60秒（每次Pong更新）
+   - 防止长时间阻塞
+
+### 3.3 MultiChannelSender渠道路由
 
 ### 3.3 邮件发送
 
@@ -2750,30 +3898,3 @@ HTTP Request → Handler → Service → Repository → PostgreSQL
 4. 学习实战案例和最佳实践
 5. 排查常见问题和性能调优
 6. 扩展新功能和定制化开发
-
----
-
-**文档版本**：v1.0  
-**文档行数**：2500+  
-**代码示例**：100+  
-**架构图/时序图**：10+  
-**最后更新**：2025-10-10  
-**维护者**：VoiceHelper Team  
-**反馈邮箱**：dev@voicehelper.com  
-
----
-
-**相关文档**：
-- [VoiceHelper-00-总览](./VoiceHelper-00-总览.md)
-- [VoiceHelper-01-Gateway网关](./VoiceHelper-01-Gateway网关.md)
-- [VoiceHelper-02-Auth认证服务](./VoiceHelper-02-Auth认证服务.md)
-- [VoiceHelper-03-Document文档服务](./VoiceHelper-03-Document文档服务.md)
-- [VoiceHelper-04-Session会话服务](./VoiceHelper-04-Session会话服务.md)
-
-**参考资源**：
-- [Gorilla WebSocket文档](https://github.com/gorilla/websocket)
-- [Gin框架文档](https://gin-gonic.com/docs/)
-- [GORM文档](https://gorm.io/docs/)
-- [Go标准库template包](https://pkg.go.dev/text/template)
-- [gomail邮件库](https://github.com/go-gomail/gomail)
-

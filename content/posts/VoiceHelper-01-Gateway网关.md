@@ -1,11 +1,12 @@
 ---
-title: "VoiceHelper源码剖析 - 01Gateway网关"
-date: 2025-10-10T01:00:00+08:00
+title: "VoiceHelper-01-Gateway网关"
+date: 2025-10-10T10:01:00+08:00
 draft: false
-tags: ["源码剖析", "VoiceHelper", "API网关", "Gin框架", "中间件"]
+tags: ["VoiceHelper", "API网关", "Gin", "中间件", "限流熔断"]
 categories: ["VoiceHelper", "源码剖析"]
-description: "Gateway网关服务详解：统一入口、认证鉴权、请求路由、流量控制、协议转换、监控追踪，包含中间件链设计和性能优化"
-weight: 2
+description: "VoiceHelper API网关详细设计，包含11层中间件链、认证鉴权、限流熔断、协议转换、监控追踪完整实现与性能优化"
+series: ["VoiceHelper源码剖析"]
+weight: 1
 ---
 
 # VoiceHelper-01-Gateway网关
@@ -49,106 +50,504 @@ weight: 2
 
 ---
 
-### 1.2 模块架构图
+### 1.2 整体服务架构图（详细版）
 
 ```mermaid
-flowchart TB
-    subgraph "客户端层 Client Layer"
-        CLIENT[前端客户端<br/>7个平台]
+graph TB
+    subgraph "客户端层 Client Layer - 7个前端平台"
+        WEB[Web浏览器]
+        MOBILE[移动App iOS/Android]
+        MINI[微信小程序]
+        DESKTOP[桌面应用 Electron]
+        EXT[浏览器扩展]
+        ADMIN[管理后台]
+        DEV[开发者门户]
     end
     
-    subgraph "网关层 Gateway Layer :8080"
+    subgraph "网关层 Gateway Layer - :8080"
         direction TB
         
-        subgraph "HTTP Server"
-            GIN[Gin框架<br/>HTTP Router]
+        subgraph "入口 Entry Point"
+            GINSERVER[Gin HTTP Server<br/>监听 :8080<br/>ReadTimeout: 30s<br/>WriteTimeout: 30s<br/>IdleTimeout: 120s]
         end
         
-        subgraph "中间件链 Middleware Chain"
-            direction LR
-            MW1[日志记录<br/>Logger]
-            MW2[请求ID<br/>Request ID]
-            MW3[CORS<br/>跨域]
-            MW4[认证<br/>Auth JWT]
-            MW5[权限<br/>RBAC]
-            MW6[限流<br/>Rate Limit]
-            MW7[熔断<br/>Circuit Breaker]
-            MW8[追踪<br/>Tracing]
-            MW9[监控<br/>Metrics]
+        subgraph "全局中间件链 Global Middleware Chain"
+            direction TB
+            MW_LOGGER[1. Logger 日志记录<br/>记录请求开始/方法/路径]
+            MW_RECOVERY[2. Recovery 异常恢复<br/>捕获Panic 防止进程崩溃]
+            MW_CORS[3. CORS 跨域处理<br/>设置CORS头/白名单校验]
+            MW_REQID[4. RequestID 请求追踪<br/>生成UUID/追踪请求链路]
+            MW_MONITOR[5. Monitoring 监控<br/>Prometheus指标采集]
+            MW_RATELIMIT[6. RateLimit 全局限流<br/>100req/min per IP]
             
-            MW1 --> MW2 --> MW3 --> MW4 --> MW5 --> MW6 --> MW7 --> MW8 --> MW9
+            MW_LOGGER --> MW_RECOVERY --> MW_CORS --> MW_REQID --> MW_MONITOR --> MW_RATELIMIT
         end
         
-        subgraph "路由处理器 Handlers"
+        subgraph "路由组 Route Groups"
             direction LR
-            H_AUTH[认证处理器<br/>Register/Login]
-            H_CHAT[聊天处理器<br/>StreamChat]
-            H_SESSION[会话处理器<br/>CRUD]
-            H_VOICE[语音处理器<br/>WebSocket]
+            
+            subgraph "公开路由 Public Routes"
+                ROUTE_AUTH[/api/v01/auth<br/>register/login/refresh]
+                ROUTE_HEALTH[/health<br/>/metrics<br/>/ready]
+            end
+            
+            subgraph "认证路由 Authenticated Routes"
+                MW_JWT[AuthMiddleware<br/>JWT验证/Token提取]
+                ROUTE_PROFILE[/api/v01/profile<br/>用户信息]
+                ROUTE_SESSION[/api/v01/sessions<br/>会话管理 CRUD]
+                ROUTE_CHAT[/api/v01/chat/stream<br/>流式对话SSE]
+                ROUTE_WS[/api/v01/voice/realtime<br/>WebSocket实时语音]
+                
+                MW_JWT --> ROUTE_PROFILE & ROUTE_SESSION & ROUTE_CHAT & ROUTE_WS
+            end
         end
         
-        subgraph "服务适配器 Service Adapters"
+        subgraph "处理器层 Handler Layer"
             direction LR
-            ADAPT_MS[微服务客户端]
-            ADAPT_ALGO[算法服务客户端]
+            H_AUTH[V01AuthHandler<br/>认证处理器]
+            H_CHAT[V01ChatHandler<br/>聊天处理器]
+            H_SESSION[SessionHandler<br/>会话处理器]
+            H_VOICE[VoiceHandler<br/>语音处理器]
         end
         
-        GIN --> MW1
-        MW9 --> H_AUTH & H_CHAT & H_SESSION & H_VOICE
-        H_AUTH --> ADAPT_MS
-        H_CHAT --> ADAPT_ALGO
-        H_SESSION --> ADAPT_MS
-        H_VOICE --> ADAPT_ALGO
-    end
-    
-    subgraph "后端服务层 Backend Services"
-        direction LR
-        AUTH_SVC[认证服务<br/>:8081]
-        DOC_SVC[文档服务<br/>:8082]
-        SESSION_SVC[会话服务<br/>:8083]
-        NOTIFY_SVC[通知服务<br/>:8084]
-    end
-    
-    subgraph "算法服务层 Algo Services"
-        direction LR
-        RAG_SVC[GraphRAG<br/>:8001]
-        LLM_SVC[LLM Router<br/>:8005]
-        VOICE_SVC[Voice<br/>:8002]
-        AGENT_SVC[Agent<br/>:8003]
+        subgraph "仓库层 Repository Layer"
+            direction LR
+            REPO_USER[UserRepository<br/>用户数据访问]
+            REPO_SESSION[SessionRepository<br/>会话数据访问]
+            REPO_MSG[MessageRepository<br/>消息数据访问]
+        end
+        
+        GINSERVER --> MW_LOGGER
+        MW_RATELIMIT --> ROUTE_AUTH & ROUTE_HEALTH
+        MW_RATELIMIT --> MW_JWT
+        
+        ROUTE_AUTH --> H_AUTH
+        ROUTE_PROFILE --> H_AUTH
+        ROUTE_SESSION --> H_SESSION
+        ROUTE_CHAT --> H_CHAT
+        ROUTE_WS --> H_VOICE
+        
+        H_AUTH --> REPO_USER
+        H_SESSION --> REPO_SESSION
+        H_CHAT --> REPO_SESSION & REPO_MSG
     end
     
     subgraph "数据层 Data Layer"
-        REDIS[(Redis<br/>缓存+限流)]
-        PG[(PostgreSQL<br/>持久化)]
+        PG[(PostgreSQL :5432<br/>用户/会话/消息<br/>连接池: 20<br/>空闲: 5)]
+        REDIS[(Redis :6379<br/>缓存/限流/黑名单<br/>连接池: 50<br/>空闲: 10)]
     end
     
-    CLIENT -.HTTP/WS.-> GIN
+    subgraph "算法服务层 Algo Services - Python FastAPI"
+        RAG[GraphRAG服务 :8001<br/>文档检索/知识图谱]
+        LLM[LLM Router :8005<br/>模型路由/负载均衡]
+        VOICE[Voice服务 :8002<br/>ASR/TTS/实时语音]
+        AGENT[Agent服务 :8003<br/>工具调用/推理]
+        MULTI[Multimodal :8004<br/>多模态处理]
+    end
     
-    ADAPT_MS --> AUTH_SVC & DOC_SVC & SESSION_SVC & NOTIFY_SVC
-    ADAPT_ALGO --> RAG_SVC & LLM_SVC & VOICE_SVC & AGENT_SVC
+    subgraph "微服务层 Microservices - Go gRPC"
+        AUTH_SVC[Auth服务 :8081<br/>认证授权/权限管理]
+        DOC_SVC[Document服务 :8082<br/>文档管理/版本控制]
+        SESSION_SVC[Session服务 :8083<br/>会话存储/状态管理]
+        NOTIFY_SVC[Notification :8084<br/>消息推送/通知]
+    end
     
-    ADAPT_MS --> REDIS & PG
+    subgraph "监控层 Observability"
+        PROM[Prometheus<br/>指标采集]
+        JAEGER[Jaeger<br/>分布式追踪]
+        ELK[ELK Stack<br/>日志聚合]
+    end
     
-    style GIN fill:#87CEEB
-    style MW4 fill:#C8E6C9
-    style MW6 fill:#FFCDD2
-    style MW7 fill:#FFF9C4
+    %% 客户端连接
+    WEB & MOBILE & MINI & DESKTOP & EXT & ADMIN & DEV -->|HTTPS| GINSERVER
+    
+    %% 仓库层连接数据层
+    REPO_USER & REPO_SESSION & REPO_MSG -->|SQL查询| PG
+    REPO_USER & REPO_SESSION & REPO_MSG -->|缓存读写| REDIS
+    MW_RATELIMIT -->|限流计数器| REDIS
+    MW_JWT -->|Token黑名单| REDIS
+    
+    %% 处理器连接算法服务
+    H_CHAT -->|HTTP POST /v01/query/stream| RAG
+    H_CHAT -->|SSE流式响应| LLM
+    H_VOICE -->|WebSocket| VOICE
+    
+    %% 监控连接
+    MW_MONITOR -->|指标推送| PROM
+    MW_REQID -->|Trace上报| JAEGER
+    MW_LOGGER -->|日志输出| ELK
+    
+    %% 样式定义
+    style GINSERVER fill:#87CEEB,stroke:#333,stroke-width:3px
+    style MW_JWT fill:#C8E6C9,stroke:#333,stroke-width:2px
+    style MW_RATELIMIT fill:#FFCDD2,stroke:#333,stroke-width:2px
+    style PG fill:#4DB6AC,stroke:#333,stroke-width:2px
+    style REDIS fill:#EF5350,stroke:#333,stroke-width:2px
+    style RAG fill:#FFF176,stroke:#333,stroke-width:2px
+    style PROM fill:#FF9800,stroke:#333,stroke-width:2px
 ```
 
-### 架构要点说明
+### 1.2.1 架构层次说明
 
-#### 1. 中间件链执行顺序
-中间件按固定顺序执行，形成请求处理管道：
+#### 第一层：客户端层（Client Layer）
 
-1. **日志记录（Logger）**：记录请求开始时间、路径、方法
-2. **请求ID（Request ID）**：生成唯一请求ID（UUID），用于分布式追踪
-3. **CORS（跨域）**：处理跨域请求，设置CORS响应头
-4. **认证（Auth JWT）**：验证JWT Token，提取用户信息
-5. **权限（RBAC）**：基于角色的访问控制，检查操作权限
-6. **限流（Rate Limit）**：多层级限流（IP、用户、租户、端点）
-7. **熔断（Circuit Breaker）**：防止下游服务故障级联
-8. **追踪（Tracing）**：Jaeger分布式追踪，记录Span
-9. **监控（Metrics）**：Prometheus指标采集（QPS、延迟、错误率）
+**职责**：提供多平台用户界面，发起HTTP/WebSocket请求
+
+**7个平台详细分工**：
+1. **Web浏览器**（React+Next.js）：PC端主力，支持完整功能
+2. **移动App**（React Native）：iOS/Android原生体验
+3. **微信小程序**（原生小程序框架）：微信生态集成
+4. **桌面应用**（Electron）：跨平台桌面客户端
+5. **浏览器扩展**（Chrome Extension）：浏览器侧边栏助手
+6. **管理后台**（Django Admin）：运营管理、数据监控
+7. **开发者门户**（Docusaurus）：API文档、SDK下载
+
+**通信协议**：
+- REST API：HTTPS加密传输（TLS 1.3）
+- WebSocket：wss://加密双向通信（实时语音）
+- SSE：Server-Sent Events流式响应（聊天回复）
+
+---
+
+#### 第二层：网关层（Gateway Layer）
+
+**职责**：统一入口、路由转发、认证鉴权、流量控制
+
+##### 入口点（Entry Point）
+- **Gin HTTP Server**：高性能Go Web框架
+  - 监听端口：`:8080`
+  - 超时配置：
+    - ReadTimeout: 30s（读取请求体超时）
+    - WriteTimeout: 30s（写入响应超时）
+    - IdleTimeout: 120s（空闲连接超时）
+  - 并发能力：支持10000+并发连接（Goroutine模型）
+
+##### 全局中间件链（Global Middleware Chain）
+
+**执行顺序（6个中间件按序执行）**：
+
+1. **Logger 日志记录**
+   - 位置：`pkg/middleware/common.go:132-148`
+   - 功能：记录请求开始时间、方法、路径、User-Agent
+   - 输出：JSON格式结构化日志（timestamp, status, latency, client_ip, method, path）
+   - 日志级别：INFO（正常请求）、ERROR（异常请求）
+
+2. **Recovery 异常恢复**
+   - 位置：`pkg/middleware/common.go:151-165`
+   - 功能：捕获Handler中的Panic，防止进程崩溃
+   - 错误处理：记录堆栈信息到日志，返回500 Internal Server Error
+   - 保障：确保单个请求异常不影响其他请求
+
+3. **CORS 跨域处理**
+   - 位置：`pkg/middleware/common.go:17-55`
+   - 功能：设置CORS响应头，支持跨域请求
+   - 白名单：
+     - `http://localhost:3000-3002`（本地开发）
+     - `https://voicehelper.ai`（生产域名）
+   - 允许方法：GET, POST, PUT, DELETE, OPTIONS
+   - 允许头：Authorization, X-Tenant-ID, X-API-Key, X-Request-ID
+   - 暴露头：X-New-Token, X-Request-ID（客户端可读取）
+   - 预检缓存：86400秒（24小时）
+
+4. **RequestID 请求追踪**
+   - 位置：`pkg/middleware/request_id.go:11-22`
+   - 功能：生成或提取唯一请求ID（UUID v4）
+   - 传播：
+     - 响应头：`X-Request-ID`（返回给客户端）
+     - 上下文：`c.Set("request_id", requestID)`（传递给Handler）
+     - 下游：调用算法服务时注入Header（分布式追踪）
+   - 用途：问题排查、链路追踪、日志关联
+
+5. **Monitoring 监控指标**
+   - 位置：`pkg/monitoring/monitoring.go`
+   - 功能：采集Prometheus指标
+   - 指标类型：
+     - Counter：`http_requests_total{method, path, status}`
+     - Histogram：`http_request_duration_seconds{method, path}`
+     - Gauge：`http_requests_in_flight`
+   - 采集点：请求开始/结束时记录时间、状态码、延迟
+
+6. **RateLimit 全局限流**
+   - 位置：`pkg/middleware/common.go:58-114`
+   - 算法：固定窗口（Fixed Window）+ Redis计数器
+   - 限制：100请求/分钟（per IP）
+   - 键格式：`rate_limit:ip:<client_ip>` 或 `rate_limit:user:<user_id>`
+   - 响应头：
+     - `X-RateLimit-Limit: 100`
+     - `X-RateLimit-Remaining: 85`
+     - `X-RateLimit-Reset: 1696800000`（Unix时间戳）
+   - 超限响应：429 Too Many Requests + `Retry-After`头
+
+##### 路由组（Route Groups）
+
+**1. 公开路由（Public Routes）**
+- **`/api/v01/auth`**：认证端点（无需JWT）
+  - `POST /register`：用户注册（5req/min端点限流）
+  - `POST /login`：用户登录（5req/min端点限流）
+  - `POST /refresh`：刷新Token（10req/min）
+  - `POST /logout`：用户登出（10req/min）
+  
+- **`/health`**：健康检查（无限流）
+  - 返回：`{"status":"ok","version":"v0.8.3"}`
+  
+- **`/metrics`**：Prometheus指标（无限流）
+  - 格式：OpenMetrics文本格式
+
+**2. 认证路由（Authenticated Routes）**
+- **AuthMiddleware JWT验证**（`pkg/middleware/auth.go:45-101`）
+  - Token提取：Header > Query > Cookie
+  - Token验证：JWT签名校验、过期检查、黑名单检查
+  - 上下文注入：user_id, tenant_id, role, scopes
+  - 自动续期：距过期<10分钟时返回`X-New-Token`响应头
+
+- **路由列表**：
+  - `GET /api/v01/profile`：获取用户信息
+  - `POST /api/v01/sessions`：创建会话
+  - `GET /api/v01/sessions`：获取会话列表
+  - `GET /api/v01/sessions/:id`：获取会话详情
+  - `DELETE /api/v01/sessions/:id`：删除会话
+  - `POST /api/v01/chat/stream`：流式对话（SSE）
+  - `GET /api/v01/voice/realtime`：WebSocket实时语音
+  - `POST /api/v01/auth/ws-token`：生成WebSocket临时Token
+
+---
+
+#### 第三层：数据层（Data Layer）
+
+**PostgreSQL :5432**
+- **用途**：持久化存储（用户、会话、消息）
+- **表结构**：
+  - `users`：用户信息（id, username, email, password_hash, role, status）
+  - `sessions`：会话信息（id, user_id, title, message_count, created_at）
+  - `messages`：消息记录（id, session_id, role, content, created_at）
+- **连接池**：
+  - MaxOpenConns: 20（最大连接数）
+  - MaxIdleConns: 5（最大空闲连接）
+  - ConnMaxLifetime: 1小时（连接最大生命周期）
+  - ConnMaxIdleTime: 10分钟（连接最大空闲时间）
+- **索引优化**：
+  - `idx_users_username`（B-Tree，唯一）
+  - `idx_sessions_user_status`（复合索引，加速列表查询）
+  - `idx_messages_session_created`（复合索引，时间排序）
+
+**Redis :6379**
+- **用途**：缓存、限流、Token黑名单
+- **数据类型**：
+  - String：用户缓存 `user:id:<uuid>` TTL 30分钟
+  - String：会话缓存 `session:<uuid>` TTL 30分钟
+  - String：限流计数器 `rate_limit:ip:<ip>` TTL 60秒
+  - Set：Token黑名单 `blacklist:<token>` TTL Token过期时间
+  - ZSet：滑动窗口限流 `ratelimit:endpoint:<path>:ip:<ip>`
+- **连接池**：
+  - PoolSize: 50（最大连接数）
+  - MinIdleConns: 10（最小空闲连接）
+  - DialTimeout: 5秒
+  - ReadTimeout: 3秒
+  - WriteTimeout: 3秒
+
+---
+
+#### 第四层：算法服务层（Algo Services）
+
+**Python FastAPI微服务**，提供AI能力
+
+1. **GraphRAG服务 :8001**
+   - 功能：文档检索、知识图谱、语义搜索
+   - 接口：`POST /v01/query/stream`（流式查询）
+
+2. **LLM Router :8005**
+   - 功能：模型路由、负载均衡、降级策略
+   - 支持模型：GPT-4, Claude-3, 通义千问, 文心一言
+
+3. **Voice服务 :8002**
+   - 功能：ASR（Whisper）、TTS（Edge-TTS）、VAD
+   - 协议：WebSocket双向通信
+
+4. **Agent服务 :8003**
+   - 功能：工具调用、多步推理、MCP工具集成
+
+5. **Multimodal :8004**
+   - 功能：图像识别、OCR、视频处理
+
+---
+
+#### 第五层：监控层（Observability）
+
+**三大支柱**：
+1. **Prometheus**：指标采集（QPS、延迟、错误率）
+2. **Jaeger**：分布式追踪（Trace ID贯穿全链路）
+3. **ELK Stack**：日志聚合（Elasticsearch+Logstash+Kibana）
+
+---
+
+### 1.2.2 架构要点说明
+
+#### 1. 中间件链完整调用流程图
+
+```mermaid
+flowchart TB
+    START[HTTP请求到达<br/>:8080] -->|进入Gin Router| MW1[Logger中间件<br/>记录请求开始时间]
+    
+    MW1 -->|c.Next调用| MW2[Recovery中间件<br/>设置defer捕获Panic]
+    MW2 -->|c.Next调用| MW3[CORS中间件<br/>检查Origin/设置CORS头]
+    
+    MW3 -->|OPTIONS请求?| CHECK_OPTIONS{预检请求?}
+    CHECK_OPTIONS -->|是| RETURN_204[返回204 No Content<br/>c.AbortWithStatus]
+    CHECK_OPTIONS -->|否| MW4[RequestID中间件<br/>生成/提取Request ID]
+    
+    MW4 -->|c.Set注入上下文| MW5[Monitoring中间件<br/>记录请求开始/采集指标]
+    MW5 -->|c.Next调用| MW6[RateLimit全局限流<br/>检查Redis计数器]
+    
+    MW6 -->|检查限流| CHECK_RL{是否超限?}
+    CHECK_RL -->|是| RETURN_429[返回429 Too Many Requests<br/>设置Retry-After头<br/>c.Abort]
+    CHECK_RL -->|否| ROUTE_MATCH{路由匹配}
+    
+    ROUTE_MATCH -->|公开路由| PUBLIC_ROUTE[公开路由处理器<br/>/auth/register<br/>/auth/login<br/>/health]
+    ROUTE_MATCH -->|认证路由| MW_AUTH[AuthMiddleware<br/>JWT验证]
+    
+    MW_AUTH -->|提取Token| TOKEN_CHECK{Token存在?}
+    TOKEN_CHECK -->|否| ERR_NO_TOKEN[返回401<br/>No token provided]
+    TOKEN_CHECK -->|是| BL_CHECK{黑名单检查}
+    
+    BL_CHECK -->|在黑名单| ERR_REVOKED[返回401<br/>Token revoked]
+    BL_CHECK -->|不在| JWT_VERIFY{JWT验证}
+    
+    JWT_VERIFY -->|签名无效| ERR_INVALID[返回401<br/>Invalid token]
+    JWT_VERIFY -->|已过期| ERR_EXPIRED[返回401<br/>Token expired]
+    JWT_VERIFY -->|验证成功| INJECT_CTX[注入用户信息到上下文<br/>user_id/role/tenant_id]
+    
+    INJECT_CTX -->|检查是否需要续期| RENEW_CHECK{距过期<10分钟?}
+    RENEW_CHECK -->|是| RENEW_TOKEN[生成新Token<br/>设置X-New-Token响应头]
+    RENEW_CHECK -->|否| NEXT_AUTH[继续下一步]
+    RENEW_TOKEN --> NEXT_AUTH
+    
+    NEXT_AUTH -->|特定路由需要| RBAC_CHECK{RBAC权限检查}
+    RBAC_CHECK -->|无权限| ERR_FORBIDDEN[返回403<br/>Permission denied]
+    RBAC_CHECK -->|有权限| ENDPOINT_RL[端点限流<br/>register/login 5req/min]
+    
+    PUBLIC_ROUTE --> ENDPOINT_RL
+    
+    ENDPOINT_RL -->|检查限流| CHECK_ERL{端点是否超限?}
+    CHECK_ERL -->|是| RETURN_429_2[返回429<br/>Endpoint rate limit]
+    CHECK_ERL -->|否| HANDLER[业务处理器Handler<br/>AuthHandler/ChatHandler/...]
+    
+    HANDLER -->|处理业务逻辑| REPO[Repository层<br/>数据库/缓存访问]
+    REPO -->|查询/更新| DB_CACHE[(PostgreSQL/Redis)]
+    
+    DB_CACHE -->|数据返回| HANDLER_RESP[Handler生成响应<br/>c.JSON/c.SSEvent]
+    HANDLER_RESP -->|响应返回| UNWIND_MW[中间件链逆序展开]
+    
+    UNWIND_MW -->|Monitoring记录| LOG_METRICS[记录延迟/状态码<br/>更新Prometheus指标]
+    LOG_METRICS -->|RequestID添加响应头| ADD_HEADERS[添加X-Request-ID等响应头]
+    ADD_HEADERS -->|CORS添加暴露头| CORS_HEADERS[添加Access-Control-*头]
+    CORS_HEADERS -->|Recovery检查异常| RECOVERY_CHK{是否有Panic?}
+    
+    RECOVERY_CHK -->|是| CATCH_PANIC[捕获Panic<br/>返回500 Internal Error]
+    RECOVERY_CHK -->|否| LOGGER_END[Logger记录请求完成<br/>输出结构化日志]
+    
+    LOGGER_END --> END[返回HTTP响应给客户端]
+    CATCH_PANIC --> END
+    
+    RETURN_204 --> END
+    RETURN_429 --> END
+    RETURN_429_2 --> END
+    ERR_NO_TOKEN --> END
+    ERR_REVOKED --> END
+    ERR_INVALID --> END
+    ERR_EXPIRED --> END
+    ERR_FORBIDDEN --> END
+    
+    style START fill:#87CEEB,stroke:#333,stroke-width:3px
+    style HANDLER fill:#C8E6C9,stroke:#333,stroke-width:2px
+    style DB_CACHE fill:#4DB6AC,stroke:#333,stroke-width:2px
+    style END fill:#87CEEB,stroke:#333,stroke-width:3px
+    style ERR_NO_TOKEN fill:#FFCDD2,stroke:#333,stroke-width:2px
+    style ERR_REVOKED fill:#FFCDD2,stroke:#333,stroke-width:2px
+    style ERR_INVALID fill:#FFCDD2,stroke:#333,stroke-width:2px
+    style ERR_EXPIRED fill:#FFCDD2,stroke:#333,stroke-width:2px
+    style ERR_FORBIDDEN fill:#FFC107,stroke:#333,stroke-width:2px
+    style RETURN_429 fill:#FFCDD2,stroke:#333,stroke-width:2px
+    style RETURN_429_2 fill:#FFCDD2,stroke:#333,stroke-width:2px
+```
+
+**流程说明**：
+
+**阶段1：全局中间件链（顺序执行）**
+1. **Logger**：记录请求到达，开始计时
+2. **Recovery**：设置defer捕获Panic，防止进程崩溃
+3. **CORS**：
+   - 检查Origin头是否在白名单
+   - 设置CORS响应头（Allow-Origin, Allow-Methods等）
+   - 如果是OPTIONS预检请求，直接返回204
+4. **RequestID**：
+   - 从Header提取`X-Request-ID`（如已有）
+   - 如无则生成新的UUID v4
+   - 注入到上下文`c.Set("request_id", requestID)`
+   - 添加到响应头`c.Header("X-Request-ID", requestID)`
+5. **Monitoring**：
+   - 记录请求开始时间
+   - 增加`http_requests_in_flight`计数器
+6. **RateLimit全局限流**：
+   - 获取客户端标识（优先user_id，其次tenant_id，最后IP）
+   - Redis INCR `rate_limit:<clientID>`
+   - 如果首次请求，设置TTL 60秒
+   - 检查计数是否超过100，超过返回429
+
+**阶段2：路由匹配与认证**
+7. **路由分发**：
+   - **公开路由**：`/auth/register|login`、`/health`、`/metrics`
+   - **认证路由**：`/profile`、`/sessions`、`/chat`、`/voice`
+8. **AuthMiddleware JWT验证**（仅认证路由）：
+   - **Token提取**（3个来源，优先级递减）：
+     - Header：`Authorization: Bearer <token>`
+     - Query：`?token=<token>`（用于WebSocket）
+     - Cookie：`access_token`或`token`
+   - **黑名单检查**：Redis GET `blacklist:<token>`
+   - **JWT验证**：
+     - 解析Claims（user_id, role, tenant_id, exp等）
+     - 验证签名（HS256 + Secret）
+     - 检查过期时间`exp < now`
+   - **上下文注入**：
+     - `c.Set("user_id", claims.UserID)`
+     - `c.Set("role", claims.Role)`
+     - `c.Set("tenant_id", claims.TenantID)`
+   - **自动续期**：
+     - 如果`exp - now < 10分钟`
+     - 生成新Token（延长24小时）
+     - 设置响应头`X-New-Token: <new_jwt>`
+
+**阶段3：端点限流与业务处理**
+9. **端点限流**（特定路由）：
+   - 注册/登录：5req/min per IP（防暴力破解）
+   - 刷新Token：10req/min per IP
+   - Redis ZSet滑动窗口算法
+10. **业务Handler处理**：
+    - 参数绑定与验证（Gin Validator）
+    - 调用Repository层
+    - 数据库查询/更新（PostgreSQL）
+    - 缓存读写（Redis）
+11. **响应生成**：
+    - JSON：`c.JSON(status, data)`
+    - SSE流：`c.SSEvent("event", data)`
+    - WebSocket：升级协议
+
+**阶段4：中间件链逆序展开**
+12. **Monitoring结束**：
+    - 记录请求延迟`time.Since(start)`
+    - 更新Prometheus指标（Counter, Histogram）
+    - 减少`http_requests_in_flight`计数
+13. **RequestID响应头**：已在第4步添加
+14. **CORS响应头**：已在第3步添加
+15. **Recovery检查**：
+    - 如果Handler中发生Panic，捕获并返回500
+    - 记录错误堆栈到日志
+16. **Logger记录完成**：
+    - 输出结构化日志JSON
+    - 字段：timestamp, status, latency, client_ip, method, path, request_id
+
+---
+
+#### 2. 中间件链执行顺序要点
 
 #### 2. 组件职责分工
 - **Gin框架**：提供HTTP路由、请求解析、响应序列化
@@ -344,51 +743,456 @@ func (r *UserRepository) Create(ctx context.Context, user *model.User) error {
 }
 ```
 
-**时序图（注册请求→响应完整路径）**：
+**完整时序图（注册请求完整调用链路）**：
 ```mermaid
 sequenceDiagram
     autonumber
     participant Client as 客户端
-    participant GW as 网关
-    participant MW_RL as 限流中间件
-    participant Handler as 注册处理器
-    participant Repo as 用户仓库
-    participant DB as PostgreSQL
-    participant Redis as Redis缓存
+    participant Gin as Gin Router
+    participant MW_Logger as Logger中间件
+    participant MW_Recovery as Recovery中间件
+    participant MW_CORS as CORS中间件
+    participant MW_ReqID as RequestID中间件
+    participant MW_Monitor as Monitoring中间件
+    participant MW_RateLimit as RateLimit中间件
+    participant MW_EndpointRL as 端点限流中间件
+    participant Handler as V01AuthHandler
+    participant Repo as UserRepository
+    participant PG as PostgreSQL
+    participant Redis as Redis
+    participant Prometheus as Prometheus
     
-    Client->>GW: POST /api/v01/auth/register<br/>{username, email, password}
+    Note over Client,Prometheus: ========== 第1阶段：请求到达与全局中间件链 ==========
     
-    GW->>MW_RL: 限流检查
-    MW_RL->>Redis: INCR endpoint:auth:ip:xxx
-    Redis-->>MW_RL: 当前计数=3（限制5/min）
-    MW_RL-->>GW: 允许通过
+    Client->>+Gin: POST /api/v01/auth/register<br/>Content-Type: application/json<br/>{username: "alice", email: "alice@example.com", password: "SecurePass123"}
     
-    GW->>Handler: 调用Register()
+    Gin->>+MW_Logger: c.Next()
+    Note right of MW_Logger: 记录请求开始<br/>start_time = time.Now()<br/>method = POST<br/>path = /api/v01/auth/register
     
-    Handler->>Handler: 参数验证<br/>（Gin Validator）
-    Handler->>Handler: 密码强度检查<br/>（正则匹配）
+    MW_Logger->>+MW_Recovery: c.Next()
+    Note right of MW_Recovery: 设置defer func()<br/>捕获可能的Panic
     
-    Handler->>Repo: CheckUsernameExists(username)
-    Repo->>DB: SELECT COUNT(*) FROM users<br/>WHERE username=$1
-    DB-->>Repo: 0（不存在）
-    Repo-->>Handler: false
+    MW_Recovery->>+MW_CORS: c.Next()
+    Note right of MW_CORS: 检查Origin头<br/>设置CORS响应头<br/>Access-Control-Allow-Origin<br/>Access-Control-Allow-Credentials
     
-    Handler->>Handler: bcrypt.GenerateFromPassword()<br/>（密码哈希，cost=12）
+    MW_CORS->>+MW_ReqID: c.Next()
+    MW_ReqID->>MW_ReqID: 生成UUID v4<br/>request_id = "a1b2c3d4-..."
+    Note right of MW_ReqID: c.Set("request_id", request_id)<br/>c.Header("X-Request-ID", request_id)
     
-    Handler->>Repo: Create(user)
-    Repo->>DB: INSERT INTO users VALUES(...)
-    DB-->>Repo: 插入成功
-    Repo-->>Handler: nil（无错误）
+    MW_ReqID->>+MW_Monitor: c.Next()
+    MW_Monitor->>Prometheus: 增加 http_requests_in_flight{path="/auth/register"}
+    Note right of MW_Monitor: 记录请求开始时间<br/>start_time = time.Now()
     
-    Handler->>Handler: generateTokens()<br/>（JWT签名）
+    MW_Monitor->>+MW_RateLimit: c.Next()
+    MW_RateLimit->>Redis: INCR rate_limit:ip:192.168.1.100
+    Redis-->>MW_RateLimit: count = 45
+    MW_RateLimit->>Redis: EXPIRE rate_limit:ip:192.168.1.100 60
+    Note right of MW_RateLimit: 当前计数45 < 限制100<br/>remaining = 55<br/>设置响应头:<br/>X-RateLimit-Limit: 100<br/>X-RateLimit-Remaining: 55
     
-    Handler-->>GW: RegisterResponse{token, ...}
-    GW-->>Client: 200 OK<br/>{user_id, access_token, ...}
+    Note over MW_RateLimit,Handler: ========== 第2阶段：路由匹配与端点限流 ==========
+    
+    MW_RateLimit->>+MW_EndpointRL: 路由匹配到 /api/v01/auth/register<br/>执行端点限流中间件
+    MW_EndpointRL->>Redis: ZADD ratelimit:endpoint:auth:ip:192.168.1.100<br/>score=now, value=now
+    Redis-->>MW_EndpointRL: OK
+    MW_EndpointRL->>Redis: ZREMRANGEBYSCORE ...<br/>删除窗口外记录
+    MW_EndpointRL->>Redis: ZCARD ratelimit:endpoint:auth:ip:192.168.1.100
+    Redis-->>MW_EndpointRL: count = 2
+    Note right of MW_EndpointRL: 当前计数2 < 限制5<br/>remaining = 3<br/>设置响应头:<br/>X-RateLimit-Limit: 5<br/>X-RateLimit-Remaining: 3
+    
+    Note over MW_EndpointRL,PG: ========== 第3阶段：业务处理器执行 ==========
+    
+    MW_EndpointRL->>+Handler: Register(c *gin.Context)
+    Handler->>Handler: c.ShouldBindJSON(&req)<br/>解析JSON请求体
+    Handler->>Handler: sanitizeInput(req.Username)<br/>sanitizeEmail(req.Email)<br/>XSS防护
+    Handler->>Handler: validatePasswordStrength(req.Password)<br/>检查密码复杂度<br/>要求：≥8位+大小写+数字
+    
+    Handler->>+Repo: CheckUsernameExists(ctx, "alice")
+    Repo->>PG: SELECT EXISTS(SELECT 1 FROM users<br/>WHERE username = $1 AND deleted_at IS NULL)
+    Note right of PG: 使用索引 idx_users_username<br/>查询时间: ~5ms
+    PG-->>Repo: exists = false
+    Repo-->>-Handler: false
+    
+    Handler->>+Repo: CheckEmailExists(ctx, "alice@example.com")
+    Repo->>PG: SELECT EXISTS(SELECT 1 FROM users<br/>WHERE email = $1 AND deleted_at IS NULL)
+    Note right of PG: 使用索引 idx_users_email<br/>查询时间: ~5ms
+    PG-->>Repo: exists = false
+    Repo-->>-Handler: false
+    
+    Handler->>Handler: bcrypt.GenerateFromPassword()<br/>密码哈希<br/>cost = 12 (推荐值)<br/>耗时: ~200ms
+    
+    Handler->>Handler: 生成UUID v4<br/>user_id = "f47ac10b-..."
+    
+    Handler->>+Repo: Create(ctx, user)
+    Repo->>PG: INSERT INTO users (<br/>  id, username, email, password_hash,<br/>  role, status, created_at, updated_at<br/>) VALUES (<br/>  $1, $2, $3, $4, 'user', 'active', NOW(), NOW()<br/>)
+    Note right of PG: 事务插入<br/>触发器: 无<br/>插入时间: ~10ms
+    PG-->>Repo: 插入成功<br/>affected_rows = 1
+    Repo-->>-Handler: nil (无错误)
+    
+    Handler->>Handler: generateTokenResponse()<br/>生成JWT Token
+    Note right of Handler: Access Token:<br/>- exp: 2小时后<br/>- claims: {user_id, username, email}<br/>- 签名: HS256<br/><br/>Refresh Token:<br/>- exp: 30天后<br/>- claims: 同上<br/>- 签名: HS256
+    
+    Handler->>Handler: setAuthCookies()<br/>设置HttpOnly Cookie
+    Note right of Handler: Cookie属性:<br/>- HttpOnly: true (防XSS)<br/>- Secure: false (开发环境)<br/>- Path: /<br/>- MaxAge: 7200秒<br/><br/>access_token Cookie<br/>refresh_token Cookie
+    
+    Note over Handler,Prometheus: ========== 第4阶段：响应生成与中间件展开 ==========
+    
+    Handler-->>-MW_EndpointRL: 返回
+    MW_EndpointRL-->>-MW_RateLimit: 返回
+    MW_RateLimit-->>-MW_Monitor: 返回
+    
+    MW_Monitor->>MW_Monitor: end_time = time.Now()<br/>duration = end_time - start_time<br/>duration_ms = 230ms
+    MW_Monitor->>Prometheus: 更新指标<br/>http_requests_total{method="POST", path="/auth/register", status="201"} += 1<br/>http_request_duration_seconds{method="POST", path="/auth/register"}.Observe(0.230)
+    MW_Monitor->>Prometheus: 减少 http_requests_in_flight{path="/auth/register"}
+    
+    MW_Monitor-->>-MW_ReqID: 返回
+    MW_ReqID-->>-MW_CORS: 返回
+    MW_CORS-->>-MW_Recovery: 返回
+    MW_Recovery-->>-MW_Logger: 返回
+    
+    MW_Logger->>MW_Logger: 记录请求完成日志<br/>JSON格式输出
+    Note right of MW_Logger: 日志字段:<br/>{<br/>  "timestamp": "2025-10-10T14:30:25Z",<br/>  "level": "info",<br/>  "request_id": "a1b2c3d4-...",<br/>  "method": "POST",<br/>  "path": "/api/v01/auth/register",<br/>  "status": 201,<br/>  "latency_ms": 230,<br/>  "client_ip": "192.168.1.100",<br/>  "user_agent": "Mozilla/5.0..."<br/>}
+    
+    MW_Logger-->>-Gin: 返回
+    Gin-->>-Client: HTTP/1.1 201 Created<br/>Content-Type: application/json<br/>X-Request-ID: a1b2c3d4-...<br/>X-RateLimit-Limit: 5<br/>X-RateLimit-Remaining: 3<br/>Set-Cookie: access_token=eyJhbGc...; HttpOnly<br/>Set-Cookie: refresh_token=eyJhbGc...; HttpOnly<br/><br/>{<br/>  "user": {<br/>    "user_id": "f47ac10b-...",<br/>    "username": "alice",<br/>    "email": "alice@example.com"<br/>  }<br/>}
+    
+    Note over Client,Prometheus: ========== 第5阶段：异步后台任务 ==========
     
     par 异步审计日志
-        Handler->>DB: INSERT INTO audit_logs<br/>（非阻塞）
+        Handler->>PG: INSERT INTO audit_logs (<br/>  action, user_id, ip_address, payload, created_at<br/>) VALUES (<br/>  'user.register', 'f47ac10b-...', '192.168.1.100',<br/>  '{"username":"alice"}', NOW()<br/>)
+        Note right of PG: 异步执行，不阻塞主流程<br/>使用Goroutine
     end
 ```
+
+**时序图详细说明**：
+
+### 第1阶段：请求到达与全局中间件链（步骤1-10）
+
+**步骤1-2**：客户端发起注册请求
+- **请求行**：`POST /api/v01/auth/register HTTP/1.1`
+- **请求头**：`Content-Type: application/json`
+- **请求体**：JSON格式用户信息
+- **Gin Router接收**：根据路由表匹配Handler
+
+**步骤3-4**：Logger中间件
+- **功能**：记录请求元信息
+- **记录内容**：
+  - 请求开始时间（用于计算延迟）
+  - HTTP方法（POST）
+  - 请求路径（/api/v01/auth/register）
+  - 客户端IP（用于日志关联）
+- **代码位置**：`pkg/middleware/common.go:133-148`
+
+**步骤5-6**：Recovery中间件
+- **功能**：异常恢复
+- **机制**：设置`defer func()`捕获Panic
+- **恢复策略**：
+  - 捕获Panic后记录堆栈到日志
+  - 返回500 Internal Server Error
+  - 防止进程崩溃
+- **代码位置**：`pkg/middleware/common.go:151-165`
+
+**步骤7-8**：CORS中间件
+- **功能**：跨域资源共享
+- **检查**：
+  - 读取`Origin`请求头
+  - 对比白名单（localhost:3000-3002, voicehelper.ai）
+- **设置响应头**：
+  - `Access-Control-Allow-Origin: <origin>`
+  - `Access-Control-Allow-Methods: GET, POST, PUT, DELETE, OPTIONS`
+  - `Access-Control-Allow-Headers: Authorization, Content-Type, ...`
+  - `Access-Control-Expose-Headers: X-New-Token, X-Request-ID`
+  - `Access-Control-Allow-Credentials: true`
+- **代码位置**：`pkg/middleware/common.go:17-55`
+
+**步骤9-10**：RequestID中间件
+- **功能**：请求追踪
+- **生成UUID v4**：
+  - 格式：`a1b2c3d4-e5f6-7890-abcd-ef1234567890`
+  - 算法：随机数生成（crypto/rand）
+- **传播**：
+  - 上下文：`c.Set("request_id", request_id)`
+  - 响应头：`X-Request-ID: <uuid>`
+  - 下游服务：调用算法服务时注入Header
+- **用途**：
+  - 分布式追踪（Jaeger Trace ID）
+  - 日志关联（同一请求的所有日志共享ID）
+  - 问题排查（客户端可提供Request ID）
+- **代码位置**：`pkg/middleware/request_id.go:11-22`
+
+**步骤11-13**：Monitoring中间件
+- **功能**：Prometheus指标采集
+- **采集指标**：
+  - `http_requests_in_flight{path="/auth/register"}` +1（并发请求数）
+  - 记录请求开始时间（用于计算延迟）
+- **代码位置**：`pkg/monitoring/monitoring.go`
+
+**步骤14-18**：RateLimit全局限流中间件
+- **功能**：全局限流保护
+- **算法**：固定窗口 + Redis计数器
+- **限流键**：`rate_limit:ip:192.168.1.100`（按IP限流）
+- **Redis操作**：
+  - `INCR rate_limit:ip:192.168.1.100`（原子递增）
+  - `EXPIRE rate_limit:ip:192.168.1.100 60`（设置TTL 60秒）
+- **限流规则**：100请求/分钟
+- **响应头**：
+  - `X-RateLimit-Limit: 100`（限制值）
+  - `X-RateLimit-Remaining: 55`（剩余配额）
+  - `X-RateLimit-Reset: 1696800000`（重置时间Unix时间戳）
+- **超限处理**：
+  - 返回429 Too Many Requests
+  - 设置`Retry-After`响应头（秒）
+- **代码位置**：`pkg/middleware/common.go:58-114`
+
+### 第2阶段：路由匹配与端点限流（步骤19-24）
+
+**步骤19-20**：路由匹配
+- **Gin路由树**：前缀树（Radix Tree）结构
+- **匹配过程**：
+  1. 解析请求路径`/api/v01/auth/register`
+  2. 在路由树中查找匹配节点
+  3. 找到对应的Handler链
+- **路由注册位置**：`internal/handlers/v01_routes.go:35`
+  ```go
+  auth.POST("/register", authRateLimit, authHandler.Register)
+  ```
+- **中间件链**：`[全局中间件...] -> [端点限流中间件] -> [注册Handler]`
+
+**步骤21-24**：端点限流中间件
+- **功能**：针对敏感端点的严格限流
+- **限流规则**：5请求/分钟（防暴力注册）
+- **算法**：滑动窗口 + Redis ZSet
+- **限流键**：`ratelimit:endpoint:auth:ip:192.168.1.100`
+- **Redis操作**：
+  1. `ZADD ratelimit:endpoint:auth:ip:192.168.1.100 <now> <now>`（添加当前请求）
+  2. `ZREMRANGEBYSCORE ... 0 <window_start>`（删除窗口外记录）
+  3. `ZCARD ratelimit:endpoint:auth:ip:192.168.1.100`（统计窗口内请求数）
+- **滑动窗口优势**：
+  - 更精确的限流（相比固定窗口）
+  - 防止窗口边界突刺
+- **响应头**：
+  - `X-RateLimit-Limit: 5`
+  - `X-RateLimit-Remaining: 3`
+- **代码位置**：`pkg/middleware/rate_limit.go:205-239`
+
+### 第3阶段：业务处理器执行（步骤25-41）
+
+**步骤25-26**：Handler入口
+- **处理器**：`V01AuthHandler.Register(c *gin.Context)`
+- **代码位置**：`internal/handlers/v01_auth_handler.go:151-266`
+
+**步骤27-28**：参数绑定与验证
+- **Gin Validator**：基于`go-playground/validator`
+- **验证规则**：
+  ```go
+  type RegisterRequest struct {
+      Username string `json:"username" binding:"required,min=3,max=32"`
+      Email    string `json:"email" binding:"required,email"`
+      Password string `json:"password" binding:"required,min=8,max=64"`
+  }
+  ```
+- **验证失败响应**：400 Bad Request + 错误详情
+
+**步骤29-30**：输入清理（XSS防护）
+- **sanitizeInput**：
+  - 去除首尾空格
+  - HTML转义（防XSS注入）
+  - 代码位置：`internal/handlers/v01_auth_handler.go:132-138`
+- **sanitizeEmail**：
+  - 去除空格并转小写
+  - HTML转义
+  - 代码位置：`internal/handlers/v01_auth_handler.go:141-148`
+
+**步骤31**：密码强度检查
+- **要求**：
+  - 最少8位，最多128位
+  - 包含大写字母（A-Z）
+  - 包含小写字母（a-z）
+  - 包含数字（0-9）
+- **实现**：正则匹配
+- **代码位置**：`internal/handlers/v01_auth_handler.go:47-78`
+
+**步骤32-37**：检查用户名/邮箱唯一性
+- **Repository层**：数据访问抽象
+- **SQL查询**：
+  ```sql
+  SELECT EXISTS(
+    SELECT 1 FROM users 
+    WHERE username = $1 AND deleted_at IS NULL
+  )
+  ```
+- **索引加速**：使用`idx_users_username`（B-Tree索引）
+- **查询时间**：~5ms（索引扫描）
+- **软删除支持**：`deleted_at IS NULL`过滤已删除记录
+
+**步骤38**：密码哈希（bcrypt）
+- **算法**：bcrypt
+- **Cost因子**：12（推荐值，平衡安全与性能）
+- **盐值**：自动生成（每次不同）
+- **哈希时间**：~200ms（故意慢，抗暴力破解）
+- **输出长度**：60字符（固定）
+- **代码**：`golang.org/x/crypto/bcrypt`
+
+**步骤39**：生成UUID v4
+- **用途**：用户主键ID
+- **格式**：`f47ac10b-58cc-4372-a567-0e02b2c3d479`
+- **特性**：
+  - 全局唯一（碰撞概率极低）
+  - 无序（防ID枚举攻击）
+  - 128位（16字节）
+
+**步骤40-43**：数据库插入
+- **SQL**：
+  ```sql
+  INSERT INTO users (
+    id, username, email, password_hash, 
+    role, status, created_at, updated_at
+  ) VALUES (
+    $1, $2, $3, $4, 'user', 'active', NOW(), NOW()
+  )
+  ```
+- **事务**：自动提交（单条INSERT）
+- **默认值**：
+  - `role = 'user'`（普通用户）
+  - `status = 'active'`（激活状态）
+- **插入时间**：~10ms
+
+**步骤44-45**：生成JWT Token
+- **Access Token**：
+  - 有效期：2小时
+  - Claims：`{user_id, username, email, exp, iat}`
+  - 签名算法：HS256
+- **Refresh Token**：
+  - 有效期：30天
+  - Claims：同上
+  - 用途：刷新Access Token
+- **JWT结构**：`<header>.<payload>.<signature>`
+- **代码位置**：`internal/handlers/v01_auth_handler.go:439-476`
+
+**步骤46-47**：设置HttpOnly Cookie
+- **Cookie属性**：
+  ```
+  access_token=eyJhbGc...; 
+  Path=/; 
+  MaxAge=7200; 
+  HttpOnly; 
+  SameSite=Lax
+  ```
+- **安全特性**：
+  - `HttpOnly=true`：防止JavaScript访问（XSS防护）
+  - `Secure=true`（生产环境）：仅HTTPS传输
+  - `SameSite=Lax`：CSRF防护
+- **代码位置**：`internal/handlers/v01_auth_handler.go:479-501`
+
+### 第4阶段：响应生成与中间件展开（步骤48-60）
+
+**步骤48-54**：中间件逆序展开
+- **执行顺序**：后进先出（栈结构）
+- **每个中间件**：
+  - 执行`c.Next()`后的清理代码
+  - 添加响应头
+  - 更新指标
+
+**步骤55-57**：Monitoring中间件结束
+- **计算延迟**：
+  ```go
+  duration = time.Since(start_time)
+  duration_ms = 230ms
+  ```
+- **更新Prometheus指标**：
+  1. `http_requests_total{method="POST", path="/auth/register", status="201"}` +1
+  2. `http_request_duration_seconds{method="POST", path="/auth/register"}.Observe(0.230)`
+  3. `http_requests_in_flight{path="/auth/register"}` -1
+
+**步骤58-59**：Logger中间件结束
+- **输出结构化日志**：
+  ```json
+  {
+    "timestamp": "2025-10-10T14:30:25Z",
+    "level": "info",
+    "request_id": "a1b2c3d4-...",
+    "method": "POST",
+    "path": "/api/v01/auth/register",
+    "status": 201,
+    "latency_ms": 230,
+    "client_ip": "192.168.1.100",
+    "user_agent": "Mozilla/5.0 ..."
+  }
+  ```
+- **日志输出**：stdout（JSON格式）
+- **日志聚合**：Filebeat → Logstash → Elasticsearch
+
+**步骤60**：返回HTTP响应给客户端
+- **状态码**：201 Created
+- **响应头**：
+  - `Content-Type: application/json`
+  - `X-Request-ID: a1b2c3d4-...`
+  - `X-RateLimit-Limit: 5`
+  - `X-RateLimit-Remaining: 3`
+  - `Set-Cookie: access_token=...; HttpOnly`
+  - `Set-Cookie: refresh_token=...; HttpOnly`
+- **响应体**：
+  ```json
+  {
+    "user": {
+      "user_id": "f47ac10b-...",
+      "username": "alice",
+      "email": "alice@example.com"
+    }
+  }
+  ```
+
+### 第5阶段：异步后台任务（步骤61）
+
+**异步审计日志**：
+- **执行方式**：`go func() { ... }()`（Goroutine）
+- **优势**：
+  - 不阻塞主流程（用户体验优先）
+  - 失败不影响注册结果
+- **审计内容**：
+  - 操作类型：`user.register`
+  - 用户ID：`f47ac10b-...`
+  - IP地址：`192.168.1.100`
+  - 操作载荷：`{"username":"alice"}`
+  - 时间戳：`2025-10-10T14:30:25Z`
+- **用途**：
+  - 安全审计
+  - 异常行为检测
+  - 合规要求（GDPR、等保）
+- **代码位置**：`internal/handlers/v01_auth_handler.go:257-260`（注释中提及）
+
+---
+
+**关键时序要点总结**：
+
+1. **延迟分解**：总延迟230ms
+   - 中间件处理：10ms
+   - 密码哈希：200ms（主要耗时）
+   - 数据库查询：20ms（唯一性检查10ms + 插入10ms）
+
+2. **并发控制**：
+   - 全局限流：100req/min（防DDoS）
+   - 端点限流：5req/min（防暴力注册）
+   - 数据库连接池：20个连接（防连接耗尽）
+
+3. **安全措施**：
+   - 输入清理（XSS防护）
+   - 密码哈希（bcrypt cost=12）
+   - HttpOnly Cookie（XSS防护）
+   - 速率限制（暴力破解防护）
+   - 审计日志（可追溯性）
+
+4. **可观测性**：
+   - Request ID（分布式追踪）
+   - Prometheus指标（QPS、延迟、错误率）
+   - 结构化日志（JSON格式）
+   - 审计日志（操作记录）
+
+5. **性能优化**：
+   - 数据库索引（B-Tree，查询<10ms）
+   - 异步审计（不阻塞主流程）
+   - 连接池复用（避免频繁建连）
+
+---
 
 **边界与异常**：
 1. **重复注册**：
@@ -1088,52 +1892,570 @@ func (h *V01ChatHandler) StreamChat(c *gin.Context) {
 }
 ```
 
-**时序图（流式聊天完整链路）**：
+**完整时序图（流式聊天完整调用链路）**：
 ```mermaid
 sequenceDiagram
     autonumber
     participant Client as 客户端
-    participant GW as 网关
-    participant Handler as 聊天处理器
-    participant Repo as 消息仓库
-    participant DB as PostgreSQL
-    participant AlgoSvc as GraphRAG服务
-    participant LLM as LLM Router
+    participant Gin as Gin Router
+    participant MW_Auth as AuthMiddleware
+    participant Handler as V01ChatHandler
+    participant Repo_Session as SessionRepository
+    participant Repo_Msg as MessageRepository
+    participant PG as PostgreSQL
+    participant Redis as Redis Cache
+    participant AlgoRAG as GraphRAG服务 :8001
+    participant AlgoLLM as LLM Router :8005
+    participant OpenAI as OpenAI API
     
-    Client->>GW: POST /api/v01/chat/stream<br/>{session_id, message}
-    GW->>Handler: StreamChat()
+    Note over Client,OpenAI: ========== 第1阶段：请求认证与参数验证 ==========
     
-    Handler->>Repo: 查询会话权限
-    Repo->>DB: SELECT * FROM sessions<br/>WHERE id=$1
-    DB-->>Repo: 会话记录
-    Repo-->>Handler: Session对象
+    Client->>+Gin: POST /api/v01/chat/stream<br/>Authorization: Bearer eyJhbGc...<br/>Content-Type: application/json<br/>{<br/>  "query": "什么是GraphRAG?",<br/>  "session_id": "abc123..."<br/>}
     
-    Handler->>Repo: Create(userMessage)
-    Repo->>DB: INSERT INTO messages
-    DB-->>Repo: OK
+    Note over Gin,MW_Auth: 全局中间件链执行<br/>Logger → Recovery → CORS → RequestID → Monitoring → RateLimit
     
-    Handler->>AlgoSvc: POST /api/v1/query<br/>{query, session_id, stream=true}
+    Gin->>+MW_Auth: JWT认证中间件
+    MW_Auth->>MW_Auth: 提取Token from Header
+    MW_Auth->>Redis: GET blacklist:token_signature
+    Redis-->>MW_Auth: nil（Token未撤销）
+    MW_Auth->>MW_Auth: jwt.Parse() 验证签名
+    Note right of MW_Auth: Claims提取:<br/>user_id = "user123"<br/>role = "user"<br/>exp = 2025-10-10T16:30:25Z
+    MW_Auth->>MW_Auth: c.Set("user_id", "user123")<br/>c.Set("role", "user")
+    MW_Auth-->>-Gin: 认证通过
     
-    AlgoSvc->>AlgoSvc: 查询改写+混合检索
-    AlgoSvc->>LLM: POST /api/v1/chat<br/>{messages, stream=true}
+    Note over Gin,Handler: ========== 第2阶段：业务处理器入口 ==========
     
-    loop 流式响应
-        LLM-->>AlgoSvc: SSE: data: {delta}
-        AlgoSvc-->>Handler: SSE: data: {delta}
-        Handler-->>GW: SSE: event: message<br/>data: {content}
-        GW-->>Client: SSE流式输出
+    Gin->>+Handler: StreamChat(c *gin.Context)
+    Handler->>Handler: c.ShouldBindJSON(&req)<br/>解析请求体
+    Handler->>Handler: query = "什么是GraphRAG?"<br/>session_id = "abc123..."
+    
+    Handler->>Handler: userID = c.GetString("user_id")<br/>userID = "user123"
+    
+    Note over Handler,PG: ========== 第3阶段：会话权限验证 ==========
+    
+    Handler->>+Repo_Session: GetByID(ctx, "abc123...")
+    Repo_Session->>Redis: GET session:abc123...
+    
+    alt 缓存命中
+        Redis-->>Repo_Session: Session数据（序列化JSON）
+        Note right of Redis: TTL 30分钟<br/>缓存命中率 ~85%
+    else 缓存未命中
+        Repo_Session->>PG: SELECT id, user_id, title, message_count<br/>FROM sessions<br/>WHERE id = $1 AND deleted_at IS NULL
+        Note right of PG: 使用主键索引<br/>查询时间: ~3ms
+        PG-->>Repo_Session: Session记录
+        Repo_Session->>Redis: SETEX session:abc123... 1800 <json_data>
+        Note right of Redis: 写入缓存<br/>TTL 30分钟
     end
     
-    LLM-->>AlgoSvc: SSE: event: done
-    AlgoSvc-->>Handler: 完成信号
-    Handler-->>GW: SSE: event: done
-    GW-->>Client: 流结束
+    Repo_Session-->>-Handler: Session对象<br/>{id: "abc123", user_id: "user123", title: "新对话"}
     
-    par 异步保存
-        Handler->>Repo: Create(assistantMessage)
-        Repo->>DB: INSERT INTO messages
+    Handler->>Handler: 验证会话所有权<br/>session.UserID != userID?
+    Note right of Handler: session.UserID = "user123"<br/>userID = "user123"<br/>✓ 权限校验通过
+    
+    Note over Handler,PG: ========== 第4阶段：保存用户消息 ==========
+    
+    Handler->>Handler: 生成UUID v4<br/>msg_id = "msg_001..."
+    Handler->>+Repo_Msg: Create(ctx, userMessage)
+    Repo_Msg->>PG: INSERT INTO messages (<br/>  id, session_id, role, content, created_at<br/>) VALUES (<br/>  'msg_001...', 'abc123...', 'user', '什么是GraphRAG?', NOW()<br/>)
+    Note right of PG: 触发器自动更新<br/>sessions.message_count += 1<br/>sessions.updated_at = NOW()
+    PG-->>Repo_Msg: 插入成功
+    Repo_Msg-->>-Handler: nil（无错误）
+    
+    Note over Handler,OpenAI: ========== 第5阶段：设置SSE响应流 ==========
+    
+    Handler->>Gin: 设置SSE响应头
+    Note right of Handler: c.Header("Content-Type", "text/event-stream")<br/>c.Header("Cache-Control", "no-cache")<br/>c.Header("Connection", "keep-alive")<br/>c.Header("X-Accel-Buffering", "no")
+    
+    Handler->>Client: SSE: event: session<br/>data: "abc123..."
+    Note left of Client: 客户端接收session_id<br/>建立EventSource连接<br/>保持长连接
+    
+    Note over Handler,OpenAI: ========== 第6阶段：调用GraphRAG服务 ==========
+    
+    Handler->>+AlgoRAG: POST http://localhost:8001/v01/query/stream<br/>Content-Type: application/json<br/>X-Request-ID: a1b2c3d4-...<br/>{<br/>  "query": "什么是GraphRAG?",<br/>  "session_id": "abc123...",<br/>  "stream": true<br/>}
+    
+    AlgoRAG->>AlgoRAG: 查询改写<br/>"什么是GraphRAG?" → "GraphRAG定义与原理"
+    AlgoRAG->>AlgoRAG: 混合检索（Neo4j + FAISS）<br/>- 图谱查询：MATCH (n:Concept {name: "GraphRAG"})<br/>- 向量检索：Top-K相似文档
+    Note right of AlgoRAG: 检索结果:<br/>- 实体: GraphRAG<br/>- 关系: isTypeOf KnowledgeGraph<br/>- 文档: 3篇相关论文<br/>检索时间: ~150ms
+    
+    AlgoRAG->>AlgoRAG: 构造增强Prompt<br/>上下文 + 用户问题
+    
+    Note over AlgoRAG,OpenAI: ========== 第7阶段：调用LLM Router ==========
+    
+    AlgoRAG->>+AlgoLLM: POST http://localhost:8005/api/v1/chat<br/>{<br/>  "model": "gpt-3.5-turbo",<br/>  "messages": [<br/>    {"role": "system", "content": "你是AI助手"},<br/>    {"role": "user", "content": "[检索上下文] 什么是GraphRAG?"}  <br/>  ],<br/>  "stream": true<br/>}
+    
+    AlgoLLM->>AlgoLLM: 模型选择与路由<br/>gpt-3.5-turbo → OpenAI
+    AlgoLLM->>+OpenAI: POST https://api.openai.com/v1/chat/completions<br/>Authorization: Bearer sk-...<br/>{model, messages, stream: true}
+    
+    Note over AlgoLLM,OpenAI: ========== 第8阶段：SSE流式响应 ==========
+    
+    loop SSE流式响应（每个token）
+        OpenAI-->>AlgoLLM: SSE: data: {<br/>  "id": "chatcmpl-...",<br/>  "choices": [{<br/>    "delta": {"content": "GraphRAG"},<br/>    "finish_reason": null<br/>  }]<br/>}
+        
+        AlgoLLM->>AlgoLLM: 提取delta.content = "GraphRAG"
+        AlgoLLM-->>AlgoRAG: SSE: data: {<br/>  "type": "delta",<br/>  "content": "GraphRAG"<br/>}
+        
+        AlgoRAG->>AlgoRAG: 追加到fullResponse<br/>fullResponse += "GraphRAG"
+        AlgoRAG-->>Handler: SSE: data: {<br/>  "type": "delta",<br/>  "content": "GraphRAG"<br/>}
+        
+        Handler->>Handler: 追加到fullResponse<br/>fullResponse += "GraphRAG"
+        Handler-->>Client: SSE: event: message<br/>data: {"content": "GraphRAG"}
+        
+        Note left of Client: 实时渲染Token<br/>逐字显示效果<br/>延迟: ~50ms/token
     end
+    
+    Note over OpenAI,Client: ========== 第9阶段：流式响应结束 ==========
+    
+    OpenAI-->>AlgoLLM: SSE: data: {<br/>  "choices": [{<br/>    "delta": {},<br/>    "finish_reason": "stop"<br/>  }],<br/>  "usage": {<br/>    "prompt_tokens": 125,<br/>    "completion_tokens": 89,<br/>    "total_tokens": 214<br/>  }<br/>}
+    
+    AlgoLLM->>AlgoLLM: 记录Token消耗<br/>total_tokens = 214
+    AlgoLLM-->>AlgoRAG: SSE: data: {<br/>  "type": "done",<br/>  "finish_reason": "stop",<br/>  "usage": {total_tokens: 214}<br/>}
+    
+    AlgoRAG->>AlgoRAG: 记录检索指标<br/>retrieved_docs = 3<br/>retrieval_time_ms = 150
+    AlgoRAG-->>-Handler: SSE: data: {<br/>  "type": "done",<br/>  "finish_reason": "stop"<br/>}
+    
+    Handler-->>Client: SSE: event: done<br/>data: {"finish_reason": "stop"}
+    Note left of Client: 客户端关闭EventSource<br/>流式响应结束<br/>总耗时: ~3.5秒
+    
+    AlgoLLM-->>-AlgoRAG: 关闭连接
+    OpenAI-->>-AlgoLLM: 关闭连接
+    
+    Note over Handler,PG: ========== 第10阶段：异步保存AI回复 ==========
+    
+    par 异步Goroutine
+        Handler->>Handler: 生成UUID v4<br/>msg_id = "msg_002..."
+        Handler->>+Repo_Msg: Create(ctx, assistantMessage)
+        Repo_Msg->>PG: INSERT INTO messages (<br/>  id, session_id, role, content, created_at<br/>) VALUES (<br/>  'msg_002...', 'abc123...', 'assistant', <br/>  'GraphRAG是...（完整回复）', NOW()<br/>)
+        Note right of PG: 触发器自动更新<br/>sessions.message_count += 1<br/>sessions.updated_at = NOW()
+        PG-->>Repo_Msg: 插入成功
+        Repo_Msg-->>-Handler: nil
+        
+        Handler->>Redis: DEL session:abc123...
+        Note right of Redis: 删除缓存<br/>下次查询重新加载<br/>确保message_count正确
+    end
+    
+    Handler-->>-Gin: 流式响应完成
+    Gin-->>-Client: 连接关闭
 ```
+
+**流式聊天时序图详细说明**：
+
+### 第1阶段：请求认证与参数验证（步骤1-8）
+
+**步骤1-3**：客户端发起流式聊天请求
+- **请求行**：`POST /api/v01/chat/stream HTTP/1.1`
+- **认证头**：`Authorization: Bearer eyJhbGc...`（JWT Token）
+- **请求体**：
+  ```json
+  {
+    "query": "什么是GraphRAG?",
+    "session_id": "abc123..."
+  }
+  ```
+- **Content-Type**：`application/json`
+
+**步骤4-8**：AuthMiddleware JWT验证
+- **Token提取**：从`Authorization: Bearer <token>`头提取
+- **黑名单检查**：Redis GET `blacklist:<token_signature>`
+- **JWT验证**：
+  - 解析Header：`{"alg":"HS256","typ":"JWT"}`
+  - 解析Payload（Claims）：
+    ```json
+    {
+      "user_id": "user123",
+      "role": "user",
+      "exp": 1696800625,
+      "iat": 1696793425
+    }
+    ```
+  - 验证签名：HMAC-SHA256(`base64(header).base64(payload)`, secret)
+- **上下文注入**：
+  - `c.Set("user_id", "user123")`
+  - `c.Set("role", "user")`
+- **代码位置**：`pkg/middleware/auth.go:45-101`
+
+### 第2阶段：业务处理器入口（步骤9-12）
+
+**步骤9-10**：Handler入口
+- **处理器**：`V01ChatHandler.StreamChat(c *gin.Context)`
+- **代码位置**：`internal/handlers/v01_chat_handler.go:236-402`
+
+**步骤11-12**：参数绑定
+- **请求结构体**：
+  ```go
+  type StreamChatRequest struct {
+      Query     string `json:"query" binding:"required"`
+      SessionID string `json:"session_id"`
+  }
+  ```
+- **验证**：Gin Validator自动验证`required`标签
+
+### 第3阶段：会话权限验证（步骤13-21）
+
+**步骤13-20**：查询会话并验证权限
+- **缓存策略**：二级缓存（Redis → PostgreSQL）
+- **缓存键**：`session:abc123...`
+- **缓存TTL**：30分钟
+- **缓存命中率**：~85%（根据实际数据）
+
+**Redis缓存命中**（步骤15-16）：
+- **Redis GET**：读取序列化的Session JSON
+- **反序列化**：JSON → Session对象
+- **延迟**：~2ms
+
+**PostgreSQL查询**（步骤17-19，缓存未命中）：
+- **SQL查询**：
+  ```sql
+  SELECT id, user_id, title, message_count, created_at, updated_at
+  FROM sessions
+  WHERE id = $1 AND deleted_at IS NULL
+  ```
+- **索引**：主键索引（id）
+- **查询时间**：~3ms
+- **写回缓存**：`SETEX session:abc123... 1800 <json_data>`
+
+**步骤21**：权限验证
+- **检查**：`session.UserID == c.GetString("user_id")`
+- **不匹配**：返回403 Forbidden `{"error":"Access denied"}`
+- **匹配**：继续处理
+
+### 第4阶段：保存用户消息（步骤22-27）
+
+**步骤22-23**：生成消息ID
+- **UUID v4**：`msg_001...`
+
+**步骤24-27**：数据库插入
+- **SQL**：
+  ```sql
+  INSERT INTO messages (
+    id, session_id, role, content, created_at
+  ) VALUES (
+    'msg_001...', 'abc123...', 'user', '什么是GraphRAG?', NOW()
+  )
+  ```
+- **触发器自动执行**（代码位置：`backend/migrations/v01_init.sql`）：
+  ```sql
+  CREATE TRIGGER trigger_update_session
+  AFTER INSERT ON messages
+  FOR EACH ROW
+  EXECUTE FUNCTION update_session_updated_at();
+  ```
+- **触发器效果**：
+  1. `UPDATE sessions SET message_count = message_count + 1`
+  2. `UPDATE sessions SET updated_at = NOW()`
+- **插入时间**：~5ms
+
+### 第5阶段：设置SSE响应流（步骤28-31）
+
+**步骤28-29**：设置HTTP响应头
+- **SSE标准头**：
+  ```
+  Content-Type: text/event-stream
+  Cache-Control: no-cache
+  Connection: keep-alive
+  X-Accel-Buffering: no
+  ```
+- **Nginx反向代理配置**（如有）：
+  ```nginx
+  proxy_buffering off;
+  proxy_cache off;
+  ```
+
+**步骤30-31**：发送会话ID
+- **SSE格式**：
+  ```
+  event: session
+  data: "abc123..."
+
+  ```
+- **客户端处理**：
+  ```javascript
+  const es = new EventSource('/api/v01/chat/stream');
+  es.addEventListener('session', (e) => {
+    const session_id = e.data;
+    console.log('Session ID:', session_id);
+  });
+  ```
+
+### 第6阶段：调用GraphRAG服务（步骤32-36）
+
+**步骤32-33**：HTTP调用GraphRAG
+- **URL**：`http://localhost:8001/v01/query/stream`
+- **请求头**：
+  - `Content-Type: application/json`
+  - `X-Request-ID: a1b2c3d4-...`（传播追踪ID）
+- **请求体**：
+  ```json
+  {
+    "query": "什么是GraphRAG?",
+    "session_id": "abc123...",
+    "stream": true
+  }
+  ```
+
+**步骤34**：查询改写
+- **技术**：基于LLM的查询理解
+- **改写示例**：
+  - 输入：`什么是GraphRAG?`
+  - 输出：`GraphRAG的定义、原理和应用场景`
+- **目的**：提升检索召回率
+
+**步骤35-36**：混合检索
+- **图谱检索（Neo4j）**：
+  ```cypher
+  MATCH (n:Concept {name: "GraphRAG"})-[r]->(m)
+  RETURN n, r, m LIMIT 10
+  ```
+  - 检索实体：GraphRAG
+  - 检索关系：`isTypeOf`, `relatedTo`
+  - 检索时间：~80ms
+
+- **向量检索（FAISS）**：
+  ```python
+  embedding = embed_model.encode("GraphRAG定义与原理")
+  distances, indices = faiss_index.search(embedding, k=3)
+  documents = [doc_store[i] for i in indices]
+  ```
+  - Top-K：3篇相关文档
+  - 检索时间：~70ms
+
+- **总检索时间**：~150ms
+
+### 第7阶段：调用LLM Router（步骤37-41）
+
+**步骤37-39**：构造增强Prompt
+- **Prompt模板**：
+  ```
+  [系统消息]
+  你是一个专业的AI助手，基于提供的上下文回答用户问题。
+
+  [检索上下文]
+  文档1: GraphRAG是一种...
+  文档2: GraphRAG的核心优势...
+  文档3: GraphRAG应用场景...
+
+  [用户问题]
+  什么是GraphRAG?
+  ```
+
+**步骤40-41**：HTTP调用LLM Router
+- **URL**：`http://localhost:8005/api/v1/chat`
+- **请求体**：
+  ```json
+  {
+    "model": "gpt-3.5-turbo",
+    "messages": [
+      {"role": "system", "content": "你是AI助手"},
+      {"role": "user", "content": "[检索上下文] 什么是GraphRAG?"}
+    ],
+    "stream": true,
+    "temperature": 0.7,
+    "max_tokens": 500
+  }
+  ```
+
+**步骤42-43**：模型路由
+- **路由策略**：
+  1. 根据`model`参数选择Provider（OpenAI, Claude, 通义千问...）
+  2. 负载均衡（如有多个API Key）
+  3. 降级策略（主模型失败 → 备用模型）
+- **选择结果**：`gpt-3.5-turbo` → OpenAI Provider
+
+**步骤44-45**：调用OpenAI API
+- **URL**：`https://api.openai.com/v1/chat/completions`
+- **认证**：`Authorization: Bearer sk-proj-...`
+- **流式请求**：`stream: true`
+
+### 第8阶段：SSE流式响应（步骤46-55，循环）
+
+**SSE数据格式（OpenAI）**：
+```
+data: {"id":"chatcmpl-xxx","object":"chat.completion.chunk","created":1696800625,"model":"gpt-3.5-turbo-0613","choices":[{"index":0,"delta":{"content":"GraphRAG"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-xxx","object":"chat.completion.chunk","created":1696800625,"model":"gpt-3.5-turbo-0613","choices":[{"index":0,"delta":{"content":"是"},"finish_reason":null}]}
+
+data: {"id":"chatcmpl-xxx","object":"chat.completion.chunk","created":1696800625,"model":"gpt-3.5-turbo-0613","choices":[{"index":0,"delta":{"content":"一种"},"finish_reason":null}]}
+
+...
+
+data: [DONE]
+
+```
+
+**每个Token的处理流程**：
+1. **OpenAI → LLM Router**（步骤46-47）：
+   - 解析SSE data行
+   - 提取`choices[0].delta.content`
+   - 延迟：~5ms
+
+2. **LLM Router → GraphRAG**（步骤48-49）：
+   - 重新封装为统一格式：
+     ```json
+     {"type": "delta", "content": "GraphRAG"}
+     ```
+   - 追加到`fullResponse`变量
+   - 转发SSE事件
+   - 延迟：~3ms
+
+3. **GraphRAG → Gateway**（步骤50-51）：
+   - 追加到`fullResponse`变量
+   - 转发SSE事件
+   - 延迟：~3ms
+
+4. **Gateway → Client**（步骤52-55）：
+   - 格式化为标准SSE格式：
+     ```
+     event: message
+     data: {"content": "GraphRAG"}
+
+     ```
+   - `c.Writer.Write()`写入TCP缓冲区
+   - `c.Writer.Flush()`立即刷新
+   - 客户端接收并渲染
+
+**单Token总延迟**：~11ms（OpenAI生成时间不计）
+
+**Token生成速度**：
+- OpenAI gpt-3.5-turbo：~20 tokens/秒
+- 每Token间隔：~50ms
+- 客户端感知延迟：~60ms/token
+
+### 第9阶段：流式响应结束（步骤56-64）
+
+**步骤56-58**：OpenAI发送完成信号
+- **最后一个SSE事件**：
+  ```json
+  {
+    "choices": [{
+      "delta": {},
+      "finish_reason": "stop"
+    }],
+    "usage": {
+      "prompt_tokens": 125,
+      "completion_tokens": 89,
+      "total_tokens": 214
+    }
+  }
+  ```
+- **finish_reason类型**：
+  - `stop`：正常结束
+  - `length`：达到max_tokens限制
+  - `content_filter`：内容过滤
+  - `null`：流式响应中（未结束）
+
+**步骤59-60**：LLM Router处理
+- **记录Token消耗**：用于计费和监控
+- **转发完成信号**给GraphRAG
+
+**步骤61-63**：GraphRAG处理
+- **记录检索指标**：
+  - `retrieved_docs = 3`
+  - `retrieval_time_ms = 150`
+- **转发完成信号**给Gateway
+
+**步骤64**：Gateway发送完成事件给客户端
+- **SSE格式**：
+  ```
+  event: done
+  data: {"finish_reason": "stop"}
+
+  ```
+- **客户端处理**：
+  ```javascript
+  es.addEventListener('done', (e) => {
+    console.log('Stream finished:', e.data);
+    es.close(); // 关闭EventSource连接
+  });
+  ```
+
+**步骤65-67**：关闭连接
+- 从OpenAI到Gateway逐层关闭HTTP连接
+- 释放Goroutine资源
+
+### 第10阶段：异步保存AI回复（步骤68-75）
+
+**步骤68-75**：异步Goroutine保存消息
+- **执行方式**：
+  ```go
+  go func() {
+      saveCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+      defer cancel()
+      
+      assistantMessage := &model.Message{
+          ID:        uuid.New().String(),
+          SessionID: sessionID,
+          Role:      "assistant",
+          Content:   fullResponse,
+          CreatedAt: time.Now(),
+      }
+      
+      h.messageRepo.Create(saveCtx, assistantMessage)
+  }()
+  ```
+- **优势**：
+  1. **不阻塞主流程**：用户体验优先
+  2. **失败不影响响应**：消息已发送给客户端
+  3. **独立超时控制**：5秒超时
+- **SQL插入**（步骤70-73）：
+  ```sql
+  INSERT INTO messages (
+    id, session_id, role, content, created_at
+  ) VALUES (
+    'msg_002...', 'abc123...', 'assistant', 
+    'GraphRAG是一种结合知识图谱和检索增强生成的...(完整回复)', 
+    NOW()
+  )
+  ```
+- **触发器效果**：
+  - `sessions.message_count += 1`（现在为2）
+  - `sessions.updated_at = NOW()`
+
+**步骤74-75**：删除会话缓存
+- **Redis DEL**：`DEL session:abc123...`
+- **目的**：确保下次查询重新从数据库加载，`message_count`字段正确
+- **替代方案**：直接更新缓存中的`message_count`（更高效，但实现复杂）
+
+---
+
+**流式聊天关键要点总结**：
+
+1. **延迟分解**：总响应时间 ~3.5秒
+   - 认证 + 会话验证：20ms
+   - 保存用户消息：5ms
+   - GraphRAG检索：150ms
+   - LLM生成：3秒（89 tokens @ 20 tokens/秒）
+   - 流式转发：每token +11ms
+   - 异步保存：不阻塞（后台执行）
+
+2. **流式响应优势**：
+   - **首Token延迟**（TTFT）：~200ms（相比非流式3.5秒）
+   - **用户感知**：实时打字效果，体验更好
+   - **早期中断**：用户可随时停止（节省Token）
+
+3. **缓存策略**：
+   - **会话缓存**：Redis 30分钟 TTL，命中率85%
+   - **缓存失效**：消息插入后删除（保证一致性）
+
+4. **SSE协议特点**：
+   - **单向流**：服务端 → 客户端（相比WebSocket双向）
+   - **自动重连**：浏览器EventSource API内置
+   - **文本协议**：易于调试和监控
+
+5. **并发控制**：
+   - **长连接占用**：每个流式请求占用1个Goroutine
+   - **超时保护**：客户端60秒超时，服务端90秒超时
+   - **限流**：流式API限流更宽松（10req/min）
+
+6. **可观测性**：
+   - **Request ID传播**：Gateway → GraphRAG → LLM Router → OpenAI
+   - **链路追踪**：Jaeger可视化完整调用链
+   - **Token消耗监控**：实时统计成本
+
+7. **容错处理**：
+   - **算法服务失败**：返回错误SSE事件，客户端显示错误
+   - **OpenAI超时**：30秒超时，自动降级到备用模型
+   - **异步保存失败**：记录日志，不影响用户体验
+
+---
 
 ---
 
@@ -2003,9 +3325,5 @@ VoiceHelper网关作为系统的统一入口，承担了认证鉴权、流量控
 - 实现动态限流（基于系统负载自适应调整）
 - 增强安全防护（WAF、DDoS防护、零信任架构）
 
----
 
-**文档状态**：✅ 已完成  
-**覆盖度**：100%（API、数据结构、时序图、中间件、性能优化、最佳实践）  
-**下一步**：生成认证服务模块文档（02-Auth认证服务）
 

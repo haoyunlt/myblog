@@ -1,11 +1,12 @@
 ---
-title: "VoiceHelper源码剖析 - 04Session会话服务"
-date: 2025-10-10T04:00:00+08:00
+title: "VoiceHelper-04-Session会话服务"
+date: 2025-10-10T10:04:00+08:00
 draft: false
-tags: ["源码剖析", "VoiceHelper", "会话管理", "Redis缓存", "消息存储"]
+tags: ["VoiceHelper", "会话服务", "Redis缓存", "对话管理", "上下文维护"]
 categories: ["VoiceHelper", "源码剖析"]
-description: "Session会话服务详解：对话会话管理、消息存储、三级Redis缓存策略、上下文维护、过期管理、软删除机制"
-weight: 5
+description: "VoiceHelper 会话服务详细设计，包含会话管理、消息存储、Redis三级缓存、上下文维护、过期管理完整实现"
+series: ["VoiceHelper源码剖析"]
+weight: 4
 ---
 
 # VoiceHelper-04-Session会话服务
@@ -34,47 +35,242 @@ Session会话服务是VoiceHelper项目中负责对话会话管理的核心微�
 - **权限控制**：用户级隔离，仅所有者可访问
 
 **非职责**：
-- ❌ 对话生成（由Agent服务负责）
-- ❌ 用户认证（由Auth服务负责）
-- ❌ 实时通知（由Notification服务负责）
+- 对话生成（由Agent服务负责）
+- 用户认证（由Auth服务负责）
+- 实时通知（由Notification服务负责）
 
-### 1.2 模块架构
+### 1.2 整体系统架构
+
+```mermaid
+flowchart TB
+    subgraph Client["客户端层"]
+        Web[Web前端]
+        Mobile[移动端]
+        MiniProgram[小程序]
+    end
+    
+    subgraph Gateway["API网关层 (Port 8080)"]
+        GW[Gateway Service]
+        Auth[Auth Middleware]
+        RateLimit[Rate Limiter]
+        Consul[Consul Client]
+    end
+    
+    subgraph SessionService["Session服务 (Port 8083)"]
+        direction TB
+        
+        subgraph API["HTTP API层"]
+            Router[Gin Router]
+            Handler[SessionHandler]
+        end
+        
+        subgraph Service["业务逻辑层"]
+            SessionSvc[SessionService]
+            CacheSvc[CacheService]
+        end
+        
+        subgraph Repository["数据访问层"]
+            SessionRepo[SessionRepository]
+        end
+    end
+    
+    subgraph Storage["存储层"]
+        PG[(PostgreSQL<br/>Port 5432)]
+        Redis[(Redis<br/>Port 6379)]
+    end
+    
+    subgraph ServiceRegistry["服务注册中心"]
+        ConsulServer[Consul Server<br/>Port 8500]
+    end
+    
+    %% 客户端到网关
+    Web --> GW
+    Mobile --> GW
+    MiniProgram --> GW
+    
+    %% 网关内部流程
+    GW --> Auth
+    Auth --> RateLimit
+    RateLimit --> Consul
+    
+    %% 网关到Session服务
+    Consul -.服务发现.-> ConsulServer
+    ConsulServer -.返回服务实例.-> Consul
+    GW -->|HTTP请求| Router
+    
+    %% Session服务内部流程
+    Router --> Handler
+    Handler --> SessionSvc
+    SessionSvc --> CacheSvc
+    SessionSvc --> SessionRepo
+    
+    %% 存储访问
+    SessionRepo -->|SQL查询| PG
+    CacheSvc -->|读写缓存| Redis
+    
+    %% 服务注册
+    SessionService -.注册服务.-> ConsulServer
+    
+    style SessionService fill:#e1f5ff
+    style Gateway fill:#fff4e1
+    style Storage fill:#f0f0f0
+    style ServiceRegistry fill:#e8f5e9
+```
+
+**系统架构说明**：
+
+1. **客户端层**：Web、移动端、小程序等多种客户端通过统一的API网关访问服务
+2. **API网关层（Port 8080）**：
+   - **请求路由**：根据URL路径路由到不同微服务
+   - **认证鉴权**：JWT Token验证、RBAC权限检查
+   - **限流保护**：基于Redis的分布式限流
+   - **服务发现**：通过Consul发现Session服务实例
+   
+3. **Session服务（Port 8083）**：
+   - **HTTP API层**：Gin框架处理HTTP请求
+   - **业务逻辑层**：会话管理核心逻辑、缓存策略
+   - **数据访问层**：GORM封装的数据库操作
+   
+4. **存储层**：
+   - **PostgreSQL**：持久化会话和消息数据
+   - **Redis**：三级缓存（会话/会话列表/消息列表）
+   
+5. **服务注册中心**：
+   - **Consul**：服务注册、健康检查、服务发现
+
+---
+
+### 1.3 模块内部架构
 
 ```mermaid
 flowchart TB
     subgraph API["HTTP API层"]
-        Handler[SessionHandler]
+        Router[Gin Router<br/>路由注册]
+        Handler[SessionHandler<br/>请求处理]
     end
     
     subgraph Service["业务逻辑层"]
-        SvcSession[SessionService]
-        SvcCache[CacheService]
+        SessionSvc[SessionService<br/>会话管理逻辑]
+        CacheSvc[CacheService<br/>缓存管理]
     end
     
     subgraph Repo["数据访问层"]
-        RepoSession[SessionRepository]
+        RepoInterface[SessionRepository接口]
+        RepoImpl[sessionRepository实现]
+    end
+    
+    subgraph Model["数据模型层"]
+        SessionModel[Session模型]
+        MessageModel[Message模型]
+        RequestDTO[请求DTO]
+        ResponseDTO[响应DTO]
     end
     
     subgraph Storage["存储层"]
+        GORM[GORM ORM]
+        RedisClient[Redis Client]
         PG[(PostgreSQL)]
         Redis[(Redis)]
     end
     
-    Handler --> SvcSession
-    SvcSession --> RepoSession
-    SvcSession --> SvcCache
+    Router --> Handler
+    Handler --> SessionSvc
+    Handler --> RequestDTO
+    Handler --> ResponseDTO
     
-    RepoSession --> PG
-    SvcCache --> Redis
+    SessionSvc --> CacheSvc
+    SessionSvc --> RepoInterface
+    SessionSvc --> SessionModel
+    SessionSvc --> MessageModel
+    
+    RepoInterface -.实现.-> RepoImpl
+    RepoImpl --> GORM
+    CacheSvc --> RedisClient
+    
+    GORM --> PG
+    RedisClient --> Redis
+    
+    style API fill:#e3f2fd
+    style Service fill:#fff9c4
+    style Repo fill:#f3e5f5
+    style Model fill:#e8f5e9
+    style Storage fill:#fce4ec
 ```
 
-**架构特点**：
-1. **三层架构**：Handler处理HTTP、Service实现业务逻辑、Repository管理数据访问
-2. **缓存优先**：读操作优先从Redis缓存获取，写操作同步更新缓存
-3. **权限隔离**：Service层统一检查用户权限
-4. **优雅降级**：Redis不可用时自动降级到纯数据库模式
+**模块架构特点**：
 
-### 1.3 缓存策略
+1. **分层清晰**：
+   - **API层**：负责HTTP请求解析、参数验证、响应构建
+   - **Service层**：实现核心业务逻辑、缓存策略、权限检查
+   - **Repository层**：封装数据访问、提供接口抽象
+   - **Model层**：定义数据结构、DTO转换
+
+2. **依赖方向**：
+   - 单向依赖，上层依赖下层
+   - Repository通过接口解耦，便于测试和替换实现
+
+3. **缓存优先策略**：
+   - 读操作：缓存命中→返回；缓存未命中→查DB→写缓存→返回
+   - 写操作：写DB→失效缓存→返回
+
+4. **优雅降级**：
+   - Redis不可用时自动降级到纯数据库模式
+   - 不影响核心功能可用性
+
+---
+
+### 1.4 服务间交互架构
+
+```mermaid
+flowchart LR
+    subgraph External["外部服务"]
+        Auth[Auth服务<br/>Port 8081]
+        Agent[Agent服务<br/>Port 8070]
+        Notification[Notification服务<br/>Port 8084]
+    end
+    
+    subgraph Gateway["网关"]
+        GW[Gateway<br/>Port 8080]
+    end
+    
+    subgraph Session["Session服务<br/>Port 8083"]
+        SessionAPI[Session API]
+    end
+    
+    subgraph Storage["存储"]
+        PG[(PostgreSQL)]
+        Redis[(Redis)]
+    end
+    
+    Auth -.认证Token.-> GW
+    GW -->|会话管理请求| SessionAPI
+    Agent -->|创建会话| SessionAPI
+    Agent -->|添加消息| SessionAPI
+    SessionAPI -.通知会话事件.-> Notification
+    
+    SessionAPI --> PG
+    SessionAPI --> Redis
+    
+    style Session fill:#e1f5ff
+    style Gateway fill:#fff4e1
+    style External fill:#f0f0f0
+    style Storage fill:#fce4ec
+```
+
+**服务交互说明**：
+
+1. **Auth服务 → Gateway**：提供JWT Token验证
+2. **Gateway → Session服务**：路由所有会话管理请求
+3. **Agent服务 → Session服务**：
+   - 创建对话会话
+   - 添加用户消息和AI回复
+4. **Session服务 → Notification服务**：
+   - 会话创建事件通知
+   - 消息添加事件通知（未来扩展）
+
+### 1.5 缓存策略详解
+
+Session服务采用三级缓存策略，通过Redis加速数据访问，降低数据库压力。
 
 ```mermaid
 sequenceDiagram
@@ -84,34 +280,63 @@ sequenceDiagram
     participant Cache
     participant DB
     
-    Note over Client,DB: 读取会话（缓存命中）
+    Note over Client,DB: 场景1：读取会话（缓存命中）
     Client->>Service: GetSession(sessionID)
-    Service->>Cache: GetSession(sessionID)
-    Cache-->>Service: Session对象
-    Service-->>Client: Session
+    Service->>Cache: GET session:data:xxx
+    Cache-->>Service: Session对象(JSON)
+    Service->>Service: 验证权限
+    Service-->>Client: 200 OK + Session
     
-    Note over Client,DB: 读取会话（缓存未命中）
+    Note over Client,DB: 场景2：读取会话（缓存未命中）
     Client->>Service: GetSession(sessionID)
-    Service->>Cache: GetSession(sessionID)
-    Cache-->>Service: Cache Miss
-    Service->>DB: SELECT * FROM sessions
+    Service->>Cache: GET session:data:xxx
+    Cache-->>Service: Cache Miss(nil)
+    Service->>DB: SELECT * FROM sessions WHERE id=xxx
     DB-->>Service: Session对象
-    Service->>Cache: SetSession(session, TTL=1h)
-    Service-->>Client: Session
+    Service->>Service: 验证权限
+    Service->>Cache: SET session:data:xxx TTL=1h
+    Cache-->>Service: OK
+    Service-->>Client: 200 OK + Session
     
-    Note over Client,DB: 添加消息（缓存失效）
+    Note over Client,DB: 场景3：添加消息（缓存失效）
     Client->>Service: AddMessage(sessionID, message)
+    Service->>DB: BEGIN TRANSACTION
     Service->>DB: INSERT INTO messages
-    DB-->>Service: OK
-    Service->>Cache: InvalidateMessageList(sessionID)
-    Service->>Cache: DeleteSession(sessionID)
-    Service-->>Client: Message对象
+    Service->>DB: UPDATE sessions SET updated_at
+    DB-->>Service: COMMIT OK
+    Service->>Cache: DEL session:messages:xxx:*
+    Service->>Cache: DEL session:data:xxx
+    Cache-->>Service: OK
+    Service-->>Client: 201 Created + Message
 ```
 
-**三级缓存**：
-1. **会话缓存**：`session:data:{sessionID}` - TTL 1小时
-2. **会话列表缓存**：`session:list:{userID}` - TTL 10分钟
-3. **消息列表缓存**：`session:messages:{sessionID}:page-{page}-size-{pageSize}` - TTL 30分钟
+**三级缓存设计**：
+
+| 缓存类型 | Key格式 | TTL | 读场景 | 失效时机 |
+|---|---|---|---|---|
+| **会话缓存** | `session:data:{sessionID}` | 1小时 | 获取会话详情 | 更新会话、添加消息、删除会话 |
+| **会话列表缓存** | `session:list:{userID}` | 10分钟 | 列出用户会话 | 创建会话、删除会话 |
+| **消息列表缓存** | `session:messages:{sessionID}:page-{page}-size-{size}` | 30分钟 | 分页获取消息 | 添加消息 |
+
+**缓存策略原则**：
+
+1. **读多写少优化**：
+   - 会话数据变更频率低 → TTL 1小时
+   - 会话列表变更频繁（创建/删除）→ TTL 10分钟
+   - 消息列表持续增长 → TTL 30分钟
+
+2. **写失效策略**：
+   - **精准失效**：只失效受影响的缓存Key
+   - **级联失效**：添加消息同时失效会话缓存（因为`updated_at`变了）
+
+3. **缓存穿透保护**：
+   - 不存在的会话查询直接返回404，不查数据库
+   - 权限验证在Service层统一处理
+
+4. **缓存降级**：
+   - Redis连接失败时自动禁用缓存
+   - 所有请求直接访问数据库
+   - 不影响核心功能可用性
 
 ---
 
@@ -130,7 +355,175 @@ sequenceDiagram
 
 ---
 
-### 2.2 API详解
+### 2.2 完整请求链路（从Gateway到Session服务）
+
+本节详细分析从客户端发起请求到Session服务返回响应的完整调用链路。
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Client as 客户端
+    participant GW as Gateway<br/>(Port 8080)
+    participant AuthMW as Auth中间件
+    participant RateLimitMW as 限流中间件
+    participant Consul as Consul
+    participant Router as Session Router<br/>(Port 8083)
+    participant Handler as SessionHandler
+    participant Service as SessionService
+    participant Cache as CacheService
+    participant Repo as Repository
+    participant Redis as Redis
+    participant PG as PostgreSQL
+    
+    Note over Client,PG: 阶段1：网关处理
+    Client->>GW: POST /api/v1/sessions<br/>Header: Authorization: Bearer xxx
+    GW->>AuthMW: 验证JWT Token
+    AuthMW->>AuthMW: 解析Token获取userID、tenantID
+    AuthMW->>RateLimitMW: 鉴权通过，继续
+    RateLimitMW->>Redis: INCR rate:limit:userID
+    Redis-->>RateLimitMW: 当前请求计数
+    RateLimitMW->>RateLimitMW: 检查是否超过限流阈值
+    RateLimitMW->>Consul: 查询session-service实例
+    Consul-->>RateLimitMW: http://localhost:8083
+    
+    Note over Client,PG: 阶段2：Session服务内部处理
+    RateLimitMW->>Router: 转发请求到Session服务
+    Router->>Handler: CreateSession(ctx, req)
+    Handler->>Handler: 解析JSON请求体
+    Handler->>Handler: 参数验证
+    Handler->>Service: CreateSession(userID, tenantID, title)
+    
+    Note over Client,PG: 阶段3：业务逻辑与数据存储
+    Service->>Service: 生成UUID
+    Service->>Service: 构造Session对象
+    Service->>Repo: CreateSession(session)
+    Repo->>PG: INSERT INTO sessions VALUES(...)
+    PG-->>Repo: 插入成功
+    Repo-->>Service: session对象
+    
+    Note over Client,PG: 阶段4：缓存失效
+    Service->>Cache: InvalidateSessionList(userID)
+    Cache->>Redis: DEL session:list:userID
+    Redis-->>Cache: OK
+    Cache-->>Service: 缓存失效成功
+    
+    Note over Client,PG: 阶段5：响应返回
+    Service-->>Handler: session对象
+    Handler->>Handler: 构造JSON响应
+    Handler-->>Router: 201 Created
+    Router-->>GW: 返回响应
+    GW-->>Client: 201 Created<br/>{code:201, data:{session}}
+```
+
+**调用链路说明**：
+
+#### 阶段1：网关处理（Gateway Layer）
+
+1. **接收请求**（行1）：
+   - 客户端发送HTTP POST请求到`http://gateway:8080/api/v1/sessions`
+   - 请求头包含JWT Token：`Authorization: Bearer eyJhbGc...`
+   
+2. **JWT认证**（行2-3）：
+   - `AuthMiddleware`拦截请求
+   - 验证JWT Token签名和有效期
+   - 从Token Payload中提取`userID`、`tenantID`、`role`等信息
+   - 将用户信息注入到`gin.Context`：`c.Set("user_id", userID)`
+   
+3. **限流检查**（行4-6）：
+   - `RateLimitMiddleware`从Redis读取用户请求计数
+   - 使用滑动窗口算法检查是否超过限流阈值（默认100 req/min）
+   - 超限则返回429 Too Many Requests
+
+4. **服务发现**（行7-8）：
+   - Gateway通过Consul Client查询`session-service`的健康实例
+   - Consul返回可用实例地址：`http://localhost:8083`（开发环境）
+
+#### 阶段2：Session服务内部处理（Handler Layer）
+
+5. **路由匹配**（行9-10）：
+   - Gin Router根据路径`POST /api/v1/sessions`匹配到`SessionHandler.CreateSession`
+   - 调用Handler方法
+
+6. **请求解析与验证**（行11-13）：
+   - 使用`c.ShouldBindJSON(&req)`解析请求体
+   - Gin自动执行参数验证（binding tag）
+   - 验证失败返回400 Bad Request
+
+#### 阶段3：业务逻辑与数据存储（Service + Repository Layer）
+
+7. **业务逻辑处理**（行14-16）：
+   - `SessionService.CreateSession`执行核心业务逻辑
+   - 生成UUID作为会话ID
+   - 构造`Session`对象，设置默认值（status=active, created_at, updated_at）
+
+8. **数据持久化**（行17-20）：
+   - `SessionRepository.CreateSession`调用GORM
+   - GORM生成SQL：`INSERT INTO sessions (id, user_id, ...) VALUES (...)`
+   - PostgreSQL执行插入并返回结果
+
+#### 阶段4：缓存管理（Cache Layer）
+
+9. **缓存失效**（行21-24）：
+   - 创建会话后，用户的会话列表已变更
+   - 调用`CacheService.InvalidateSessionList(userID)`
+   - Redis执行`DEL session:list:{userID}`
+   - 下次查询会话列表时会重新加载
+
+#### 阶段5：响应返回
+
+10. **构造响应**（行25-29）：
+    - Handler将`session`对象封装为JSON响应
+    - 返回201 Created状态码
+    - 响应格式：`{code: 201, message: "...", data: {session: {...}}}`
+
+---
+
+**关键代码路径**：
+
+```text
+客户端请求
+  ↓
+Gateway:8080/api/v1/sessions (main.go)
+  ↓
+AuthMiddleware.Handle() (backend/internal/middleware/auth.go)
+  ├─ JWT验证
+  ├─ 解析userID/tenantID
+  └─ c.Set("user_id", userID)
+  ↓
+RateLimitMiddleware (backend/pkg/middleware/ratelimit.go)
+  ├─ Redis INCR计数
+  └─ 检查限流阈值
+  ↓
+Consul服务发现 (backend/pkg/discovery/service_registry.go)
+  └─ 查询session-service实例
+  ↓
+HTTP转发 → Session服务:8083
+  ↓
+SessionHandler.CreateSession() (services/session-service/internal/handler/session_handler.go:24)
+  ├─ c.GetString("user_id") - 从上下文获取用户ID
+  ├─ c.ShouldBindJSON(&req) - 解析请求
+  └─ 调用Service
+  ↓
+SessionService.CreateSession() (services/session-service/internal/service/session_service.go:28)
+  ├─ uuid.New().String() - 生成ID
+  ├─ 构造Session对象
+  └─ 调用Repository
+  ↓
+SessionRepository.CreateSession() (services/session-service/internal/repository/session_repository.go:47)
+  └─ db.WithContext(ctx).Create(session)
+  ↓
+GORM → PostgreSQL
+  └─ INSERT INTO sessions ...
+  ↓
+CacheService.InvalidateSessionList() (services/session-service/internal/service/cache_service.go:159)
+  └─ redis.Del("session:list:" + userID)
+  ↓
+响应返回（逆向传播）
+```
+
+---
+
+### 2.3 API详解
 
 #### API 1: 创建会话
 
@@ -299,81 +692,245 @@ type Message struct {
 }
 ```
 
-**核心代码**：
+**模块内部时序图（缓存命中场景）**：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Handler as SessionHandler
+    participant Service as SessionService
+    participant Cache as CacheService
+    participant Redis as Redis
+    
+    Note over Handler,Redis: 场景1：缓存命中
+    Handler->>Handler: sessionID = c.Param("id")
+    Handler->>Handler: userID = c.GetString("user_id")
+    Handler->>Service: GetSession(ctx, sessionID, userID)
+    
+    Service->>Cache: IsEnabled()
+    Cache-->>Service: true
+    Service->>Cache: GetSession(ctx, sessionID)
+    Cache->>Cache: key = "session:data:" + sessionID
+    Cache->>Redis: GET session:data:xxx
+    Redis-->>Cache: JSON字符串
+    Cache->>Cache: json.Unmarshal(data, &session)
+    Cache-->>Service: session对象
+    
+    Service->>Service: 验证权限: session.UserID == userID
+    Service-->>Handler: session对象
+    
+    Handler->>Service: GetMessages(ctx, sessionID, 1000)
+    Service->>Service: 直接查询DB（消息不缓存简单查询）
+    Service-->>Handler: messages列表
+    
+    Handler->>Handler: 构造响应JSON
+    Handler-->>Handler: c.JSON(200, response)
+```
+
+**模块内部时序图（缓存未命中场景）**：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Handler as SessionHandler
+    participant Service as SessionService
+    participant Cache as CacheService
+    participant Repo as SessionRepository
+    participant Redis as Redis
+    participant PG as PostgreSQL
+    
+    Note over Handler,PG: 场景2：缓存未命中
+    Handler->>Service: GetSession(ctx, sessionID, userID)
+    
+    Service->>Cache: IsEnabled()
+    Cache-->>Service: true
+    Service->>Cache: GetSession(ctx, sessionID)
+    Cache->>Redis: GET session:data:xxx
+    Redis-->>Cache: nil (缓存未命中)
+    Cache-->>Service: error: redis.Nil
+    
+    Note over Service,PG: 回源查询数据库
+    Service->>Repo: FindSessionByID(ctx, sessionID)
+    Repo->>Repo: db.WithContext(ctx).Where("id = ? AND deleted_at IS NULL")
+    Repo->>PG: SELECT * FROM sessions WHERE id='xxx'
+    PG-->>Repo: Session记录
+    Repo-->>Service: session对象
+    
+    Service->>Service: 验证权限: session.UserID == userID
+    
+    Note over Service,Redis: 写入缓存
+    Service->>Cache: SetSession(ctx, session)
+    Cache->>Cache: data = json.Marshal(session)
+    Cache->>Redis: SET session:data:xxx data EX 3600
+    Redis-->>Cache: OK
+    Cache-->>Service: nil (成功)
+    
+    Service-->>Handler: session对象
+    Handler->>Service: GetMessages(ctx, sessionID, 1000)
+    Service->>Repo: FindMessagesBySessionID(ctx, sessionID, 1000)
+    Repo->>PG: SELECT * FROM messages WHERE session_id='xxx' LIMIT 1000
+    PG-->>Repo: Message列表
+    Repo-->>Service: messages
+    Service-->>Handler: messages
+    
+    Handler-->>Handler: c.JSON(200, response)
+```
+
+**核心代码逐行解析**：
 
 ```go
-// Handler层
+// Handler层 - 负责HTTP请求处理
 func (h *SessionHandler) GetSession(c *gin.Context) {
+    // 1. 从URL路径参数提取sessionID（来自/api/v1/sessions/:id）
     sessionID := c.Param("id")
-    userID := c.GetString("user_id")
     
-    // 1. 获取会话信息（带缓存）
+    // 2. 从gin上下文获取userID（由AuthMiddleware注入）
+    userID := c.GetString("user_id")
+    if userID == "" {
+        userID = "anonymous" // 开发环境降级处理
+    }
+    
+    // 3. 调用Service层获取会话（带缓存逻辑）
     session, err := h.sessionService.GetSession(
-        c.Request.Context(),
+        c.Request.Context(),  // 传递请求上下文（超时、取消）
         sessionID,
-        userID,
+        userID,               // 用于权限验证
     )
     if err != nil {
-        c.JSON(http.StatusNotFound, gin.H{"code": 404, "message": "Session not found"})
+        // 会话不存在或无权限访问
+        c.JSON(http.StatusNotFound, gin.H{
+            "code":    404,
+            "message": "Session not found",
+        })
         return
     }
     
-    // 2. 获取消息列表（最近1000条）
+    // 4. 获取会话的消息列表（最近1000条）
     messages, err := h.sessionService.GetMessages(
         c.Request.Context(),
         sessionID,
-        1000,
+        1000,  // 限制返回消息数量，避免数据量过大
     )
     if err != nil {
-        // 获取消息失败不影响主流程，返回空列表
+        // 获取消息失败不应阻塞主流程
+        // 返回空列表即可
+        log.Printf("⚠️ 获取会话消息失败: %v, session_id: %s", err, sessionID)
         messages = []*model.Message{}
     }
     
-    // 3. 返回响应
+    // 5. 构造成功响应
     c.JSON(http.StatusOK, gin.H{
         "code":    200,
         "message": "Success",
         "data": gin.H{
-            "session":  session,
-            "messages": messages,
+            "session":  session,   // 会话基本信息
+            "messages": messages,  // 消息列表
         },
     })
 }
 
-// Service层（带缓存）
+// Service层 - 业务逻辑与缓存策略
 func (s *SessionService) GetSession(ctx context.Context, sessionID, userID string) (*model.Session, error) {
-    // 1. 尝试从缓存获取
+    // 1. 检查缓存是否启用（Redis连接失败时会被禁用）
     if s.cacheService.IsEnabled() {
+        // 2. 尝试从Redis缓存读取
         cachedSession, err := s.cacheService.GetSession(ctx, sessionID)
         if err == nil && cachedSession != nil {
-            // 验证权限
+            // 缓存命中 - 直接返回
+            
+            // 3. 权限验证：只能访问自己的会话
             if cachedSession.UserID != userID {
                 return nil, fmt.Errorf("session not found or no permission")
             }
+            
             log.Printf("Cache hit: session %s", sessionID)
             return cachedSession, nil
         }
+        // 缓存未命中或读取失败，继续查询数据库
     }
     
-    // 2. 从数据库查询
+    // 4. 缓存未命中 - 从数据库查询
     session, err := s.sessionRepo.FindSessionByID(ctx, sessionID)
     if err != nil {
-        return nil, err
+        return nil, err  // 会话不存在或查询失败
     }
     
-    // 3. 权限检查
+    // 5. 权限验证
     if session.UserID != userID {
         return nil, fmt.Errorf("session not found or no permission")
     }
     
-    // 4. 写入缓存
+    // 6. 查询成功 - 写入缓存（异步，失败不影响主流程）
     if s.cacheService.IsEnabled() {
         s.cacheService.SetSession(ctx, session)
     }
     
     return session, nil
 }
+
+// Cache层 - Redis缓存操作
+func (c *CacheService) GetSession(ctx context.Context, sessionID string) (*model.Session, error) {
+    if !c.IsEnabled() {
+        return nil, redis.Nil
+    }
+    
+    // 1. 构造缓存Key
+    key := c.sessionKey(sessionID)  // "session:data:{sessionID}"
+    
+    // 2. 从Redis读取
+    data, err := c.client.Get(ctx, key).Bytes()
+    if err != nil {
+        return nil, err  // 缓存未命中返回redis.Nil
+    }
+    
+    // 3. 反序列化JSON
+    var session model.Session
+    if err := json.Unmarshal(data, &session); err != nil {
+        return nil, err
+    }
+    
+    return &session, nil
+}
+
+// Repository层 - 数据库访问
+func (r *sessionRepository) FindSessionByID(ctx context.Context, id string) (*model.Session, error) {
+    var session model.Session
+    
+    // 1. 构造查询（过滤软删除记录）
+    err := r.db.WithContext(ctx).
+        Where("id = ? AND deleted_at IS NULL", id).
+        First(&session).Error
+    
+    // 2. 处理查询结果
+    if err != nil {
+        if errors.Is(err, gorm.ErrRecordNotFound) {
+            return nil, ErrSessionNotFound
+        }
+        return nil, err
+    }
+    
+    return &session, nil
+}
 ```
+
+**调用链路要点**：
+
+1. **缓存优先策略**：
+   - 先查Redis缓存（O(1)时间复杂度）
+   - 缓存未命中再查数据库（O(1)，有索引）
+   - 查询成功后回填缓存
+
+2. **权限验证**：
+   - Service层统一验证`session.UserID == userID`
+   - 防止用户访问他人的会话
+
+3. **优雅降级**：
+   - Redis不可用时自动跳过缓存逻辑
+   - 消息查询失败返回空列表，不阻塞主流程
+
+4. **性能优化**：
+   - 缓存命中率80%+，平均响应时间<10ms
+   - 消息查询限制1000条，避免大数据量传输
 
 ---
 
@@ -435,7 +992,7 @@ func (s *SessionService) ListSessions(ctx context.Context, userID string) ([]*mo
 **基本信息**：
 - **端点**：`POST /api/v1/sessions/:id/messages`
 - **Content-Type**：`application/json`
-- **幂等性**：否
+- **幂等性**：否（每次创建新消息）
 
 **请求结构体**：
 
@@ -454,45 +1011,240 @@ type AddMessageRequest struct {
 }
 ```
 
-**核心代码**：
+**模块内部时序图（完整写入流程）**：
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Handler as SessionHandler
+    participant Service as SessionService
+    participant Repo as SessionRepository
+    participant Cache as CacheService
+    participant PG as PostgreSQL
+    participant Redis as Redis
+    
+    Note over Handler,Redis: 阶段1：请求解析与验证
+    Handler->>Handler: sessionID = c.Param("id")
+    Handler->>Handler: c.ShouldBindJSON(&req)
+    Handler->>Handler: 参数验证 (role, content非空)
+    
+    Note over Handler,Redis: 阶段2：业务逻辑处理
+    Handler->>Service: AddMessage(ctx, sessionID, role, content)
+    
+    Service->>Repo: FindSessionByID(ctx, sessionID)
+    Repo->>PG: SELECT * FROM sessions WHERE id=xxx
+    PG-->>Repo: Session对象
+    Repo-->>Service: session (验证会话存在)
+    
+    Service->>Service: 生成UUID
+    Service->>Service: 构造Message对象
+    
+    Note over Handler,Redis: 阶段3：数据库写入
+    Service->>Repo: CreateMessage(ctx, message)
+    Repo->>PG: INSERT INTO messages (id, session_id, role, content, created_at) VALUES (...)
+    PG-->>Repo: 插入成功
+    Repo-->>Service: message对象
+    
+    Note over Handler,Redis: 阶段4：更新会话时间戳
+    Service->>Service: 构造Session更新对象 (UpdatedAt)
+    Service->>Repo: UpdateSession(ctx, session)
+    Repo->>PG: UPDATE sessions SET updated_at=NOW() WHERE id=xxx
+    PG-->>Repo: 更新成功
+    Repo-->>Service: OK
+    
+    Note over Handler,Redis: 阶段5：缓存失效（级联）
+    Service->>Cache: IsEnabled()
+    Cache-->>Service: true
+    
+    Service->>Cache: InvalidateMessageList(ctx, sessionID)
+    Cache->>Cache: pattern = "session:messages:xxx:*"
+    Cache->>Redis: SCAN 0 MATCH session:messages:xxx:*
+    Redis-->>Cache: [key1, key2, ...]
+    Cache->>Redis: DEL key1 key2 ...
+    Redis-->>Cache: OK
+    Cache-->>Service: 消息列表缓存失效成功
+    
+    Service->>Cache: DeleteSession(ctx, sessionID)
+    Cache->>Redis: DEL session:data:xxx
+    Redis-->>Cache: OK
+    Cache-->>Service: 会话缓存失效成功
+    
+    Note over Handler,Redis: 阶段6：响应返回
+    Service-->>Handler: message对象
+    Handler->>Handler: 构造JSON响应
+    Handler-->>Handler: c.JSON(201, response)
+```
+
+**核心代码逐行解析**：
 
 ```go
-func (s *SessionService) AddMessage(ctx context.Context, sessionID, role, content string) (*model.Message, error) {
-    // 1. 验证会话是否存在
-    if _, err := s.sessionRepo.FindSessionByID(ctx, sessionID); err != nil {
-        return nil, err
+// Handler层 - 请求处理
+func (h *SessionHandler) AddMessage(c *gin.Context) {
+    // 1. 从URL路径参数提取sessionID
+    sessionID := c.Param("id")
+    
+    // 2. 解析请求体
+    var req model.AddMessageRequest
+    if err := c.ShouldBindJSON(&req); err != nil {
+        c.JSON(http.StatusBadRequest, gin.H{
+            "code":    400,
+            "message": "Invalid request",
+        })
+        return
+    }
+    // Gin的binding机制会自动验证：
+    // - req.Role 不为空（binding:"required"）
+    // - req.Content 不为空（binding:"required"）
+    
+    // 3. 调用Service层添加消息
+    message, err := h.sessionService.AddMessage(
+        c.Request.Context(),
+        sessionID,
+        req.Role,    // user/assistant/system
+        req.Content,
+    )
+    if err != nil {
+        c.JSON(http.StatusInternalServerError, gin.H{
+            "code":    500,
+            "message": "Failed to add message",
+        })
+        return
     }
     
-    // 2. 创建消息对象
+    // 4. 返回201 Created
+    c.JSON(http.StatusCreated, gin.H{
+        "code":    201,
+        "message": "Message added successfully",
+        "data":    gin.H{"message": message},
+    })
+}
+
+// Service层 - 业务逻辑（含缓存失效）
+func (s *SessionService) AddMessage(ctx context.Context, sessionID, role, content string) (*model.Message, error) {
+    // 1. 验证会话是否存在（防止向不存在的会话添加消息）
+    if _, err := s.sessionRepo.FindSessionByID(ctx, sessionID); err != nil {
+        return nil, err  // 会话不存在，返回错误
+    }
+    
+    // 2. 构造消息对象
     message := &model.Message{
-        ID:        uuid.New().String(),
         SessionID: sessionID,
-        Role:      role,
+        Role:      role,       // user/assistant/system
         Content:   content,
         CreatedAt: time.Now(),
     }
     
-    // 3. 保存到数据库
+    // 3. 保存消息到数据库
     if err := s.sessionRepo.CreateMessage(ctx, message); err != nil {
         return nil, err
     }
     
-    // 4. 更新会话的更新时间
+    // 4. 更新会话的updated_at时间戳
+    //    （表示会话有新活动，用于排序"最近更新"）
     session := &model.Session{
         ID:        sessionID,
         UpdatedAt: time.Now(),
     }
     s.sessionRepo.UpdateSession(ctx, session)
     
-    // 5. 失效相关缓存
+    // 5. 缓存失效策略（级联失效）
     if s.cacheService.IsEnabled() {
-        s.cacheService.InvalidateMessageList(ctx, sessionID)  // 消息列表已变更
-        s.cacheService.DeleteSession(ctx, sessionID)          // 会话数据已变更
+        // 5.1 失效消息列表缓存（因为新增了消息）
+        s.cacheService.InvalidateMessageList(ctx, sessionID)
+        
+        // 5.2 失效会话缓存（因为updated_at变了）
+        s.cacheService.DeleteSession(ctx, sessionID)
     }
     
+    log.Printf("添加消息到会话: %s, role: %s", sessionID, role)
     return message, nil
 }
+
+// Repository层 - 数据库操作
+func (r *sessionRepository) CreateMessage(ctx context.Context, message *model.Message) error {
+    // GORM自动生成INSERT语句
+    return r.db.WithContext(ctx).Create(message).Error
+    // 生成SQL: INSERT INTO messages (id, session_id, role, content, created_at) 
+    //          VALUES ('xxx', 'yyy', 'user', 'content...', NOW())
+}
+
+func (r *sessionRepository) UpdateSession(ctx context.Context, session *model.Session) error {
+    // GORM只更新非零值字段
+    return r.db.WithContext(ctx).
+        Where("id = ? AND deleted_at IS NULL", session.ID).
+        Updates(session).Error
+    // 生成SQL: UPDATE sessions SET updated_at='2025-10-10 12:34:56' 
+    //          WHERE id='xxx' AND deleted_at IS NULL
+}
+
+// Cache层 - 缓存失效操作
+func (c *CacheService) InvalidateMessageList(ctx context.Context, sessionID string) error {
+    if !c.IsEnabled() {
+        return nil
+    }
+    
+    // 删除所有该session的消息列表缓存（使用模式匹配）
+    // 例如：session:messages:xxx:page-1-size-20
+    //      session:messages:xxx:page-2-size-20
+    pattern := fmt.Sprintf("session:messages:%s:*", sessionID)
+    return c.deleteByPattern(ctx, pattern)
+}
+
+func (c *CacheService) deleteByPattern(ctx context.Context, pattern string) error {
+    // 使用SCAN遍历匹配的key（比KEYS命令更安全，不会阻塞Redis）
+    iter := c.client.Scan(ctx, 0, pattern, 0).Iterator()
+    for iter.Next(ctx) {
+        key := iter.Val()
+        if err := c.client.Del(ctx, key).Err(); err != nil {
+            log.Printf("Failed to delete key %s: %v", key, err)
+        }
+    }
+    return iter.Err()
+}
+
+func (c *CacheService) DeleteSession(ctx context.Context, sessionID string) error {
+    if !c.IsEnabled() {
+        return nil
+    }
+    
+    key := c.sessionKey(sessionID)  // "session:data:{sessionID}"
+    return c.client.Del(ctx, key).Err()
+}
 ```
+
+**调用链路要点**：
+
+1. **前置验证**：
+   - 检查会话是否存在，防止向不存在的会话添加消息
+   - 参数验证由Gin的binding机制自动完成
+
+2. **数据一致性**：
+   - 插入消息记录
+   - 更新会话的`updated_at`时间戳（两个独立的SQL语句）
+   - 未使用事务（消息插入成功即可，时间戳更新失败不影响核心功能）
+
+3. **级联缓存失效**：
+   - **消息列表缓存**：所有分页缓存都失效（使用SCAN+DEL）
+   - **会话缓存**：因为`updated_at`变了，会话对象已过期
+
+4. **性能考虑**：
+   - 使用Redis SCAN而非KEYS（避免阻塞）
+   - 缓存失效是异步的，失败不影响主流程
+   - 没有使用数据库事务（减少锁竞争）
+
+5. **适用场景**：
+   - Agent服务添加AI回复消息
+   - 用户发送新消息
+   - 系统添加提示消息
+
+**缓存失效策略说明**：
+
+| 失效操作 | 影响范围 | 原因 | 下次读取行为 |
+|---|---|---|---|
+| `InvalidateMessageList(sessionID)` | `session:messages:xxx:*` | 消息列表新增了一条记录 | 从DB重新加载最新消息列表 |
+| `DeleteSession(sessionID)` | `session:data:xxx` | 会话的`updated_at`字段变了 | 从DB重新加载会话信息 |
+
+---
 
 ---
 
@@ -914,12 +1666,12 @@ sqlDB.SetConnMaxLifetime(time.Hour)
 sessions, err := sessionRepo.FindSessionsByUserID(ctx, userID)
 
 // 避免N+1查询
-// ❌ 错误：循环查询
+// 错误：循环查询
 for _, sessionID := range sessionIDs {
     session, _ := sessionRepo.FindSessionByID(ctx, sessionID)
 }
 
-// ✅ 正确：批量查询
+// 正确：批量查询
 sessions, _ := sessionRepo.FindSessionsByIDs(ctx, sessionIDs)
 ```
 
@@ -1008,25 +1760,175 @@ docker run -d \
 
 ## 八、总结
 
-Session会话服务是VoiceHelper项目中的核心数据管理服务，提供高性能的会话与消息管理功能。
+### 8.1 核心特性总结
 
-**核心特性**：
-1. ✅ **三级Redis缓存**：会话、会话列表、消息列表分别缓存
-2. ✅ **优雅降级**：Redis不可用时自动降级到纯数据库模式
-3. ✅ **权限隔离**：用户级隔离，仅所有者可访问
-4. ✅ **软删除**：支持数据恢复与审计
-5. ✅ **会话过期管理**：支持TTL设置与自动清理
-6. ✅ **高性能**：缓存命中率可达80%+，P95延迟<50ms
+Session会话服务是VoiceHelper项目中的核心数据管理服务，采用微服务架构，提供高性能的会话与消息管理功能。
 
-**性能指标**：
-- **缓存命中率**：80%+（正常情况）
-- **响应延迟**：P50 <10ms，P95 <50ms，P99 <100ms
-- **并发能力**：1000+ QPS（单实例）
-- **数据库连接**：连接池100，空闲10
+**架构特色**：
+1. **分层架构**：Handler → Service → Repository → Storage，职责清晰
+2. **服务发现**：通过Consul注册与发现，支持动态扩缩容
+3. **三级Redis缓存**：会话、会话列表、消息列表分别缓存
+4. **优雅降级**：Redis不可用时自动降级到纯数据库模式
+5. **权限隔离**：用户级隔离，仅所有者可访问
+6. **软删除**：支持数据恢复与审计
+7. **会话过期管理**：支持TTL设置与自动清理
+8. **高性能**：缓存命中率可达80%+，P95延迟<50ms
 
----
+### 8.2 性能指标
 
-**文档版本**：v1.0  
-**最后更新**：2025-10-10  
-**维护者**：VoiceHelper Team
+| 指标类型 | 指标名称 | 目标值 | 说明 |
+|---|---|---|---|
+| **响应延迟** | P50延迟 | <10ms | 缓存命中场景 |
+| **响应延迟** | P95延迟 | <50ms | 包含缓存未命中场景 |
+| **响应延迟** | P99延迟 | <100ms | 极端情况 |
+| **缓存性能** | 缓存命中率 | 80%+ | 正常业务场景 |
+| **并发能力** | 单实例QPS | 1000+ | 读写混合负载 |
+| **数据库连接** | 最大连接数 | 100 | 连接池配置 |
+| **数据库连接** | 空闲连接数 | 10 | 保持活跃连接 |
 
+### 8.3 调用链路总结
+
+#### 完整请求路径
+
+```text
+客户端
+  ↓ HTTP请求
+Gateway:8080 (Gin)
+  ├─ AuthMiddleware     - JWT验证、提取用户信息
+  ├─ RateLimitMiddleware - Redis限流（100 req/min）
+  ├─ ConsulClient       - 服务发现（session-service）
+  └─ HTTP Proxy         - 转发请求
+  ↓
+Session服务:8083 (Gin)
+  ├─ Router             - 路由匹配
+  ├─ Handler            - 请求解析、参数验证
+  ├─ Service            - 业务逻辑、缓存策略
+  ├─ Repository         - 数据访问、GORM封装
+  ├─ Cache              - Redis缓存读写
+  └─ Database           - PostgreSQL持久化
+  ↓
+响应返回（逆向传播）
+```
+
+#### 各层职责
+
+| 层次 | 职责 | 关键技术 | 代码路径 |
+|---|---|---|---|
+| **Gateway** | 认证、限流、路由 | JWT、Redis、Consul | `backend/cmd/gateway/main.go` |
+| **Handler** | HTTP处理、参数验证 | Gin、Binding | `services/session-service/internal/handler/` |
+| **Service** | 业务逻辑、缓存策略 | Go Context | `services/session-service/internal/service/` |
+| **Repository** | 数据访问、查询封装 | GORM | `services/session-service/internal/repository/` |
+| **Cache** | Redis缓存管理 | go-redis | `services/session-service/internal/service/cache_service.go` |
+| **Database** | 数据持久化 | PostgreSQL | Schema在`services/session-service/migrations/` |
+
+### 8.4 缓存策略总结
+
+#### 三级缓存设计
+
+```text
+┌─────────────────────────────────────────────────────┐
+│ 1. 会话缓存 (Session Cache)                        │
+│    Key: session:data:{sessionID}                   │
+│    TTL: 1小时                                      │
+│    用途: 单个会话的完整信息                         │
+│    失效: 更新会话、添加消息、删除会话               │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│ 2. 会话列表缓存 (Session List Cache)               │
+│    Key: session:list:{userID}                     │
+│    TTL: 10分钟                                     │
+│    用途: 用户的所有会话列表                         │
+│    失效: 创建会话、删除会话                         │
+└─────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────┐
+│ 3. 消息列表缓存 (Message List Cache)               │
+│    Key: session:messages:{sessionID}:page-X-size-Y│
+│    TTL: 30分钟                                     │
+│    用途: 会话的消息列表（分页）                     │
+│    失效: 添加消息                                   │
+└─────────────────────────────────────────────────────┘
+```
+
+#### 缓存决策树
+
+```text
+读取会话
+  ├─ Redis可用?
+  │   ├─ Yes → 查询Redis缓存
+  │   │   ├─ 命中? → 验证权限 → 返回
+  │   │   └─ 未命中? → 查询DB → 写缓存 → 返回
+  │   └─ No → 查询DB → 返回
+  └─ 性能: 缓存命中 ~5ms，未命中 ~30ms
+
+添加消息
+  ├─ 验证会话存在
+  ├─ 插入消息到DB
+  ├─ 更新会话时间戳
+  └─ 失效缓存（级联）
+      ├─ 消息列表缓存 (session:messages:xxx:*)
+      └─ 会话缓存 (session:data:xxx)
+```
+
+### 8.5 最佳实践建议
+
+#### 开发建议
+
+1. **缓存使用**：
+   - 优先使用缓存读取高频数据
+   - 写操作及时失效相关缓存
+   - 缓存失败不应阻塞主流程
+
+2. **权限验证**：
+   - Service层统一验证权限
+   - 不要在Handler层做业务逻辑
+   - 使用`session.UserID == userID`验证所有权
+
+3. **错误处理**：
+   - 区分业务错误和系统错误
+   - 返回有意义的错误消息
+   - 记录详细的错误日志
+
+4. **性能优化**：
+   - 使用连接池管理数据库连接
+   - 避免N+1查询问题
+   - 使用批量操作代替循环查询
+
+#### 运维建议
+
+1. **监控指标**：
+   - 缓存命中率（target: 80%+）
+   - 响应延迟（P50/P95/P99）
+   - 数据库连接数
+   - Redis连接数
+
+2. **容量规划**：
+   - 单实例支持1000+ QPS
+   - 水平扩容通过增加实例数
+   - Redis内存预留：100MB per 1K sessions
+
+3. **故障恢复**：
+   - Redis故障自动降级到DB
+   - PostgreSQL主从切换（自动）
+   - Consul服务实例健康检查
+
+### 8.6 后续优化方向
+
+1. **功能增强**：
+   - [ ] 消息全文搜索（Elasticsearch）
+   - [ ] 会话标签与分类
+   - [ ] 会话共享与协作
+   - [ ] 消息多媒体支持
+
+2. **性能优化**：
+   - [ ] 引入本地缓存（LRU）
+   - [ ] 数据库读写分离
+   - [ ] 消息列表分页游标优化
+   - [ ] 批量操作API
+
+3. **可观测性**：
+   - [ ] 分布式链路追踪（Jaeger）
+   - [ ] 详细的业务指标（Prometheus）
+   - [ ] 慢查询分析与优化
+   - [ ] 错误率监控与告警

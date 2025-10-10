@@ -1,11 +1,12 @@
 ---
-title: "VoiceHelper源码剖析 - 13框架使用示例与最佳实践"
-date: 2025-10-10T13:00:00+08:00
+title: "VoiceHelper-13-框架使用示例与最佳实践"
+date: 2025-10-10T10:13:00+08:00
 draft: false
-tags: ["源码剖析", "VoiceHelper", "最佳实践", "使用示例", "开发指南"]
+tags: ["VoiceHelper", "最佳实践", "使用示例", "开发指南", "代码规范"]
 categories: ["VoiceHelper", "源码剖析"]
-description: "VoiceHelper框架使用示例与最佳实践：快速开始、API调用示例、错误处理、异步处理、缓存策略、日志配置、测试方法"
-weight: 14
+description: "VoiceHelper 框架使用示例与最佳实践，包含快速开始、核心功能示例、性能优化、安全加固、故障排查指南"
+series: ["VoiceHelper源码剖析"]
+weight: 13
 ---
 
 # VoiceHelper-13-框架使用示例与最佳实践
@@ -676,22 +677,4 @@ async def optimized_retrieval(query, top_k=5):
 3. 编写完善的单元测试和集成测试
 4. 参考示例代码进行二次开发
 
----
-
-**文档状态**:✅ 已完成  
-**完整文档列表**:共13个文档,覆盖项目全貌
-- 00-总览.md
-- 01-Gateway网关.md
-- 02-Auth认证服务.md
-- 03-Document文档服务.md
-- 04-Session会话服务.md
-- 05-Notification通知服务.md
-- 06-GraphRAG服务.md
-- 07-LLMRouter服务.md
-- 08-Voice语音服务.md
-- 09-Agent服务.md
-- 10-Multimodal多模态服务.md
-- 11-Shared共享组件.md
-- 12-Infrastructure基础设施.md
-- 13-框架使用示例与最佳实践.md(本文档)
 

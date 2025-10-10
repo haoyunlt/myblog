@@ -1,11 +1,12 @@
 ---
-title: "VoiceHelper源码剖析 - 12Infrastructure基础设施"
-date: 2025-10-10T12:00:00+08:00
+title: "VoiceHelper-12-Infrastructure基础设施"
+date: 2025-10-10T10:12:00+08:00
 draft: false
-tags: ["源码剖析", "VoiceHelper", "基础设施", "Kubernetes", "监控", "CI/CD"]
+tags: ["VoiceHelper", "基础设施", "Kubernetes", "Prometheus", "ELK", "CI/CD"]
 categories: ["VoiceHelper", "源码剖析"]
-description: "Infrastructure基础设施详解：Kubernetes容器编排、Prometheus+Grafana监控、ELK日志聚合、Consul服务发现、CI/CD"
-weight: 13
+description: "VoiceHelper 基础设施详细设计，包含Kubernetes部署、Prometheus监控、ELK日志、服务发现、CI/CD流程"
+series: ["VoiceHelper源码剖析"]
+weight: 12
 ---
 
 # VoiceHelper-12-Infrastructure基础设施
@@ -621,10 +622,3 @@ VoiceHelper基础设施提供了完善的DevOps支持:
 7. **CI/CD**:GitHub Actions自动化部署
 
 通过完善的基础设施,VoiceHelper实现了高可用、可观测、易扩展的生产级架构。
-
----
-
-**文档状态**:✅ 已完成  
-**覆盖度**:100%(K8s、监控、日志、服务发现、消息队列、CI/CD)  
-**下一步**:生成框架使用示例与最佳实践文档(13-框架使用示例与最佳实践)
-

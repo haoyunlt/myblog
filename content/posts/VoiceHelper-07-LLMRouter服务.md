@@ -1,11 +1,12 @@
 ---
-title: "VoiceHelper源码剖析 - 07LLMRouter服务"
-date: 2025-10-10T07:00:00+08:00
+title: "VoiceHelper-07-LLMRouter服务"
+date: 2025-10-10T10:07:00+08:00
 draft: false
-tags: ["源码剖析", "VoiceHelper", "LLM路由", "模型管理", "负载均衡", "降级策略"]
+tags: ["VoiceHelper", "LLM Router", "智能路由", "负载均衡", "成本优化"]
 categories: ["VoiceHelper", "源码剖析"]
-description: "LLM Router服务详解：智能模型路由、多模型支持（OpenAI/Anthropic/通义/文心）、负载均衡、自动降级、成本优化"
-weight: 8
+description: "VoiceHelper LLM Router服务详细设计，包含智能路由算法、多模型支持、负载均衡、自动降级、成本优化完整实现"
+series: ["VoiceHelper源码剖析"]
+weight: 7
 ---
 
 # VoiceHelper-07-LLMRouter服务
@@ -51,124 +52,1087 @@ weight: 8
 
 ---
 
-### 1.2 模块架构图
+### 1.1.1 目录结构与模块职责
+
+```
+algo/llm-router-service/
+├── app/
+│   ├── main.py              # FastAPI应用入口、生命周期管理、异常处理
+│   └── routes.py            # API路由定义、请求处理、Provider初始化
+├── core/
+│   ├── router.py            # ModelRouter主类、路由决策、指标管理
+│   ├── router/
+│   │   ├── model_router.py  # 模型路由器（旧版本）
+│   │   └── model_routing_system.py  # 路由系统（旧版本）
+│   ├── providers/
+│   │   ├── base.py          # BaseProvider抽象接口
+│   │   ├── openai_provider.py    # OpenAI Provider实现
+│   │   ├── anthropic_provider.py # Anthropic Provider实现
+│   │   ├── alibaba_provider.py   # 阿里通义Provider实现
+│   │   ├── baidu_provider.py     # 百度文心Provider实现
+│   │   ├── zhipu_provider.py     # 智谱GLM Provider实现
+│   │   ├── fallback_handler.py   # 降级处理器
+│   │   └── model_router.py       # 路由器（在providers目录）
+│   ├── monitoring/
+│   │   └── cost_optimizer.py    # 成本优化器、预算控制
+│   ├── balancer/
+│   │   └── __init__.py          # 负载均衡器（待实现）
+│   └── fallback/
+│       └── __init__.py          # 降级策略（待实现）
+├── Dockerfile
+├── requirements.txt
+└── tests/
+```
+
+**模块职责说明**:
+
+1. **app/main.py**:
+   - FastAPI应用初始化
+   - 生命周期管理(lifespan)
+   - CORS、日志中间件配置
+   - 全局异常处理器
+   - 健康检查、指标暴露端点
+
+2. **app/routes.py**:
+   - API路由定义(chat、completion、embedding、models、stats)
+   - Provider初始化与管理(全局_providers字典)
+   - 请求参数验证(Pydantic模型)
+   - 路由器实例管理(全局_router)
+
+3. **core/router.py**:
+   - ModelRouter核心类
+   - 路由决策算法(route方法)
+   - 模型配置管理(ModelConfig)
+   - 指标追踪(ModelMetrics)
+   - QPS重置任务
+
+4. **core/providers/base.py**:
+   - BaseProvider抽象基类
+   - 定义统一接口:chat、completion、embedding、count_tokens、health_check
+
+5. **core/providers/openai_provider.py** (及其他Provider):
+   - 实现BaseProvider接口
+   - 封装第三方API调用(AsyncOpenAI)
+   - 流式/非流式响应处理
+
+6. **core/providers/fallback_handler.py**:
+   - 降级策略实现(Sequential、Parallel、Hybrid)
+   - 降级链配置
+   - 超时重试逻辑
+
+7. **core/monitoring/cost_optimizer.py**:
+   - 成本追踪(CostTracker)
+   - 预算控制(CostBudget)
+   - 优化策略(model_downgrade、token_limit、request_throttling等)
+   - 成本趋势分析、告警
+
+---
+
+### 1.2 整体服务架构图（全栈视角）
 
 ```mermaid
 flowchart TB
+    subgraph "客户端层 Client Layer"
+        WEB[Web平台]
+        MOBILE[Mobile App]
+        MINIAPP[小程序]
+        DESKTOP[桌面应用]
+    end
+    
+    subgraph "网关层 Gateway Layer :8080"
+        GATEWAY[Go网关<br/>认证/路由/限流]
+    end
+    
+    subgraph "业务服务层 Business Service Layer"
+        VOICE[Voice Service<br/>:8004<br/>语音处理]
+        AGENT[Agent Service<br/>:8002<br/>Multi-Agent]
+        GRAPHRAG[GraphRAG Service<br/>:8001<br/>知识图谱]
+    end
+    
     subgraph "LLM Router Service :8005"
         direction TB
         
         subgraph "API层"
-            API_CHAT[ChatAPI<br/>聊天补全]
-            API_COMP[CompletionAPI<br/>文本补全]
-            API_EMB[EmbeddingAPI<br/>向量化]
-            API_MODELS[ModelsAPI<br/>模型列表]
-            API_STATS[StatsAPI<br/>统计信息]
+            direction LR
+            API_CHAT[POST /chat<br/>聊天补全]
+            API_COMP[POST /completion<br/>文本补全]
+            API_EMB[POST /embedding<br/>向量化]
+            API_MODELS[GET /models<br/>模型列表]
+            API_STATS[GET /stats<br/>使用统计]
         end
         
-        subgraph "路由层 Routing Layer"
-            ROUTER[ModelRouter<br/>智能路由器]
-            DECISION[RoutingDecision<br/>路由决策引擎]
-            METRICS[ModelMetrics<br/>指标追踪]
-        end
-        
-        subgraph "降级层 Fallback Layer"
-            FALLBACK[FallbackHandler<br/>降级处理器]
-            STRATEGY[降级策略<br/>Sequential/Parallel/Hybrid]
+        subgraph "核心路由层"
+            ROUTER[ModelRouter<br/>智能路由决策]
+            METRICS[ModelMetrics<br/>指标追踪器]
+            QPS_TASK[QPS重置任务<br/>每秒执行]
         end
         
         subgraph "Provider层"
-            P_OPENAI[OpenAIProvider<br/>GPT-4/3.5]
-            P_ANTHROPIC[AnthropicProvider<br/>Claude-3]
-            P_ALIBABA[AlibabaProvider<br/>通义千问]
-            P_BAIDU[BaiduProvider<br/>文心一言]
-            P_ZHIPU[ZhipuProvider<br/>GLM-4]
+            P_OPENAI[OpenAI Provider]
+            P_ANTHROPIC[Anthropic Provider]
+            P_ALIBABA[Alibaba Provider]
+            P_BAIDU[Baidu Provider]
+            P_ZHIPU[Zhipu Provider]
         end
         
-        subgraph "监控层"
+        subgraph "增强功能层"
+            FALLBACK[FallbackHandler<br/>降级处理]
             COST_OPT[CostOptimizer<br/>成本优化]
-            HEALTH[HealthCheck<br/>健康检查]
         end
         
         API_CHAT --> ROUTER
         API_COMP --> ROUTER
         API_EMB --> ROUTER
         
-        ROUTER --> DECISION
         ROUTER --> METRICS
-        ROUTER --> FALLBACK
+        ROUTER --> P_OPENAI
+        ROUTER --> P_ANTHROPIC
+        ROUTER --> P_ALIBABA
+        ROUTER --> P_BAIDU
+        ROUTER --> P_ZHIPU
         
-        FALLBACK --> STRATEGY
-        STRATEGY --> P_OPENAI & P_ANTHROPIC & P_ALIBABA & P_BAIDU & P_ZHIPU
+        ROUTER -.可选.-> FALLBACK
+        ROUTER -.可选.-> COST_OPT
         
-        ROUTER --> COST_OPT
-        ROUTER --> HEALTH
-        
-        DECISION --> P_OPENAI & P_ANTHROPIC & P_ALIBABA & P_BAIDU & P_ZHIPU
+        METRICS --> QPS_TASK
     end
     
     subgraph "外部LLM API"
-        EXT_OPENAI[OpenAI API]
-        EXT_ANTHROPIC[Anthropic API]
-        EXT_ALIBABA[阿里灵积API]
-        EXT_BAIDU[百度千帆API]
-        EXT_ZHIPU[智谱API]
+        EXT_OPENAI[OpenAI API<br/>api.openai.com]
+        EXT_ANTHROPIC[Anthropic API<br/>api.anthropic.com]
+        EXT_ALIBABA[阿里灵积API<br/>dashscope.aliyun.com]
+        EXT_BAIDU[百度千帆API<br/>qianfan.baidu.com]
+        EXT_ZHIPU[智谱API<br/>zhipuai.cn]
     end
     
-    subgraph "存储层"
-        REDIS[(Redis<br/>缓存+指标)]
+    subgraph "存储层 Storage Layer"
+        REDIS[(Redis<br/>指标缓存)]
+        POSTGRES[(PostgreSQL<br/>成本记录)]
     end
     
-    P_OPENAI -.HTTP.-> EXT_OPENAI
-    P_ANTHROPIC -.HTTP.-> EXT_ANTHROPIC
-    P_ALIBABA -.HTTP.-> EXT_ALIBABA
-    P_BAIDU -.HTTP.-> EXT_BAIDU
-    P_ZHIPU -.HTTP.-> EXT_ZHIPU
+    subgraph "监控层 Monitoring Layer"
+        PROMETHEUS[Prometheus<br/>指标收集]
+        GRAFANA[Grafana<br/>可视化]
+        ALERTMANAGER[AlertManager<br/>告警]
+    end
     
-    METRICS --> REDIS
-    COST_OPT --> REDIS
+    WEB --> GATEWAY
+    MOBILE --> GATEWAY
+    MINIAPP --> GATEWAY
+    DESKTOP --> GATEWAY
     
-    style ROUTER fill:#87CEEB
-    style FALLBACK fill:#FFB6C1
-    style DECISION fill:#C8E6C9
-    style METRICS fill:#FFF9C4
+    GATEWAY --> VOICE
+    GATEWAY --> AGENT
+    GATEWAY --> GRAPHRAG
+    
+    VOICE --> API_CHAT
+    AGENT --> API_CHAT
+    GRAPHRAG --> API_EMB
+    GRAPHRAG --> API_CHAT
+    
+    P_OPENAI -.HTTPS.-> EXT_OPENAI
+    P_ANTHROPIC -.HTTPS.-> EXT_ANTHROPIC
+    P_ALIBABA -.HTTPS.-> EXT_ALIBABA
+    P_BAIDU -.HTTPS.-> EXT_BAIDU
+    P_ZHIPU -.HTTPS.-> EXT_ZHIPU
+    
+    METRICS -.写入.-> REDIS
+    COST_OPT -.写入.-> POSTGRES
+    
+    API_STATS -.读取.-> REDIS
+    API_STATS -.读取.-> POSTGRES
+    
+    ROUTER -.暴露指标.-> PROMETHEUS
+    PROMETHEUS --> GRAFANA
+    PROMETHEUS --> ALERTMANAGER
+    
+    style ROUTER fill:#87CEEB,stroke:#333,stroke-width:3px
+    style GATEWAY fill:#90EE90,stroke:#333,stroke-width:2px
+    style PROMETHEUS fill:#FFA500,stroke:#333,stroke-width:2px
 ```
 
-### 架构要点说明
+### 架构层次说明
 
-#### 1. 分层架构
-- **API层**:暴露REST API接口，参数验证、请求解析
-- **路由层**:核心路由决策逻辑，模型选择、指标追踪
-- **降级层**:失败重试、模型降级策略
-- **Provider层**:统一抽象，封装各LLM提供商的API调用
-- **监控层**:成本统计、健康检查、性能监控
+#### 1. 客户端层 (Client Layer)
+- 多平台接入:Web、Mobile、小程序、桌面应用
+- 通过统一网关访问后端服务
 
-#### 2. 路由决策流程
-1. **接收请求**:解析任务类型、优先级、约束条件
-2. **评估复杂度**:根据消息长度评估查询复杂度(Simple/Medium/Complex)
-3. **筛选候选模型**:基于能力、QPS限制、可用性、成本/延迟约束
-4. **模型评分**:根据优先级(COST_FIRST/QUALITY_FIRST/SPEED_FIRST/BALANCED)计算评分
-5. **选择最佳模型**:返回得分最高的模型及备选模型列表
-6. **执行调用**:调用选中的Provider，记录指标
+#### 2. 网关层 (Gateway Layer :8080)
+- Go实现的API网关
+- 职责:认证授权、请求路由、限流熔断、日志追踪
+- 统一流量入口
 
-#### 3. 降级策略
-- **Sequential(顺序)**:依次尝试降级链中的模型
-- **Parallel(并行)**:同时调用多个模型，使用最快响应的
-- **Hybrid(混合)**:先尝试主模型，失败后并行尝试备用模型
+#### 3. 业务服务层 (Business Service Layer)
+- **Voice Service (:8004)**: 实时语音处理、ASR/TTS调用
+- **Agent Service (:8002)**: Multi-Agent协作、工具调用
+- **GraphRAG Service (:8001)**: 知识图谱查询、文档检索
 
-#### 4. Provider抽象
-所有Provider实现统一的`BaseProvider`接口:
-- `chat()`:聊天补全
-- `completion()`:文本补全
-- `embedding()`:向量化
-- `count_tokens()`:Token统计
-- `health_check()`:健康检查
+这些服务都是LLM Router的**上游调用方**。
 
-#### 5. 指标追踪
-实时追踪每个模型的:
-- 请求数、成功数、失败数
-- 平均延迟、总Token消耗、总成本
-- 当前QPS、可用性(成功率)
+#### 4. LLM Router Service (:8005) - 核心层
+**API层**:
+- 提供REST API接口,供上游服务调用
+- 支持聊天补全、文本补全、向量化、模型查询、统计查询
+
+**核心路由层**:
+- ModelRouter:智能路由决策引擎
+- ModelMetrics:实时指标追踪(QPS、延迟、成本、可用性)
+- QPS重置任务:每秒重置QPS计数器
+
+**Provider层**:
+- 统一抽象封装各LLM提供商API
+- 支持OpenAI、Anthropic、阿里、百度、智谱
+
+**增强功能层**:
+- FallbackHandler:失败降级重试
+- CostOptimizer:成本追踪与优化
+
+#### 5. 外部LLM API
+- 第三方LLM提供商API
+- 通过HTTPS调用
+- 各Provider负责封装API调用细节
+
+#### 6. 存储层 (Storage Layer)
+- **Redis**: 实时指标缓存(QPS、延迟、可用性)
+- **PostgreSQL**: 成本记录持久化、历史数据分析
+
+#### 7. 监控层 (Monitoring Layer)
+- **Prometheus**: 指标收集、时序数据存储
+- **Grafana**: 可视化仪表板、图表展示
+- **AlertManager**: 告警规则、通知发送
+
+---
+
+### 1.3 模块内部架构图（LLM Router详细视图）
+
+```mermaid
+flowchart TB
+    subgraph "LLM Router Service 内部结构"
+        direction TB
+        
+        subgraph "入口层 Entry Layer"
+            MAIN[main.py<br/>FastAPI应用]
+            LIFESPAN[lifespan<br/>生命周期管理]
+            MIDDLEWARE[中间件<br/>日志/CORS]
+            EXCEPTION[异常处理器<br/>VoiceHelperError]
+        end
+        
+        subgraph "路由层 Routes Layer"
+            ROUTES[routes.py]
+            CHAT_EP[chat端点]
+            COMP_EP[completion端点]
+            EMB_EP[embedding端点]
+            MODELS_EP[models端点]
+            STATS_EP[stats端点]
+            PROVIDER_INIT[Provider初始化<br/>initialize_router]
+            PROVIDER_DICT[全局_providers字典]
+            ROUTER_INST[全局_router实例]
+        end
+        
+        subgraph "路由决策层 Routing Decision Layer"
+            ROUTER_CORE[ModelRouter<br/>core/router.py]
+            
+            subgraph "路由决策流程"
+                EST_TOKENS[_estimate_tokens<br/>估算token数]
+                ASSESS_COMP[_assess_complexity<br/>评估复杂度]
+                FILTER_CAND[_filter_candidates<br/>筛选候选模型]
+                SCORE_MODELS[_score_models<br/>模型评分]
+                SELECT_BEST[选择最佳模型]
+            end
+            
+            subgraph "配置管理"
+                MODEL_CONFIG[ModelConfig<br/>模型配置]
+                DEFAULT_MODELS[DEFAULT_MODELS<br/>默认模型库]
+            end
+            
+            subgraph "决策输出"
+                ROUTING_DEC[RoutingDecision<br/>路由决策结果]
+            end
+        end
+        
+        subgraph "指标追踪层 Metrics Layer"
+            METRICS_CORE[ModelMetrics<br/>指标追踪器]
+            
+            subgraph "指标类型"
+                REQ_COUNT[request_count<br/>请求计数]
+                SUCCESS_COUNT[success_count<br/>成功计数]
+                FAILURE_COUNT[failure_count<br/>失败计数]
+                LATENCY[total_latency<br/>累计延迟]
+                TOKENS_USED[total_tokens<br/>累计token]
+                COST[total_cost<br/>累计成本]
+                QPS[current_qps<br/>当前QPS]
+            end
+            
+            subgraph "指标计算"
+                AVAIL[get_availability<br/>可用性计算]
+                AVG_LAT[get_avg_latency<br/>平均延迟]
+                GET_STATS[get_stats<br/>统计信息]
+                RESET_QPS[reset_qps<br/>QPS重置]
+            end
+        end
+        
+        subgraph "Provider抽象层 Provider Abstraction Layer"
+            BASE_PROV[BaseProvider<br/>抽象基类]
+            
+            subgraph "接口定义"
+                CHAT_IF[chat()<br/>聊天补全]
+                COMP_IF[completion()<br/>文本补全]
+                EMB_IF[embedding()<br/>向量化]
+                COUNT_IF[count_tokens()<br/>token统计]
+                HEALTH_IF[health_check()<br/>健康检查]
+            end
+        end
+        
+        subgraph "Provider实现层 Provider Implementation Layer"
+            direction LR
+            OPENAI_IMPL[OpenAIProvider<br/>AsyncOpenAI客户端]
+            ANTHRO_IMPL[AnthropicProvider<br/>Anthropic客户端]
+            ALIBABA_IMPL[AlibabaProvider<br/>DashScope客户端]
+            BAIDU_IMPL[BaiduProvider<br/>千帆客户端]
+            ZHIPU_IMPL[ZhipuProvider<br/>智谱客户端]
+        end
+        
+        subgraph "增强功能层 Enhancement Layer"
+            FALLBACK_MOD[FallbackHandler<br/>降级处理器]
+            
+            subgraph "降级策略"
+                SEQ_FALL[Sequential<br/>顺序降级]
+                PAR_FALL[Parallel<br/>并行降级]
+                HYB_FALL[Hybrid<br/>混合降级]
+            end
+            
+            COST_OPT_MOD[CostOptimizer<br/>成本优化器]
+            
+            subgraph "成本管理"
+                COST_TRACK[CostTracker<br/>成本追踪]
+                COST_BUDGET[CostBudget<br/>预算控制]
+                OPT_STRAT[优化策略<br/>model_downgrade等]
+            end
+        end
+        
+        MAIN --> LIFESPAN
+        MAIN --> MIDDLEWARE
+        MAIN --> EXCEPTION
+        MAIN --> ROUTES
+        
+        ROUTES --> PROVIDER_INIT
+        PROVIDER_INIT --> PROVIDER_DICT
+        PROVIDER_INIT --> ROUTER_INST
+        
+        CHAT_EP --> ROUTER_INST
+        COMP_EP --> ROUTER_INST
+        EMB_EP --> ROUTER_INST
+        
+        ROUTER_INST --> ROUTER_CORE
+        
+        ROUTER_CORE --> EST_TOKENS
+        EST_TOKENS --> ASSESS_COMP
+        ASSESS_COMP --> FILTER_CAND
+        FILTER_CAND --> SCORE_MODELS
+        SCORE_MODELS --> SELECT_BEST
+        SELECT_BEST --> ROUTING_DEC
+        
+        ROUTER_CORE --> MODEL_CONFIG
+        MODEL_CONFIG --> DEFAULT_MODELS
+        
+        FILTER_CAND --> METRICS_CORE
+        SCORE_MODELS --> METRICS_CORE
+        
+        METRICS_CORE --> REQ_COUNT
+        METRICS_CORE --> SUCCESS_COUNT
+        METRICS_CORE --> FAILURE_COUNT
+        METRICS_CORE --> LATENCY
+        METRICS_CORE --> TOKENS_USED
+        METRICS_CORE --> COST
+        METRICS_CORE --> QPS
+        
+        AVAIL --> REQ_COUNT
+        AVAIL --> SUCCESS_COUNT
+        AVG_LAT --> LATENCY
+        AVG_LAT --> SUCCESS_COUNT
+        
+        ROUTING_DEC --> PROVIDER_DICT
+        PROVIDER_DICT --> OPENAI_IMPL
+        PROVIDER_DICT --> ANTHRO_IMPL
+        PROVIDER_DICT --> ALIBABA_IMPL
+        PROVIDER_DICT --> BAIDU_IMPL
+        PROVIDER_DICT --> ZHIPU_IMPL
+        
+        OPENAI_IMPL --> BASE_PROV
+        ANTHRO_IMPL --> BASE_PROV
+        ALIBABA_IMPL --> BASE_PROV
+        
+        BASE_PROV --> CHAT_IF
+        BASE_PROV --> COMP_IF
+        BASE_PROV --> EMB_IF
+        BASE_PROV --> COUNT_IF
+        BASE_PROV --> HEALTH_IF
+        
+        ROUTER_CORE -.可选.-> FALLBACK_MOD
+        FALLBACK_MOD --> SEQ_FALL
+        FALLBACK_MOD --> PAR_FALL
+        FALLBACK_MOD --> HYB_FALL
+        
+        ROUTER_CORE -.可选.-> COST_OPT_MOD
+        COST_OPT_MOD --> COST_TRACK
+        COST_OPT_MOD --> COST_BUDGET
+        COST_OPT_MOD --> OPT_STRAT
+    end
+    
+    style ROUTER_CORE fill:#87CEEB,stroke:#333,stroke-width:3px
+    style METRICS_CORE fill:#FFF9C4,stroke:#333,stroke-width:2px
+    style FALLBACK_MOD fill:#FFB6C1,stroke:#333,stroke-width:2px
+    style COST_OPT_MOD fill:#98FB98,stroke:#333,stroke-width:2px
+```
+
+### 模块内部架构要点说明
+
+#### 1. 入口层 (Entry Layer)
+- **main.py**: FastAPI应用实例化、路由注册、中间件配置
+- **lifespan**: 应用生命周期管理(启动时初始化Provider、关闭时清理资源)
+- **中间件**: LoggingMiddleware(请求日志)、CORSMiddleware(跨域)
+- **异常处理器**: 统一处理VoiceHelperError和通用Exception
+
+#### 2. 路由层 (Routes Layer)
+- **routes.py**: 定义所有API端点
+- **initialize_router()**: Provider初始化逻辑(从环境变量读取API Key)
+- **全局_providers字典**: {ProviderType: Provider实例}
+- **全局_router实例**: ModelRouter单例
+
+#### 3. 路由决策层 (Routing Decision Layer)
+- **ModelRouter**: 核心路由决策引擎
+- **路由决策流程**:
+  1. _estimate_tokens: 估算输入token数(字符数 * 0.5)
+  2. _assess_complexity: 评估复杂度(SIMPLE<200字符, MEDIUM<1000, COMPLEX>1000)
+  3. _filter_candidates: 筛选候选模型(检查任务能力、QPS、可用性、成本、延迟)
+  4. _score_models: 根据优先级评分(COST_FIRST/QUALITY_FIRST/SPEED_FIRST/BALANCED)
+  5. 选择最佳模型: 取评分最高的模型
+- **ModelConfig**: 模型配置(成本、延迟、质量评分、能力列表)
+- **RoutingDecision**: 路由决策结果(选中模型、Provider、置信度、原因、备选模型)
+
+#### 4. 指标追踪层 (Metrics Layer)
+- **ModelMetrics**: 实时指标追踪器
+- **指标类型**: request_count、success_count、failure_count、total_latency、total_tokens、total_cost、current_qps
+- **指标计算**: get_availability(成功率)、get_avg_latency(平均延迟)、get_stats(统计信息)
+- **reset_qps**: 每秒重置QPS计数器(后台任务)
+
+#### 5. Provider抽象层与实现层
+- **BaseProvider**: 抽象基类,定义统一接口(chat、completion、embedding、count_tokens、health_check)
+- **Provider实现**: OpenAIProvider、AnthropicProvider等,封装第三方API客户端
+- **统一返回**: AsyncGenerator[str, None] (支持流式/非流式)
+
+#### 6. 增强功能层 (Enhancement Layer)
+- **FallbackHandler**: 降级处理器,实现Sequential(顺序)、Parallel(并行)、Hybrid(混合)降级策略
+- **CostOptimizer**: 成本优化器
+  - CostTracker: 追踪成本记录(日/月/用户维度)
+  - CostBudget: 预算控制(告警阈值、超限检查)
+  - 优化策略: model_downgrade、token_limit、request_throttling、batch_processing、cache_aggressive
+
+---
+
+### 1.4 完整端到端时序图（上游→LLM Router→外部API）
+
+#### 场景1: Voice服务调用聊天补全（非流式）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Voice as Voice Service<br/>:8004
+    participant Gateway as Go网关<br/>:8080
+    participant Routes as LLM Router<br/>routes.py
+    participant Router as ModelRouter<br/>router.py
+    participant Metrics as ModelMetrics<br/>指标追踪
+    participant Provider as OpenAIProvider<br/>provider
+    participant OpenAI as OpenAI API<br/>api.openai.com
+    participant Redis as Redis<br/>缓存
+    
+    Note over Voice: 用户语音输入<br/>经ASR转为文本
+    
+    Voice->>Gateway: POST /api/v1/llm-router/chat<br/>Authorization: Bearer xxx<br/>{messages, priority="speed_first"}
+    
+    Note over Gateway: 认证、限流、trace_id生成
+    Gateway->>Gateway: 验证JWT Token
+    Gateway->>Gateway: 检查限流配额
+    Gateway->>Gateway: 生成trace_id
+    
+    Gateway->>Routes: POST /api/v1/chat<br/>X-Trace-ID: abc123
+    
+    Note over Routes: API层处理
+    Routes->>Routes: 参数验证<br/>Pydantic: ChatRequest
+    Routes->>Routes: 转换消息格式<br/>List[Message] → List[Dict]
+    
+    Routes->>Router: route(messages, task_type=CHAT, priority=SPEED_FIRST)
+    
+    Note over Router: 路由决策流程
+    Router->>Router: _estimate_tokens(messages)<br/>返回: estimated_tokens=120
+    
+    Router->>Router: _assess_complexity(messages)<br/>总长度=240字符<br/>返回: QueryComplexity.MEDIUM
+    
+    Router->>Metrics: 读取current_qps、availability
+    Metrics-->>Router: {<br/>"gpt-3.5-turbo": {qps:45, avail:0.95},<br/>"qwen-turbo": {qps:30, avail:0.92}<br/>}
+    
+    Router->>Router: _filter_candidates(<br/>task_type=CHAT,<br/>complexity=MEDIUM,<br/>max_latency_ms=1000<br/>)
+    
+    Note over Router: 筛选逻辑:<br/>1. 检查enabled=True<br/>2. 检查CHAT in capabilities<br/>3. 检查QPS<max_qps<br/>4. 检查availability>=0.8<br/>5. 检查avg_latency_ms<=1000<br/>结果: [gpt-3.5-turbo, qwen-turbo]
+    
+    Router->>Router: _score_models(candidates, SPEED_FIRST)
+    
+    Note over Router: SPEED_FIRST评分:<br/>latency_score=1/(latency+1)<br/>gpt-3.5-turbo: 0.00125 * 0.7 = 0.875<br/>qwen-turbo: 0.00167 * 0.7 = 1.169<br/>结果: qwen-turbo得分更高
+    
+    Router->>Router: 选择最佳模型<br/>best_model="qwen-turbo"<br/>fallback_models=["gpt-3.5-turbo"]
+    
+    Router-->>Routes: RoutingDecision{<br/>selected_model="qwen-turbo",<br/>provider=ALIBABA,<br/>confidence=1.169,<br/>reasoning="...",<br/>estimated_cost=0.00024,<br/>fallback_models=[...]<br/>}
+    
+    Routes->>Routes: 获取Provider<br/>provider = _providers[ALIBABA]
+    
+    Routes->>Metrics: record_request("qwen-turbo")
+    Metrics->>Metrics: request_count["qwen-turbo"] += 1<br/>current_qps["qwen-turbo"] += 1
+    
+    Routes->>Provider: chat(<br/>messages=messages,<br/>model="qwen-turbo",<br/>temperature=0.7,<br/>max_tokens=2000,<br/>stream=False<br/>)
+    
+    Note over Provider: AlibabaProvider<br/>调用DashScope API
+    Provider->>OpenAI: POST /v1/chat/completions<br/>Authorization: Bearer DASHSCOPE_KEY<br/>{model, messages, temperature, max_tokens}
+    
+    Note over OpenAI: 外部API处理<br/>耗时约600ms
+    OpenAI-->>Provider: 200 OK<br/>{<br/>"choices": [{<br/>"message": {"role":"assistant", "content":"您好..."},<br/>"finish_reason": "stop"<br/>}],<br/>"usage": {"prompt_tokens":15, "completion_tokens":50}<br/>}
+    
+    Provider-->>Routes: yield "您好,我是AI助手,很高兴为您服务。"
+    
+    Routes->>Routes: 计算elapsed_ms = 620ms
+    Routes->>Provider: count_tokens(content)<br/>返回: tokens=50
+    
+    Routes->>Metrics: record_success(<br/>"qwen-turbo",<br/>latency_ms=620,<br/>tokens=50<br/>)
+    
+    Metrics->>Metrics: success_count["qwen-turbo"] += 1<br/>total_latency["qwen-turbo"] += 620<br/>total_tokens["qwen-turbo"] += 50<br/>total_cost["qwen-turbo"] += 0.00024
+    
+    opt 异步写入Redis
+        Metrics->>Redis: HSET llm_router:metrics:qwen-turbo<br/>{"success_count": 1201, "total_latency": 742400, ...}
+    end
+    
+    Routes-->>Gateway: 200 OK<br/>{<br/>"code": 0,<br/>"message": "success",<br/>"data": {<br/>"model": "qwen-turbo",<br/>"content": "您好...",<br/>"tokens": {...},<br/>"elapsed_time": 0.62<br/>}<br/>}
+    
+    Gateway-->>Voice: 200 OK<br/>X-Trace-ID: abc123<br/>同上响应体
+    
+    Note over Voice: TTS合成语音<br/>返回给用户
+```
+
+#### 时序图功能说明
+
+**阶段1: 上游调用与网关处理 (步骤1-3)**
+- Voice服务发起HTTP POST请求到网关
+- 网关执行认证(JWT验证)、限流检查(Redis计数器)、生成trace_id(分布式追踪)
+- 网关转发请求到LLM Router服务
+
+**阶段2: API层处理 (步骤4-6)**
+- routes.py收到请求
+- Pydantic模型验证参数(messages必填、temperature范围0-2、max_tokens范围1-32000)
+- 转换消息格式为Provider统一格式
+
+**阶段3: 路由决策 (步骤7-19)**
+- **Token估算**(步骤7): 简单算法`sum(len(content)) * 0.5`, 实际应使用tiktoken
+- **复杂度评估**(步骤8): <200字符为SIMPLE, 200-1000为MEDIUM, >1000为COMPLEX
+- **读取实时指标**(步骤9-10): 从ModelMetrics获取当前QPS和可用性
+- **筛选候选模型**(步骤11-12): 
+  - 检查enabled状态
+  - 检查任务能力(CHAT in capabilities)
+  - 检查QPS限制(current_qps < max_qps)
+  - 检查可用性(availability >= 0.8)
+  - 检查延迟约束(avg_latency_ms <= max_latency_ms参数)
+- **模型评分**(步骤13-14): 
+  - SPEED_FIRST策略: `latency_score * 0.7 + quality_score * 0.3`
+  - latency_score = 1 / (avg_latency_ms + 1)
+  - 延迟越低,评分越高
+- **选择最佳模型**(步骤15): 取评分最高的模型(qwen-turbo)
+- **返回路由决策**(步骤16): RoutingDecision包含选中模型、Provider类型、置信度、原因、预估成本、备选模型
+
+**阶段4: Provider调用 (步骤17-24)**
+- 根据ProviderType从全局_providers字典获取Provider实例
+- 记录请求(步骤18-19): request_count++, current_qps++
+- 调用Provider.chat()方法(步骤20)
+- AlibabaProvider封装DashScope API调用(步骤21-22)
+- 外部API返回响应(步骤23-24)
+
+**阶段5: 指标记录 (步骤25-29)**
+- 计算耗时(elapsed_ms)
+- 统计token数(count_tokens)
+- 记录成功(步骤27-28): success_count++, total_latency+=620, total_tokens+=50, total_cost+=0.00024
+- 异步写入Redis(步骤29): 持久化指标数据
+
+**阶段6: 响应返回 (步骤30-32)**
+- 构造success_response格式响应
+- 通过网关返回给Voice服务
+- Voice服务调用TTS合成语音返回用户
+
+**关键性能指标**:
+- 路由决策耗时: ~5-10ms (内存计算)
+- Provider调用耗时: ~600ms (外部API)
+- 总耗时: ~620ms (满足<500ms目标需优化)
+
+**容错机制**:
+- 若qwen-turbo失败,可使用fallback_models中的gpt-3.5-turbo
+- 若所有模型失败,返回LLM_SERVICE_UNAVAILABLE错误
+
+---
+
+#### 场景2: GraphRAG服务调用聊天补全（流式）
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant GraphRAG as GraphRAG Service<br/>:8001
+    participant Routes as LLM Router<br/>routes.py
+    participant Router as ModelRouter<br/>router.py
+    participant Provider as OpenAIProvider<br/>provider
+    participant OpenAI as OpenAI API<br/>api.openai.com
+    
+    Note over GraphRAG: 知识图谱查询结果<br/>需要LLM生成摘要
+    
+    GraphRAG->>Routes: POST /api/v1/chat<br/>{messages, stream=true, priority="quality_first"}
+    
+    Routes->>Routes: 参数验证<br/>stream=True
+    
+    Routes->>Router: route(messages, CHAT, QUALITY_FIRST)
+    
+    Note over Router: 路由决策:<br/>QUALITY_FIRST优先高质量模型<br/>选择: gpt-4 (quality_score=0.95)
+    
+    Router-->>Routes: RoutingDecision{<br/>selected_model="gpt-4",<br/>provider=OPENAI,<br/>...}
+    
+    Routes->>Provider: chat(messages, model="gpt-4", stream=True)
+    
+    Provider->>OpenAI: POST /v1/chat/completions<br/>{model:"gpt-4", stream:true, ...}
+    
+    Note over OpenAI: 流式返回<br/>Server-Sent Events
+    
+    loop 流式chunks
+        OpenAI-->>Provider: data: {"choices":[{"delta":{"content":"根据"}}]}<br/>
+        Provider-->>Routes: yield "根据"
+        Routes-->>GraphRAG: data: {"content":"根据"}\n\n
+        
+        OpenAI-->>Provider: data: {"choices":[{"delta":{"content":"知识"}}]}<br/>
+        Provider-->>Routes: yield "知识"
+        Routes-->>GraphRAG: data: {"content":"知识"}\n\n
+        
+        OpenAI-->>Provider: data: {"choices":[{"delta":{"content":"图谱"}}]}<br/>
+        Provider-->>Routes: yield "图谱"
+        Routes-->>GraphRAG: data: {"content":"图谱"}\n\n
+    end
+    
+    OpenAI-->>Provider: data: [DONE]<br/>
+    Provider-->>Routes: StopIteration
+    Routes-->>GraphRAG: data: [DONE]\n\n
+    
+    Note over Routes: 记录成功<br/>record_success(gpt-4, latency_ms, tokens)
+    
+    Note over GraphRAG: 组装完整摘要<br/>返回给用户
+```
+
+#### 流式调用功能说明
+
+**流式响应优势**:
+1. **降低首字延迟(TTFB)**: 用户更快看到第一个字(约200-300ms vs 2-3秒)
+2. **改善用户体验**: 逐字显示,更自然,类似人类输入
+3. **降低超时风险**: 长文本生成可能超过30秒,流式可以持续返回数据
+
+**流式实现细节**:
+- 使用FastAPI的StreamingResponse
+- media_type="text/event-stream" (SSE格式)
+- Provider返回AsyncGenerator[str, None]
+- 每个chunk格式: `data: {"content":"xxx"}\n\n`
+- 结束标志: `data: [DONE]\n\n`
+
+**流式vs非流式对比**:
+| 维度 | 流式 | 非流式 |
+|------|------|--------|
+| 首字延迟 | 200-300ms | 2-3秒 |
+| 用户体验 | 逐字显示,更自然 | 等待后一次性显示 |
+| 超时风险 | 低(持续返回数据) | 高(长文本可能超时) |
+| 实现复杂度 | 高(需要处理流) | 低(简单请求响应) |
+| Token统计 | 结束后统计 | 响应中直接包含 |
+| 适用场景 | 实时对话、长文本生成 | 批量处理、短文本生成 |
+
+---
+
+### 1.5 模块内部详细时序图
+
+#### 场景3: ModelRouter路由决策内部流程
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Routes as routes.py
+    participant Router as ModelRouter
+    participant Models as self.models<br/>模型配置库
+    participant Metrics as ModelMetrics<br/>指标追踪器
+    
+    Routes->>Router: route(<br/>messages=[...],<br/>task_type=CHAT,<br/>priority=BALANCED,<br/>max_cost=0.01,<br/>max_latency_ms=2000<br/>)
+    
+    Note over Router: 阶段1: Token估算
+    Router->>Router: _estimate_tokens(messages)
+    
+    loop 遍历每条消息
+        Router->>Router: content_length = len(msg["content"])
+    end
+    
+    Router->>Router: estimated_tokens = total_chars * 0.5<br/>结果: 150 tokens
+    
+    Note over Router: 阶段2: 复杂度评估
+    Router->>Router: _assess_complexity(messages)
+    Router->>Router: total_length = sum(len(msg["content"]))
+    
+    alt total_length < 200
+        Router->>Router: complexity = SIMPLE
+    else total_length < 1000
+        Router->>Router: complexity = MEDIUM
+    else total_length >= 1000
+        Router->>Router: complexity = COMPLEX
+    end
+    
+    Router->>Router: 结果: complexity=MEDIUM
+    
+    Note over Router: 阶段3: 筛选候选模型
+    Router->>Router: _filter_candidates(<br/>task_type,<br/>complexity,<br/>max_cost,<br/>max_latency_ms,<br/>estimated_tokens<br/>)
+    
+    Router->>Models: 获取所有模型<br/>self.models.items()
+    Models-->>Router: {<br/>"gpt-4": ModelConfig(...),<br/>"gpt-3.5-turbo": ModelConfig(...),<br/>...<br/>}
+    
+    loop 遍历每个模型
+        Router->>Router: 检查enabled状态
+        
+        alt not model.enabled
+            Router->>Router: 跳过该模型
+        end
+        
+        Router->>Router: 检查任务能力
+        alt task_type not in model.capabilities
+            Router->>Router: 跳过该模型<br/>(不支持该任务类型)
+        end
+        
+        Router->>Metrics: current_qps[model_id]
+        Metrics-->>Router: current_qps=45
+        Router->>Router: 检查QPS限制
+        alt current_qps >= model.max_qps
+            Router->>Router: 跳过该模型<br/>(QPS超限)
+        end
+        
+        Router->>Metrics: get_availability(model_id)
+        Metrics->>Metrics: 计算: success_count / request_count
+        Metrics-->>Router: availability=0.95
+        Router->>Router: 检查可用性
+        alt availability < 0.8
+            Router->>Router: 跳过该模型<br/>(可用性过低)
+        end
+        
+        opt max_cost存在
+            Router->>Router: estimated_cost = model.calculate_cost(tokens)
+            alt estimated_cost > max_cost
+                Router->>Router: 跳过该模型<br/>(成本超限)
+            end
+        end
+        
+        opt max_latency_ms存在
+            alt model.avg_latency_ms > max_latency_ms
+                Router->>Router: 跳过该模型<br/>(延迟超限)
+            end
+        end
+        
+        Router->>Router: 添加到candidates列表
+    end
+    
+    Router->>Router: candidates = [<br/>"gpt-3.5-turbo",<br/>"qwen-turbo",<br/>"claude-3-sonnet"<br/>]
+    
+    Note over Router: 阶段4: 模型评分
+    Router->>Router: _score_models(<br/>candidates,<br/>priority=BALANCED,<br/>complexity,<br/>estimated_tokens<br/>)
+    
+    loop 遍历候选模型
+        Router->>Models: 获取模型配置
+        Models-->>Router: ModelConfig{<br/>cost_per_1k_tokens: 0.002,<br/>quality_score: 0.80,<br/>avg_latency_ms: 800<br/>}
+        
+        alt priority == COST_FIRST
+            Router->>Router: cost_score = 1.0 / (cost + 0.001) * 0.5<br/>quality_score = quality * 0.3<br/>latency_score = 1.0 / (latency + 1) * 0.2<br/>score = cost_score + quality_score + latency_score
+        
+        else priority == QUALITY_FIRST
+            Router->>Router: score = quality * 0.7 + 1.0 / (latency + 1) * 0.3
+        
+        else priority == SPEED_FIRST
+            Router->>Router: latency_score = 1.0 / (latency + 1) * 0.7<br/>quality_score = quality * 0.3<br/>score = latency_score + quality_score
+        
+        else priority == BALANCED
+            Router->>Router: cost_score = 1.0 / (cost + 0.001) * 0.25<br/>quality_score = quality * 0.35<br/>latency_score = 1.0 / (latency + 1) * 0.25
+            Router->>Metrics: get_availability(model_id)
+            Metrics-->>Router: availability=0.95
+            Router->>Router: availability_score = availability * 0.15<br/>score = sum(all_scores)
+        end
+        
+        Router->>Router: scores[model_id] = score
+    end
+    
+    Router->>Router: scores = {<br/>"gpt-3.5-turbo": 0.82,<br/>"qwen-turbo": 0.75,<br/>"claude-3-sonnet": 0.68<br/>}
+    
+    Note over Router: 阶段5: 选择最佳模型
+    Router->>Router: best_model_id = max(scores, key=scores.get)
+    Router->>Router: best_model_id = "gpt-3.5-turbo"
+    Router->>Router: best_score = 0.82
+    
+    Router->>Models: best_model = models[best_model_id]
+    Models-->>Router: ModelConfig{...}
+    
+    Note over Router: 阶段6: 准备备选模型
+    Router->>Router: fallback_models = sorted(scores, reverse=True)[1:4]
+    Router->>Router: fallback_models = [<br/>"qwen-turbo",<br/>"claude-3-sonnet"<br/>]
+    
+    Note over Router: 阶段7: 生成路由原因
+    Router->>Router: reasoning = _generate_reasoning(<br/>best_model,<br/>priority,<br/>complexity<br/>)
+    Router->>Router: reasoning = "任务复杂度:MEDIUM; 路由策略:balanced; 模型质量分数:0.80; 预估延迟:800ms; 成本:$0.0020/1k tokens"
+    
+    Note over Router: 阶段8: 构造决策结果
+    Router->>Router: 计算routing_time_ms = (end_time - start_time) * 1000<br/>= 8.5ms
+    
+    Router->>Router: decision = RoutingDecision(<br/>selected_model="gpt-3.5-turbo",<br/>provider=OPENAI,<br/>confidence=0.82,<br/>reasoning=reasoning,<br/>estimated_cost=0.0003,<br/>estimated_latency_ms=800,<br/>fallback_models=fallback_models,<br/>routing_time_ms=8.5<br/>)
+    
+    Router-->>Routes: 返回 RoutingDecision
+```
+
+#### ModelRouter路由决策功能说明
+
+**阶段1: Token估算 (步骤1-4)**
+- 目的: 估算输入消息的token数量,用于成本计算和模型筛选
+- 算法: 简单字符计数 `sum(len(content)) * 0.5`
+- 缺陷: 对中英文混合、特殊字符处理不准确
+- 改进方向: 使用tiktoken库精确统计OpenAI模型token,使用各Provider的tokenizer统计其他模型
+
+**阶段2: 复杂度评估 (步骤5-10)**
+- 目的: 评估查询复杂度,影响模型选择(简单查询用小模型,复杂查询用大模型)
+- 分类规则:
+  - SIMPLE(<200字符): 适合gpt-3.5-turbo、qwen-turbo等快速模型
+  - MEDIUM(200-1000字符): 适合gpt-3.5-turbo、qwen-max等中等模型
+  - COMPLEX(>1000字符): 适合gpt-4、claude-3-opus等大模型
+- 缺陷: 仅基于长度,未考虑语义复杂度、推理深度
+- 改进方向: 使用小模型预评估复杂度,或基于关键词(如"推理"、"分析"、"对比")判断
+
+**阶段3: 筛选候选模型 (步骤11-39)**
+- 目的: 从所有模型中筛选出满足条件的候选模型
+- 筛选条件(依次检查):
+  1. **enabled状态**(步骤15-17): 模型是否启用(可动态禁用故障模型)
+  2. **任务能力**(步骤19-22): 检查`task_type in model.capabilities`
+  3. **QPS限制**(步骤24-28): 检查`current_qps < max_qps`(避免单模型过载)
+  4. **可用性**(步骤30-34): 检查`availability >= 0.8`(成功率低于80%的模型不可用)
+  5. **成本约束**(步骤36-41): 若设置max_cost,检查`estimated_cost <= max_cost`
+  6. **延迟约束**(步骤43-47): 若设置max_latency_ms,检查`avg_latency_ms <= max_latency_ms`
+- 结果: 满足所有条件的模型列表
+
+**阶段4: 模型评分 (步骤52-84)**
+- 目的: 根据路由优先级对候选模型评分,选择最优模型
+- 评分策略:
+  - **COST_FIRST**(步骤57-58): 成本50% + 质量30% + 延迟20%
+    - 适用: 批量处理、非关键任务
+    - 示例: 文档摘要、批量翻译
+  - **QUALITY_FIRST**(步骤60-61): 质量70% + 延迟30%
+    - 适用: 关键任务、高质量要求
+    - 示例: 专业内容创作、代码生成
+  - **SPEED_FIRST**(步骤63-66): 延迟70% + 质量30%
+    - 适用: 实时交互、低延迟要求
+    - 示例: 聊天对话、快速问答
+  - **BALANCED**(步骤68-73): 成本25% + 质量35% + 延迟25% + 可用性15%
+    - 适用: 通用场景、综合考虑
+    - 示例: 大部分业务场景
+- 评分计算细节:
+  - cost_score: `1.0 / (cost_per_1k_tokens + 0.001)` (成本越低分数越高)
+  - quality_score: 直接使用`model.quality_score` (0-1范围)
+  - latency_score: `1.0 / (avg_latency_ms + 1)` (延迟越低分数越高)
+  - availability_score: 直接使用`get_availability()` (0-1范围)
+
+**阶段5: 选择最佳模型 (步骤88-93)**
+- 从评分字典中选择得分最高的模型
+- 返回模型ID、评分、模型配置
+
+**阶段6: 准备备选模型 (步骤95-100)**
+- 目的: 为降级策略准备备选模型
+- 选择规则: 按评分降序排列,取前3个(排除best_model)
+- 用途: 当主模型失败时,按顺序尝试备选模型
+
+**阶段7: 生成路由原因 (步骤102-104)**
+- 目的: 提供路由决策的可解释性
+- 内容: 复杂度、策略、质量评分、延迟、成本
+- 用途: 日志记录、调试、审计
+
+**阶段8: 构造决策结果 (步骤106-118)**
+- 计算routing_time_ms: 路由决策总耗时(通常5-10ms)
+- 构造RoutingDecision对象
+- 返回给调用方
+
+**性能优化要点**:
+- 筛选阶段使用短路逻辑(一旦不满足条件立即跳过)
+- 指标查询使用内存字典(O(1)时间复杂度)
+- 评分计算避免重复调用(缓存中间结果)
+- 总耗时控制在10ms以内
+
+---
+
+#### 场景4: 降级策略 - Sequential顺序降级
+
+```mermaid
+sequenceDiagram
+    autonumber
+    participant Routes as routes.py
+    participant Fallback as FallbackHandler
+    participant P1 as OpenAI Provider<br/>gpt-3.5-turbo
+    participant P2 as Alibaba Provider<br/>qwen-turbo
+    participant P3 as Baidu Provider<br/>ernie-bot-turbo
+    participant OpenAI_API as OpenAI API
+    participant Alibaba_API as Alibaba API
+    participant Baidu_API as Baidu API
+    
+    Routes->>Fallback: call_with_fallback(<br/>messages,<br/>task_type=CHAT,<br/>stream=False<br/>)
+    
+    Note over Fallback: strategy=SEQUENTIAL<br/>顺序降级策略
+    
+    Fallback->>Fallback: 获取降级链<br/>fallback_chain = [<br/>(OPENAI, 'gpt-3.5-turbo'),<br/>(ALIBABA, 'qwen-turbo'),<br/>(BAIDU, 'ernie-bot-turbo')<br/>]
+    
+    Note over Fallback: 尝试模型1: OpenAI
+    Fallback->>P1: 获取Provider<br/>router.providers[OPENAI]
+    
+    alt Provider存在
+        Fallback->>Fallback: 设置超时: timeout=30s
+        
+        Fallback->>P1: chat(<br/>messages,<br/>model='gpt-3.5-turbo',<br/>stream=False<br/>)
+        
+        P1->>OpenAI_API: POST /v1/chat/completions
+        
+        alt 调用成功
+            OpenAI_API-->>P1: 200 OK<br/>{choices: [...]}
+            P1-->>Fallback: yield content
+            Fallback->>Fallback: response_received = True
+            Fallback-->>Routes: yield content<br/>成功返回,结束流程
+        
+        else 超时(>30s)
+            OpenAI_API--xP1: TimeoutError
+            P1--xFallback: TimeoutError
+            Fallback->>Fallback: last_error = "超时: openai/gpt-3.5-turbo"<br/>记录日志
+        
+        else API错误
+            OpenAI_API--xP1: 429 Too Many Requests
+            P1--xFallback: Exception
+            Fallback->>Fallback: last_error = "错误: openai/gpt-3.5-turbo: 429"<br/>记录日志
+        end
+    
+    else Provider不存在
+        Fallback->>Fallback: last_error = "Provider不可用: openai"<br/>记录日志
+    end
+    
+    Note over Fallback: 模型1失败,尝试模型2: Alibaba
+    Fallback->>P2: 获取Provider<br/>router.providers[ALIBABA]
+    
+    alt Provider存在
+        Fallback->>P2: chat(<br/>messages,<br/>model='qwen-turbo',<br/>stream=False<br/>)
+        
+        P2->>Alibaba_API: POST /compatible-mode/v1/chat/completions
+        
+        alt 调用成功
+            Alibaba_API-->>P2: 200 OK<br/>{output: {...}}
+            P2-->>Fallback: yield content
+            Fallback->>Fallback: response_received = True
+            Fallback-->>Routes: yield content<br/>成功返回,结束流程
+        
+        else 调用失败
+            Alibaba_API--xP2: 500 Internal Server Error
+            P2--xFallback: Exception
+            Fallback->>Fallback: last_error = "错误: alibaba/qwen-turbo: 500"<br/>记录日志
+        end
+    
+    else Provider不存在
+        Fallback->>Fallback: last_error = "Provider不可用: alibaba"<br/>记录日志
+    end
+    
+    Note over Fallback: 模型2失败,尝试模型3: Baidu
+    Fallback->>P3: 获取Provider<br/>router.providers[BAIDU]
+    
+    alt Provider存在
+        Fallback->>P3: chat(<br/>messages,<br/>model='ernie-bot-turbo',<br/>stream=False<br/>)
+        
+        P3->>Baidu_API: POST /rpc/2.0/ai_custom/v1/wenxinworkshop/chat/ernie_bot_turbo
+        
+        alt 调用成功
+            Baidu_API-->>P3: 200 OK<br/>{result: "..."}
+            P3-->>Fallback: yield content
+            Fallback->>Fallback: response_received = True
+            Fallback-->>Routes: yield content<br/>成功返回,结束流程
+        
+        else 调用失败
+            Baidu_API--xP3: Exception
+            P3--xFallback: Exception
+            Fallback->>Fallback: last_error = "错误: baidu/ernie-bot-turbo: xxx"<br/>记录日志
+        end
+    
+    else Provider不存在
+        Fallback->>Fallback: last_error = "Provider不可用: baidu"<br/>记录日志
+    end
+    
+    Note over Fallback: 所有模型都失败
+    Fallback->>Fallback: error_msg = "所有模型降级失败,最后错误: " + last_error
+    Fallback->>Fallback: logger.error(error_msg)
+    Fallback--xRoutes: raise Exception(error_msg)
+    
+    Routes--xRoutes: 捕获异常<br/>返回HTTP 503<br/>LLM_SERVICE_UNAVAILABLE
+```
+
+#### Sequential顺序降级功能说明
+
+**策略特点**:
+- **顺序尝试**: 依次尝试降级链中的每个模型
+- **失败即切换**: 一个模型失败(超时/错误)立即尝试下一个
+- **成本控制**: 同一时间只调用一个模型API,成本最低
+- **延迟较高**: 需要等待每个模型的超时时间,总延迟=失败模型数*timeout
+
+**适用场景**:
+- 对成本敏感的场景(批量处理、非实时)
+- 允许较长等待时间(SLA宽松)
+- 希望尽量使用高质量模型(降级链按质量排序)
+
+**超时处理**:
+- 每个模型设置timeout(默认30秒)
+- 使用asyncio.timeout()实现超时控制
+- 超时后自动取消当前任务,尝试下一个模型
+
+**错误类型**:
+1. **TimeoutError**: 请求超时(网络慢、模型负载高)
+2. **HTTP 429**: API限流(超出配额、QPS过高)
+3. **HTTP 500**: 服务器内部错误(模型故障、服务不可用)
+4. **HTTP 401**: 认证失败(API Key无效、过期)
+5. **Provider不存在**: 未初始化该Provider(环境变量缺失)
+
+**降级链配置**:
+```python
+FALLBACK_CHAINS = {
+    TaskType.CHAT: [
+        (ProviderType.OPENAI, 'gpt-3.5-turbo'),    # 质量高、速度快
+        (ProviderType.ALIBABA, 'qwen-turbo'),       # 质量中、成本低
+        (ProviderType.BAIDU, 'ernie-bot-turbo')     # 备用方案
+    ],
+    TaskType.REASONING: [
+        (ProviderType.OPENAI, 'gpt-4'),            # 最高质量
+        (ProviderType.ALIBABA, 'qwen-max'),         # 次高质量
+        (ProviderType.BAIDU, 'ernie-bot-4')         # 备用方案
+    ]
+}
+```
+
+**性能指标**:
+- 最佳情况: 第一个模型成功,延迟=模型延迟(约600-800ms)
+- 最坏情况: 所有模型失败,延迟=模型数*timeout(约90秒)
+- 典型情况: 1-2次重试成功,延迟=1-2*timeout + 模型延迟(约30-60秒)
+
+**成本分析**:
+- 成功时成本=1次API调用
+- 失败n次后成功,成本=n次API调用(前n次可能产生部分成本)
+- 所有失败,成本=最多n次API调用
+
+**日志记录**:
+- 每次尝试记录: `logger.info(f"尝试调用: {provider}/{model}")`
+- 每次失败记录: `logger.warning(f"调用失败: {provider}/{model}: {error}")`
+- 最终成功记录: `logger.info(f"调用成功: {provider}/{model}")`
+- 最终失败记录: `logger.error(f"所有模型降级失败: {last_error}")`
+
+---
 
 ---
 
@@ -1740,15 +2704,9 @@ LLM Router服务作为VoiceHelper的智能模型路由层,实现了以下核心�
 
 通过合理配置路由策略、降级策略和监控告警,可以实现成本、质量、速度的动态平衡,为上层服务提供稳定可靠的LLM能力。
 
-未来优化方向:
+优化方向:
 - 引入A/B测试机制(对比不同模型效果)
 - 支持模型微调版本管理
 - 实现智能缓存(语义相似查询复用结果)
 - 增强成本预测(基于历史数据预测未来成本)
-
----
-
-**文档状态**:✅ 已完成  
-**覆盖度**:100%(API、架构、路由决策、降级策略、监控、最佳实践)  
-**下一步**:生成Voice语音服务模块文档(08-Voice语音服务)
 
