@@ -1875,7 +1875,7 @@ sequenceDiagram
     Tracing->>Tracing: 5️⃣ Tracing中间件
     Tracing->>Tracing: 提取上游trace context<br/>otel.GetTextMapPropagator().Extract()
     Tracing->>Tracing: 开始新span<br/>spanName = "POST /api/v01/chat/stream"
-    Tracing->>Tracing: 设置span属性<br/>{http.method, http.url, http.route,<br/>http.client_ip, http.user_agent}
+        Tracing->>Tracing: 设置span属性<br/>http.method, http.url, http.route,<br/>http.client_ip, http.user_agent
     
     Tracing->>Monitoring: c.Next()
     Monitoring->>Monitoring: 6️⃣ Monitoring中间件
@@ -1889,18 +1889,18 @@ sequenceDiagram
     
     alt 超过限流阈值 (>100 req/min)
         RateLimit->>RateLimit: allowed = false
-        RateLimit->>RateLimit: c.JSON(429, {error:"Too Many Requests"})<br/>c.Abort()
+        RateLimit->>RateLimit: c.JSON(429, error:Too Many Requests)<br/>c.Abort()
         
         Note over RateLimit,Client: 中间件链反向返回
         RateLimit-->>Monitoring: 返回（已中断）
-        Monitoring->>Monitoring: 记录响应状态<br/>httpRequestDuration.Observe(duration)<br/>httpRequestsTotal{status="429"}.Inc()
+        Monitoring->>Monitoring: 记录响应状态<br/>httpRequestDuration.Observe(duration)<br/>httpRequestsTotal(status:429).Inc()
         Monitoring-->>Tracing: 返回
-        Tracing->>Tracing: 结束span<br/>span.SetAttributes({http.status_code:429})
+        Tracing->>Tracing: 结束span<br/>span.SetAttributes(http.status_code:429)
         Tracing-->>RequestID: 返回
         RequestID-->>CORS: 返回
         CORS-->>Recovery: 返回
         Recovery-->>Logger: 返回
-        Logger->>Logger: 记录请求完成<br/>duration = time.Since(startTime)<br/>log.Info({method, path, status:429, duration})
+        Logger->>Logger: 记录请求完成<br/>duration = time.Since(startTime)<br/>log.Info(method, path, status:429, duration)
         Logger-->>GinEngine: 返回
         GinEngine-->>Client: 429 Too Many Requests
         
@@ -1913,7 +1913,7 @@ sequenceDiagram
         alt Token不存在
             Auth-->>GinEngine: 401 Unauthorized (中断链)
         else Token存在
-            Auth->>Auth: Redis检查黑名单<br/>EXISTS token_blacklist:${token}
+            Auth->>Auth: Redis检查黑名单<br/>EXISTS token_blacklist:token_id
             
             alt Token在黑名单
                 Auth-->>GinEngine: 401 Token Revoked (中断链)
@@ -1923,12 +1923,12 @@ sequenceDiagram
                 alt JWT签名无效或过期
                     Auth-->>GinEngine: 401 Invalid/Expired Token
                 else JWT有效
-                    Auth->>Auth: 提取用户信息<br/>c.Set("user_id", claims.UserID)<br/>c.Set("tenant_id", claims.TenantID)<br/>c.Set("role", claims.Role)<br/>c.Set("scopes", claims.Scopes)
+                    Auth->>Auth: 提取用户信息<br/>c.Set(user_id, claims.UserID)<br/>c.Set(tenant_id, claims.TenantID)<br/>c.Set(role, claims.Role)<br/>c.Set(scopes, claims.Scopes)
                     
                     Auth->>Auth: 检查是否需要自动续期<br/>if expiresIn < renewThreshold
                     alt 需要续期
                         Auth->>Auth: 生成新Token<br/>newToken = jwt.Sign(claims, secret)
-                        Auth->>Auth: c.Header("X-New-Token", newToken)
+                        Auth->>Auth: c.Header(X-New-Token, newToken)
                     end
                     
                     Auth->>RBAC: c.Next()
@@ -1983,12 +1983,12 @@ sequenceDiagram
         Auth-->>RateLimit: 返回
         RateLimit-->>Monitoring: 返回
         
-        Monitoring->>Monitoring: 记录响应指标<br/>httpRequestDuration.Observe(duration)<br/>httpRequestsTotal{status="200"}.Inc()
+        Monitoring->>Monitoring: 记录响应指标<br/>httpRequestDuration.Observe(duration)<br/>httpRequestsTotal(status:200).Inc()
         Monitoring-->>Tracing: 返回
         
-        Tracing->>Tracing: 结束span<br/>span.SetAttributes({<br/>  http.status_code: 200,<br/>  http.response_size: c.Writer.Size()<br/>})
+        Tracing->>Tracing: 结束span<br/>span.SetAttributes(http.status_code:200,<br/>http.response_size:c.Writer.Size())
         alt 有错误
-            Tracing->>Tracing: span.SetAttributes({<br/>  error: true,<br/>  error.message: c.Errors.String()<br/>})
+            Tracing->>Tracing: span.SetAttributes(error:true,<br/>error.message:c.Errors.String())
         end
         Tracing-->>RequestID: 返回
         
@@ -1997,7 +1997,7 @@ sequenceDiagram
         Recovery-->>Logger: 返回
         
         Logger->>Logger: 记录请求完成<br/>duration = time.Since(startTime)<br/>status = c.Writer.Status()<br/>size = c.Writer.Size()
-        Logger->>Logger: log.Info({<br/>  method, path, status, duration, size,<br/>  client_ip, user_agent, request_id<br/>})
+        Logger->>Logger: log.Info(method, path, status, duration, size,<br/>client_ip, user_agent, request_id)
         Logger-->>GinEngine: 返回
         
         GinEngine-->>Client: HTTP Response<br/>200 OK + 响应体
@@ -2303,7 +2303,7 @@ sequenceDiagram
         DocProc->>DocProc: pypdf解析<br/>(外部库)
     end
     
-    DocProc->>DocProc: _split_into_sentences()<br/>按句子分割<br/>delimiter=[。！？；.!?;]
+    DocProc->>DocProc: _split_into_sentences()<br/>按句子分割<br/>delimiter: 。！？；.!?;
     
     DocProc->>DocProc: _create_chunks()<br/>语义分块<br/>chunk_size=500<br/>chunk_overlap=50
     

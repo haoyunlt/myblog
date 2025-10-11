@@ -2651,64 +2651,11 @@ numpy==1.26.2
 
 ---
 
-## 十、文档更新日志
 
-| 日期 | 版本 | 修改内容 | 作者 |
-|------|------|---------|------|
-| 2025-10-10 | 1.0 | 初始版本，完整模块说明与API规格 | VoiceHelper Algorithm Team |
-| 2025-10-10 | 2.0 | **重大更新**：新增完整上游调用链路与模块交互<br/>• 5.1 Gateway → GraphRAG完整调用链路（文档上传~700行）<br/>  - Web前端文档上传 → GraphRAG摄取全流程时序图<br/>  - 阶段1: 文档上传（同步）<br/>  - 阶段2: GraphRAG异步摄取（后台处理）<br/>  - 阶段3: 前端轮询状态（定时查询）<br/>  - 关键代码: DocumentHandler(Go) + IngestService(Python)<br/>• 5.2 Web前端智能问答 → GraphRAG检索全流程（~650行）<br/>  - 完整时序图（15个参与者）<br/>  - 阶段1: 查询改写（3种策略）<br/>  - 阶段2: 并行多路召回（向量+图谱+BM25）<br/>  - 阶段3: RRF融合排序（公式详解）<br/>  - 阶段4: CrossEncoder重排（BiEncoder对比）<br/>  - 阶段5: LLM生成答案（流式响应）<br/>  - 关键代码: QueryRewriter, IntelligentRetriever, RRFFusionRanker, CrossEncoderReranker<br/>• 6.2 模块交互关系详解（~450行）<br/>  - 6.2.1 GraphRAG服务与其他模块的交互拓扑图（Mermaid）<br/>  - 6.2.2 交互场景详细说明（文档摄取、智能检索、实体提取）<br/>  - 6.2.3 模块依赖矩阵（9×7表格，降级策略）<br/>  - 6.2.4 数据流详解（文档摄取/智能检索数据流图）<br/>**新增内容**：<br/>• 15+关键代码片段（Python/Go/Cypher）<br/>• 性能指标量化数据（延迟分解、数据大小对比）<br/>• 3个完整交互场景分析（15步详细流程）<br/>• 双路径实体提取策略详解<br/>• RRF融合算法示例计算<br/>• CrossEncoder vs BiEncoder对比表<br/>• 协议栈详解（应用层→数据链路层）<br/>**文档规模**：从1,503行扩展至2,700+行（增长80%）| AI Assistant |
+## 十、总结与展望
 
----
 
-**文档版本**: v2.0  
-**最后更新**: 2025-10-10  
-**维护团队**: VoiceHelper Algorithm Team
-
----
-
-## 十一、总结与展望
-
-### 11.1 核心成果总结
-
-本文档完整记录了VoiceHelper GraphRAG服务从上游Gateway到下游存储层的完整调用链路，包含：
-
-✅ **2个完整上游调用链路**：
-- 文档上传 → GraphRAG摄取全流程（~700行）
-- 智能问答 → GraphRAG检索全流程（~650行）
-
-✅ **8个详细时序图**：
-- Gateway → GraphRAG时序图（3阶段）
-- 文档摄取内部时序图
-- 智能检索内部时序图（5阶段）
-- 社区检测时序图
-- 模块交互拓扑图
-- 数据流图（摄取/检索）
-
-✅ **15+关键代码片段**：
-- Go: DocumentHandler上传处理
-- Python: IngestService摄取逻辑
-- Python: QueryRewriter查询改写
-- Python: IntelligentRetriever并行召回
-- Python: RRFFusionRanker融合算法
-- Python: CrossEncoderReranker重排序
-- Python: EntityExtractor双路径提取
-- Cypher: Neo4j批量写入
-
-✅ **详细的性能指标**：
-- 文件上传: P50 ~500ms/MB
-- 文档摄取: ~10秒/1000字
-- 向量化: ~300 chunks/s
-- 实体提取: ~50 chunks/min
-- GraphRAG检索: P50 ~215ms, P95 ~295ms
-- 召回率: 92% (Top-10)
-- Top-5准确率: 87%
-
-✅ **3个完整交互场景**：
-- 场景1: 文档摄取流程（15步详细说明）
-- 场景2: 智能检索流程（13步+延迟分解）
-- 场景3: 实体提取与图谱构建（双路径融合）
-
-### 11.2 技术亮点
+### 10.1 技术亮点
 
 1. **异步解耦架构**：
    - 文档上传立即返回，后台异步处理
@@ -2736,7 +2683,7 @@ numpy==1.26.2
    - FAISS不可用 → 降级到BM25检索
    - Redis不可用 → 禁用缓存
 
-### 11.3 优化方向
+### 10.2 优化方向
 
 1. **增量更新**：
    - 支持文档增量摄取（只处理变更部分）

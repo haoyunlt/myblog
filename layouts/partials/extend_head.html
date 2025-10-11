@@ -394,7 +394,8 @@
 {{- end -}}
 
 {{- if $hasMermaid -}}
-<script src="{{ "js/mermaid.min.js" | relURL }}"></script>
+{{- /* 使用国内CDN加载Mermaid.js（多级备用，确保加载成功） */ -}}
+<script src="https://cdn.bootcdn.net/ajax/libs/mermaid/10.9.0/mermaid.min.js" crossorigin="anonymous" onerror="this.onerror=null;this.src='https://unpkg.com/mermaid@10.9.0/dist/mermaid.min.js';this.onerror=function(){this.onerror=null;this.src='https://cdn.jsdelivr.net/npm/mermaid@10.9.0/dist/mermaid.min.js';}"></script>
 <script>
 // 等待页面完全加载
 window.addEventListener('load', function() {
@@ -411,8 +412,10 @@ window.addEventListener('load', function() {
         // 检查Mermaid是否加载
         if (typeof mermaid === 'undefined') {
             debug.error('Mermaid库未加载');
+            console.error('❌ Mermaid库未加载！请检查CDN是否可访问');
             return;
         }
+        debug.log('✅ Mermaid库已成功加载', { version: mermaid.version || 'unknown' });
         
         // 初始化Mermaid - 移动端使用简化配置
         mermaid.initialize({
@@ -452,6 +455,7 @@ window.addEventListener('load', function() {
             try {
                 const content = codeElement.textContent.trim();
                 const classList = codeElement.classList;
+                const classNames = Array.from(classList).join(', ');
                 
                 // 检查类名或内容特征
                 const hasMermaidClass = classList.contains('language-mermaid');
@@ -477,17 +481,26 @@ window.addEventListener('load', function() {
                 
                 const hasValidMermaidContent = mermaidPatterns.some(pattern => pattern.test(content));
                 
-                const isFallbackWithMermaid = (classList.contains('language-fallback') || 
-                                              classList.contains('language-gdscript3') || 
-                                              classList.contains('language-gdscript')) && hasValidMermaidContent;
+                // 扩展fallback检测，包含更多可能的错误类名
+                const isFallbackWithMermaid = (
+                    classList.contains('language-fallback') || 
+                    classList.contains('language-gdscript3') || 
+                    classList.contains('language-gdscript') ||
+                    classList.contains('language-text') ||
+                    classList.contains('language-plaintext') ||
+                    !classNames.includes('language-')  // 没有language-前缀的代码块
+                ) && hasValidMermaidContent;
                 
                 const shouldProcess = hasMermaidClass || isFallbackWithMermaid;
                 
-                // 调试日志
-                if (shouldProcess) {
-                    debug.debug(`发现Mermaid代码块`, {
-                        classes: Array.from(classList).join(', '),
-                        contentPreview: content.substring(0, 50)
+                // 增强调试日志
+                if (shouldProcess || hasValidMermaidContent) {
+                    debug.log(`${shouldProcess ? '✅' : '⚠️'} 代码块检测`, {
+                        shouldProcess,
+                        classes: classNames || '(无类名)',
+                        hasMermaidClass,
+                        hasValidMermaidContent,
+                        contentPreview: content.substring(0, 80).replace(/\n/g, ' ')
                     });
                 }
                 

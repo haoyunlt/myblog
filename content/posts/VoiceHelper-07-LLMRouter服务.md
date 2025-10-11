@@ -7,6 +7,7 @@ categories: ["VoiceHelper", "源码剖析"]
 description: "VoiceHelper LLM Router服务详细设计，包含智能路由算法、多模型支持、负载均衡、自动降级、成本优化完整实现"
 series: ["VoiceHelper源码剖析"]
 weight: 7
+mermaid: true
 ---
 
 # VoiceHelper-07-LLMRouter服务
